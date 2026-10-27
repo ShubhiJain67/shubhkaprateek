@@ -1,7 +1,7 @@
 {
   "site": {
     "title": "Shubh ka Prateek",
-    "tagline": "Everything we've shared on our page, in one place 💛",
+    "tagline": "Everything from our reels, in one place 💛",
     "instagram": "https://www.instagram.com/shubhkaprateek/"
   },
 
@@ -12,33 +12,16 @@
     { "id": "tech",    "name": "Tech",    "emoji": "📱" }
   ],
 
-  "products": [
+  "reels": [
     {
       "id": 1,
-      "name": "EXAMPLE — Ceramic coffee mug set",
-      "category": "home",
-      "link": "https://www.amazon.in/",
-      "image": "",
-      "price": "₹799",
-      "note": "The mugs from our morning-coffee reel",
-      "featured": true
-    },
-    {
-      "id": 2,
-      "name": "EXAMPLE — Matching couple hoodies",
-      "category": "fashion",
-      "link": "https://www.myntra.com/",
-      "image": "",
-      "price": "₹1,499",
-      "note": "Replace these examples with your real products"
-    },
-    {
-      "id": 3,
-      "name": "EXAMPLE — Personalised photo frame",
-      "category": "gifts",
-      "link": "https://www.amazon.in/",
-      "image": "",
-      "price": ""
+      "reel": "https://www.instagram.com/p/DemM1ceylf2/",
+      "category": "Games",
+      "title": "Play Retro - Blast Box",
+      "products": [
+        { "name": "Play Retro - Blast Box", "link": "https://www.amazon.in/", "price": "₹799" },
+        { "name": "His Tshirt", "link": "https://www.amazon.in/", "price": "₹1,299" }
+      ]
     }
   ]
 }

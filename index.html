@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Shubh ka Prateek — Shop our picks</title>
-<meta name="description" content="All the products shared on @shubhkaprateek, in one place.">
+<title>Shubh ka Prateek — Shop our reels</title>
+<meta name="description" content="Every product from @shubhkaprateek reels, in one place.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #fbf6f1;
@@ -18,164 +18,138 @@
     --accent: #d9534f;
     --accent-ink: #ffffff;
     --chip: #f3e8df;
-    --ph1: #f7d9cf;
-    --ph2: #f3e3c3;
     --shadow: 0 1px 2px rgba(43,31,26,.06), 0 8px 24px rgba(43,31,26,.06);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #1a1513;
-      --surface: #241d1a;
-      --ink: #f5ece6;
-      --muted: #b3a39a;
-      --line: #3a2f2a;
-      --accent: #ef7a6f;
-      --accent-ink: #1a1513;
-      --chip: #2f2622;
-      --ph1: #4a2f2a;
-      --ph2: #4a3f2a;
+      --bg: #1a1513; --surface: #241d1a; --ink: #f5ece6; --muted: #b3a39a;
+      --line: #3a2f2a; --accent: #ef7a6f; --accent-ink: #1a1513; --chip: #2f2622;
       --shadow: none;
     }
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
-    background: var(--bg);
-    color: var(--ink);
+    background: var(--bg); color: var(--ink);
     font-family: Inter, system-ui, -apple-system, sans-serif;
-    font-size: 15px;
-    line-height: 1.45;
-    -webkit-font-smoothing: antialiased;
+    font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
 
-  header { padding: 40px 0 20px; text-align: center; }
+  header { padding: 36px 0 16px; text-align: center; }
   h1 {
-    font-family: Fraunces, Georgia, serif;
-    font-weight: 700;
-    font-size: clamp(30px, 7vw, 44px);
-    letter-spacing: -0.02em;
-    margin: 0 0 6px;
+    font-family: Fraunces, Georgia, serif; font-weight: 700;
+    font-size: clamp(30px, 7vw, 44px); letter-spacing: -0.02em; margin: 0 0 6px;
   }
-  .tagline { color: var(--muted); margin: 0 0 14px; }
-  .ig {
-    display: inline-flex; align-items: center; gap: 6px;
-    color: var(--accent); font-weight: 600; text-decoration: none; font-size: 14px;
-  }
+  .tagline { color: var(--muted); margin: 0 0 12px; }
+  .ig { color: var(--accent); font-weight: 600; text-decoration: none; font-size: 14px; }
   .ig:hover { text-decoration: underline; }
 
   .controls {
-    position: sticky; top: 0; z-index: 5;
-    background: var(--bg);
-    padding: 12px 0 10px;
-    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    padding: 12px 0 10px; border-bottom: 1px solid var(--line);
   }
   .search {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: var(--surface);
-    color: var(--ink);
-    font: inherit;
-    outline: none;
+    width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface); color: var(--ink); font: inherit; outline: none;
   }
   .search:focus { border-color: var(--accent); }
-  .chips {
-    display: flex; gap: 8px; overflow-x: auto;
-    padding: 10px 0 2px; scrollbar-width: none;
-  }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 2px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
   .chip {
-    flex: 0 0 auto;
-    border: 0; cursor: pointer;
-    padding: 8px 14px; border-radius: 999px;
-    background: var(--chip); color: var(--ink);
-    font: inherit; font-size: 14px; font-weight: 500;
+    flex: 0 0 auto; border: 0; cursor: pointer; padding: 8px 14px; border-radius: 999px;
+    background: var(--chip); color: var(--ink); font: inherit; font-size: 14px; font-weight: 500;
     white-space: nowrap;
   }
   .chip .n { color: var(--muted); margin-left: 4px; font-size: 12px; }
   .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
   .chip[aria-pressed="true"] .n { color: inherit; opacity: .7; }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 14px;
-    padding: 18px 0 40px;
+  .feed {
+    display: grid; gap: 22px; padding: 20px 0 24px;
+    grid-template-columns: 1fr;
+    justify-items: center;
   }
-  @media (min-width: 640px) {
-    .grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+  @media (min-width: 760px)  { .feed { grid-template-columns: repeat(2, 1fr); align-items: start; } }
+  @media (min-width: 1120px) { .feed { grid-template-columns: repeat(3, 1fr); } }
+
+  .post {
+    width: 100%; max-width: 380px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: var(--shadow); overflow: hidden;
   }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    overflow: hidden;
-    display: flex; flex-direction: column;
-    box-shadow: var(--shadow);
-    text-decoration: none; color: inherit;
-    transition: transform .15s ease;
-  }
-  .card:hover { transform: translateY(-2px); }
-  .media {
-    position: relative;
-    aspect-ratio: 1 / 1;
-    background: linear-gradient(135deg, var(--ph1), var(--ph2));
-    display: grid; place-items: center;
-    font-size: 48px;
-  }
-  .media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .post-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px; }
   .num {
-    position: absolute; top: 8px; left: 8px;
-    background: rgba(0,0,0,.65); color: #fff;
-    font-size: 12px; font-weight: 600;
-    padding: 3px 8px; border-radius: 999px;
+    background: var(--ink); color: var(--bg); font-size: 12px; font-weight: 600;
+    padding: 3px 9px; border-radius: 999px;
   }
-  .star {
-    position: absolute; top: 8px; right: 8px;
-    background: var(--accent); color: var(--accent-ink);
-    font-size: 11px; font-weight: 600;
-    padding: 3px 8px; border-radius: 999px;
+  .post-title { font-weight: 600; font-size: 14px; margin: 0; flex: 1; min-width: 0; }
+  .cat { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+  .reel { padding: 0 10px; }
+  /* Instagram's embed sets its own inline styles; keep it inside the card */
+  .reel .instagram-media, .reel iframe {
+    min-width: 0 !important; width: 100% !important; max-width: 100% !important;
+    margin: 0 !important; border-radius: 12px !important;
   }
-  .body { padding: 12px 12px 14px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
-  .cat { color: var(--muted); font-size: 12px; }
-  .name { font-weight: 600; font-size: 15px; margin: 0; }
-  .note { color: var(--muted); font-size: 13px; margin: 0; }
-  .foot { margin-top: auto; padding-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .price { font-weight: 600; }
+  .reel-missing {
+    aspect-ratio: 9 / 16; max-height: 420px; width: 100%;
+    border-radius: 12px; border: 2px dashed var(--line);
+    display: grid; place-items: center; text-align: center;
+    color: var(--muted); font-size: 13px; padding: 16px;
+  }
+
+  .products { list-style: none; margin: 0; padding: 10px 14px 14px; display: grid; gap: 8px; }
+  .products-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; padding: 12px 14px 0; }
+  .prod {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px; border: 1px solid var(--line); border-radius: 12px;
+    text-decoration: none; color: inherit;
+  }
+  .prod:hover { border-color: var(--accent); }
+  .thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--chip); flex: 0 0 auto; }
+  .prod-info { flex: 1; min-width: 0; }
+  .prod-name { font-weight: 500; font-size: 14px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .prod-price { color: var(--muted); font-size: 13px; }
   .shop {
-    background: var(--accent); color: var(--accent-ink);
-    font-weight: 600; font-size: 13px;
-    padding: 7px 12px; border-radius: 10px; margin-left: auto;
+    background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 13px;
+    padding: 7px 12px; border-radius: 10px; flex: 0 0 auto;
+  }
+
+  .more-wrap { text-align: center; padding: 0 0 36px; }
+  .more {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    font: inherit; font-weight: 600; padding: 10px 22px; border-radius: 999px; cursor: pointer;
   }
   .empty { text-align: center; color: var(--muted); padding: 60px 0; }
-  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 0 0 30px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 0 16px 30px; }
 </style>
 </head>
 <body>
   <header class="wrap">
     <h1 id="title">Shubh ka Prateek</h1>
     <p class="tagline" id="tagline"></p>
-    <a class="ig" id="ig" href="#" target="_blank" rel="noopener" hidden>📸 @shubhkaprateek</a>
+    <a class="ig" id="ig" href="#" target="_blank" rel="noopener" hidden>📸 Follow @shubhkaprateek</a>
   </header>
 
   <div class="controls">
     <div class="wrap">
-      <input class="search" id="q" type="search" placeholder="Search a product or its number (e.g. 12)" autocomplete="off">
+      <input class="search" id="q" type="search" placeholder="Search a product, or a reel number (e.g. 12)" autocomplete="off">
       <div class="chips" id="chips" role="toolbar" aria-label="Categories"></div>
     </div>
   </div>
 
   <main class="wrap">
-    <div class="grid" id="grid"></div>
+    <div class="feed" id="feed"></div>
     <p class="empty" id="empty" hidden>Nothing here yet 👀</p>
+    <div class="more-wrap"><button class="more" id="more" hidden>Load more reels</button></div>
   </main>
 
-  <footer class="wrap">Some links may be affiliate links — we may earn a small commission at no extra cost to you.</footer>
+  <footer>Some links may be affiliate links — we may earn a small commission at no extra cost to you.</footer>
 
 <script>
 (async function () {
+  const PAGE = 6; // reels rendered per batch — Instagram embeds are heavy
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const $ = id => document.getElementById(id);
 
@@ -184,7 +158,7 @@
     const res = await fetch("products.json", { cache: "no-cache" });
     data = await res.json();
   } catch (e) {
-    $("grid").innerHTML = '<p class="empty">Couldn\'t load products.json — check it for a JSON typo (missing comma or quote).</p>';
+    $("feed").innerHTML = '<p class="empty">Couldn\'t load products.json — check it for a JSON typo (missing comma or quote).</p>';
     console.error(e);
     return;
   }
@@ -192,11 +166,10 @@
   const site = data.site || {};
   const cats = data.categories || [];
   const catById = Object.fromEntries(cats.map(c => [c.id, c]));
-  // featured first, then newest (highest id) first
-  const products = (data.products || []).slice().sort((a, b) =>
-    (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || (b.id ?? 0) - (a.id ?? 0));
+  const reels = (data.reels || []).slice().sort((a, b) =>
+    (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || (b.id ?? 0) - (a.id ?? 0)); // newest first
 
-  if (site.title) { $("title").textContent = site.title; document.title = site.title + " — Shop our picks"; }
+  if (site.title) { $("title").textContent = site.title; document.title = site.title + " — Shop our reels"; }
   if (site.tagline) $("tagline").textContent = site.tagline;
   if (site.instagram) { $("ig").href = site.instagram; $("ig").hidden = false; }
 
@@ -204,65 +177,93 @@
   let active = params.get("c") || "all";
   if (active !== "all" && !catById[active]) active = "all";
   $("q").value = params.get("q") || "";
+  let shown = PAGE, filtered = [];
+
+  // Normalise any instagram reel/post URL to a clean permalink, or null if invalid
+  function permalink(url) {
+    const m = String(url || "").match(/instagram\.com\/(?:[\w.]+\/)?(reel|reels|p|tv)\/([A-Za-z0-9_-]+)/);
+    if (!m || /PASTE/i.test(m[2])) return null;
+    return `https://www.instagram.com/${m[1] === "reels" ? "reel" : m[1]}/${m[2]}/`;
+  }
 
   function renderChips() {
     const counts = {};
-    products.forEach(p => counts[p.category] = (counts[p.category] || 0) + 1);
+    reels.forEach(r => counts[r.category] = (counts[r.category] || 0) + 1);
     const list = [{ id: "all", name: "All", emoji: "✨" }, ...cats.filter(c => counts[c.id])];
     $("chips").innerHTML = list.map(c => {
-      const n = c.id === "all" ? products.length : counts[c.id];
+      const n = c.id === "all" ? reels.length : counts[c.id];
       return `<button class="chip" data-id="${esc(c.id)}" aria-pressed="${c.id === active}">${esc(c.emoji || "")} ${esc(c.name)}<span class="n">${n}</span></button>`;
     }).join("");
   }
 
-  function card(p) {
-    const c = catById[p.category] || { name: p.category || "", emoji: "🛍️" };
-    const img = p.image
-      ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
-      : "";
-    return `<a class="card" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">
-      <div class="media">${esc(c.emoji || "🛍️")}${img}
-        ${p.id != null ? `<span class="num">#${esc(p.id)}</span>` : ""}
-        ${p.featured ? `<span class="star">★ Fav</span>` : ""}
-      </div>
-      <div class="body">
-        <span class="cat">${esc(c.name)}</span>
-        <p class="name">${esc(p.name)}</p>
-        ${p.note ? `<p class="note">${esc(p.note)}</p>` : ""}
-        <div class="foot">
-          ${p.price ? `<span class="price">${esc(p.price)}</span>` : ""}
-          <span class="shop">Shop →</span>
+  function post(r) {
+    const c = catById[r.category] || { name: r.category || "", emoji: "" };
+    const url = permalink(r.reel);
+    const reel = url
+      ? `<blockquote class="instagram-media" data-instgrm-permalink="${esc(url)}?utm_source=ig_embed" data-instgrm-version="14"><a href="${esc(url)}" target="_blank" rel="noopener">Watch this reel on Instagram</a></blockquote>`
+      : `<div class="reel-missing">Paste this reel's Instagram link<br>into products.json</div>`;
+    const prods = (r.products || []).map(p => `
+      <li><a class="prod" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">
+        ${p.image ? `<img class="thumb" src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}
+        <div class="prod-info">
+          <p class="prod-name">${esc(p.name)}</p>
+          ${p.price ? `<span class="prod-price">${esc(p.price)}</span>` : ""}
         </div>
+        <span class="shop">Shop →</span>
+      </a></li>`).join("");
+    return `<article class="post">
+      <div class="post-head">
+        ${r.id != null ? `<span class="num">#${esc(r.id)}</span>` : ""}
+        <p class="post-title">${esc(r.title || "")}</p>
+        <span class="cat">${esc(c.emoji || "")} ${esc(c.name)}</span>
       </div>
-    </a>`;
+      <div class="reel">${reel}</div>
+      ${prods ? `<div class="products-label">Shop this reel</div><ul class="products">${prods}</ul>` : ""}
+    </article>`;
   }
 
-  function render() {
-    const q = $("q").value.trim().toLowerCase().replace(/^#/, "");
-    const list = products.filter(p => {
-      if (active !== "all" && p.category !== active) return false;
-      if (!q) return true;
-      if (/^\d+$/.test(q)) return String(p.id) === q;
-      return [p.name, p.note, catById[p.category]?.name].join(" ").toLowerCase().includes(q);
-    });
-    $("grid").innerHTML = list.map(card).join("");
-    $("empty").hidden = list.length > 0;
+  function loadEmbeds() {
+    if (window.instgrm) { window.instgrm.Embeds.process(); return; }
+    if (document.getElementById("ig-embed")) return;
+    const s = document.createElement("script");
+    s.id = "ig-embed"; s.async = true; s.src = "https://www.instagram.com/embed.js";
+    document.body.appendChild(s); // processes all blockquotes on load
+  }
 
+  function draw() {
+    $("feed").innerHTML = filtered.slice(0, shown).map(post).join("");
+    $("empty").hidden = filtered.length > 0;
+    $("more").hidden = shown >= filtered.length;
+    loadEmbeds();
+  }
+
+  function apply() {
+    const q = $("q").value.trim().toLowerCase().replace(/^#/, "");
+    filtered = reels.filter(r => {
+      if (active !== "all" && r.category !== active) return false;
+      if (!q) return true;
+      if (/^\d+$/.test(q)) return String(r.id) === q;
+      const hay = [r.title, catById[r.category]?.name, ...(r.products || []).map(p => p.name)].join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+    shown = PAGE;
+    draw();
     const u = new URLSearchParams();
     if (active !== "all") u.set("c", active);
     if (q) u.set("q", q);
     history.replaceState(null, "", u.toString() ? "?" + u : location.pathname);
   }
 
+  let t;
+  $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(apply, 250); });
   $("chips").addEventListener("click", e => {
     const b = e.target.closest(".chip");
     if (!b) return;
-    active = b.dataset.id;
-    renderChips(); render();
+    active = b.dataset.id; renderChips(); apply();
   });
-  $("q").addEventListener("input", render);
+  $("more").addEventListener("click", () => { shown += PAGE; draw(); });
 
-  renderChips(); render();
+  renderChips(); apply();
 })();
 </script>
 </body>
