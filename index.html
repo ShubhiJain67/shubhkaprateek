@@ -10,21 +10,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #fbf6f1;
-    --surface: #ffffff;
-    --ink: #2b1f1a;
-    --muted: #7a6a62;
-    --line: #eadfd6;
-    --accent: #d9534f;
-    --accent-ink: #ffffff;
-    --chip: #f3e8df;
+    --bg: #fbf6f1; --surface: #ffffff; --ink: #2b1f1a; --muted: #7a6a62;
+    --line: #eadfd6; --accent: #d9534f; --accent-ink: #ffffff; --chip: #f3e8df;
+    --ph1: #f7d9cf; --ph2: #f3e3c3;
     --shadow: 0 1px 2px rgba(43,31,26,.06), 0 8px 24px rgba(43,31,26,.06);
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #1a1513; --surface: #241d1a; --ink: #f5ece6; --muted: #b3a39a;
       --line: #3a2f2a; --accent: #ef7a6f; --accent-ink: #1a1513; --chip: #2f2622;
-      --shadow: none;
+      --ph1: #4a2f2a; --ph2: #4a3f2a; --shadow: none;
     }
   }
   * { box-sizing: border-box; }
@@ -34,95 +29,134 @@
     font-family: Inter, system-ui, -apple-system, sans-serif;
     font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+  button { font: inherit; }
 
-  header { padding: 36px 0 16px; text-align: center; }
+  header { padding: 32px 0 14px; text-align: center; }
   h1 {
     font-family: Fraunces, Georgia, serif; font-weight: 700;
-    font-size: clamp(30px, 7vw, 44px); letter-spacing: -0.02em; margin: 0 0 6px;
+    font-size: clamp(30px, 7vw, 44px); letter-spacing: -0.02em; margin: 0 0 4px;
   }
-  .tagline { color: var(--muted); margin: 0 0 12px; }
+  .tagline { color: var(--muted); margin: 0 0 10px; }
   .ig { color: var(--accent); font-weight: 600; text-decoration: none; font-size: 14px; }
   .ig:hover { text-decoration: underline; }
+
+  /* Section switch */
+  .tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+    max-width: 440px; margin: 18px auto 0; padding: 4px;
+    background: var(--chip); border-radius: 14px;
+  }
+  .tab {
+    border: 0; cursor: pointer; padding: 10px 8px; border-radius: 10px;
+    background: transparent; color: var(--muted); font-weight: 600; font-size: 14px;
+  }
+  .tab[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 
   .controls {
     position: sticky; top: 0; z-index: 5; background: var(--bg);
     padding: 12px 0 10px; border-bottom: 1px solid var(--line);
   }
   .search {
-    width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px;
+    width: 100%; padding: 11px 14px; border: 1px solid var(--line); border-radius: 12px;
     background: var(--surface); color: var(--ink); font: inherit; outline: none;
   }
   .search:focus { border-color: var(--accent); }
   .chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 2px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
   .chip {
-    flex: 0 0 auto; border: 0; cursor: pointer; padding: 8px 14px; border-radius: 999px;
-    background: var(--chip); color: var(--ink); font: inherit; font-size: 14px; font-weight: 500;
-    white-space: nowrap;
+    flex: 0 0 auto; border: 0; cursor: pointer; padding: 7px 13px; border-radius: 999px;
+    background: var(--chip); color: var(--ink); font-size: 14px; font-weight: 500; white-space: nowrap;
   }
   .chip .n { color: var(--muted); margin-left: 4px; font-size: 12px; }
   .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
   .chip[aria-pressed="true"] .n { color: inherit; opacity: .7; }
 
-  .feed {
-    display: grid; gap: 22px; padding: 20px 0 24px;
-    grid-template-columns: 1fr;
-    justify-items: center;
+  /* ---------- Shop by reel ---------- */
+  .reels {
+    display: grid; gap: 20px; padding: 20px 0 24px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 340px));
+    justify-content: center; align-items: start;
   }
-  @media (min-width: 760px)  { .feed { grid-template-columns: repeat(2, 1fr); align-items: start; } }
-  @media (min-width: 1120px) { .feed { grid-template-columns: repeat(3, 1fr); } }
-
   .post {
-    width: 100%; max-width: 380px;
     background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
     box-shadow: var(--shadow); overflow: hidden;
   }
-  .post-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px; }
+  .post-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px 10px; }
   .num {
     background: var(--ink); color: var(--bg); font-size: 12px; font-weight: 600;
-    padding: 3px 9px; border-radius: 999px;
+    padding: 2px 8px; border-radius: 999px; flex: 0 0 auto;
   }
-  .post-title { font-weight: 600; font-size: 14px; margin: 0; flex: 1; min-width: 0; }
-  .cat { color: var(--muted); font-size: 12px; white-space: nowrap; }
-
-  .reel { padding: 0 10px; }
-  /* Instagram's embed sets its own inline styles; keep it inside the card */
+  .post-title { font-weight: 600; font-size: 14px; margin: 0; min-width: 0; }
+  .reel { padding: 0 10px; min-height: 120px; }
   .reel .instagram-media, .reel iframe {
     min-width: 0 !important; width: 100% !important; max-width: 100% !important;
-    margin: 0 !important; border-radius: 12px !important;
+    margin: 0 !important; border-radius: 12px !important; border: 1px solid var(--line) !important;
+    box-shadow: none !important;
   }
-  .reel-missing {
-    aspect-ratio: 9 / 16; max-height: 420px; width: 100%;
-    border-radius: 12px; border: 2px dashed var(--line);
-    display: grid; place-items: center; text-align: center;
-    color: var(--muted); font-size: 13px; padding: 16px;
+  .reel-fallback {
+    display: grid; place-items: center; aspect-ratio: 4 / 5; border-radius: 12px;
+    background: linear-gradient(135deg, var(--ph1), var(--ph2));
+    color: var(--ink); text-decoration: none; font-weight: 600;
   }
+  .label {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .07em; padding: 14px 14px 0;
+  }
+  .plist { list-style: none; margin: 0; padding: 8px 14px 14px; display: grid; gap: 8px; }
+  .prow {
+    display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px;
+    border: 1px solid var(--line); border-radius: 12px; text-decoration: none; color: inherit;
+  }
+  a.prow:hover { border-color: var(--accent); }
+  .prow-info { flex: 1; min-width: 0; }
+  .prow-name { font-weight: 500; font-size: 14px; margin: 0; }
+  .prow-price { color: var(--muted); font-size: 13px; }
 
-  .products { list-style: none; margin: 0; padding: 10px 14px 14px; display: grid; gap: 8px; }
-  .products-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; padding: 12px 14px 0; }
-  .prod {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px; border: 1px solid var(--line); border-radius: 12px;
-    text-decoration: none; color: inherit;
-  }
-  .prod:hover { border-color: var(--accent); }
-  .thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--chip); flex: 0 0 auto; }
-  .prod-info { flex: 1; min-width: 0; }
-  .prod-name { font-weight: 500; font-size: 14px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .prod-price { color: var(--muted); font-size: 13px; }
   .shop {
     background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 13px;
-    padding: 7px 12px; border-radius: 10px; flex: 0 0 auto;
+    padding: 7px 12px; border-radius: 10px; flex: 0 0 auto; white-space: nowrap;
+  }
+  .soon {
+    background: var(--chip); color: var(--muted); font-weight: 500; font-size: 12px;
+    padding: 7px 10px; border-radius: 10px; flex: 0 0 auto; white-space: nowrap;
   }
 
-  .more-wrap { text-align: center; padding: 0 0 36px; }
+  /* ---------- Shop products ---------- */
+  .grid {
+    display: grid; gap: 14px; padding: 18px 0 24px;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+  @media (min-width: 640px) { .grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow);
+  }
+  .media {
+    position: relative; aspect-ratio: 1 / 1; display: grid; place-items: center; font-size: 46px;
+    background: linear-gradient(135deg, var(--ph1), var(--ph2));
+  }
+  .media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .body { padding: 12px; display: flex; flex-direction: column; gap: 3px; flex: 1; }
+  .cat { color: var(--muted); font-size: 12px; }
+  .name { font-weight: 600; font-size: 15px; margin: 0; }
+  .seen {
+    border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
+    color: var(--accent); font-size: 13px; font-weight: 500;
+  }
+  .seen:hover { text-decoration: underline; }
+  .foot { margin-top: auto; padding-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .price { font-weight: 600; }
+  .foot .shop, .foot .soon { margin-left: auto; text-decoration: none; }
+
+  .more-wrap { text-align: center; padding: 0 0 32px; }
   .more {
     border: 1px solid var(--line); background: var(--surface); color: var(--ink);
-    font: inherit; font-weight: 600; padding: 10px 22px; border-radius: 999px; cursor: pointer;
+    font-weight: 600; padding: 10px 22px; border-radius: 999px; cursor: pointer;
   }
   .empty { text-align: center; color: var(--muted); padding: 60px 0; }
   footer { text-align: center; color: var(--muted); font-size: 12px; padding: 0 16px 30px; }
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
@@ -130,17 +164,22 @@
     <h1 id="title">Shubh ka Prateek</h1>
     <p class="tagline" id="tagline"></p>
     <a class="ig" id="ig" href="#" target="_blank" rel="noopener" hidden>📸 Follow @shubhkaprateek</a>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-view="reels" aria-selected="true">🎬 Shop by reel</button>
+      <button class="tab" role="tab" data-view="products" aria-selected="false">🛍️ Shop products</button>
+    </div>
   </header>
 
   <div class="controls">
     <div class="wrap">
-      <input class="search" id="q" type="search" placeholder="Search a product, or a reel number (e.g. 12)" autocomplete="off">
+      <input class="search" id="q" type="search" autocomplete="off">
       <div class="chips" id="chips" role="toolbar" aria-label="Categories"></div>
     </div>
   </div>
 
   <main class="wrap">
-    <div class="feed" id="feed"></div>
+    <section id="view-reels"><div class="reels" id="reels"></div></section>
+    <section id="view-products" hidden><div class="grid" id="grid"></div></section>
     <p class="empty" id="empty" hidden>Nothing here yet 👀</p>
     <div class="more-wrap"><button class="more" id="more" hidden>Load more reels</button></div>
   </main>
@@ -149,121 +188,188 @@
 
 <script>
 (async function () {
-  const PAGE = 6; // reels rendered per batch — Instagram embeds are heavy
+  const PAGE = 9; // reels per batch — Instagram embeds are heavy
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const $ = id => document.getElementById(id);
 
   let data;
   try {
-    const res = await fetch("products.json", { cache: "no-cache" });
-    data = await res.json();
+    data = await (await fetch("products.json", { cache: "no-cache" })).json();
   } catch (e) {
-    $("feed").innerHTML = '<p class="empty">Couldn\'t load products.json — check it for a JSON typo (missing comma or quote).</p>';
-    console.error(e);
-    return;
+    $("reels").innerHTML = '<p class="empty">Couldn\'t load products.json — check it for a JSON typo (missing comma or quote).</p>';
+    console.error(e); return;
   }
 
   const site = data.site || {};
   const cats = data.categories || [];
   const catById = Object.fromEntries(cats.map(c => [c.id, c]));
-  const reels = (data.reels || []).slice().sort((a, b) =>
-    (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || (b.id ?? 0) - (a.id ?? 0)); // newest first
+  const catOf = id => catById[id] || { id, name: id || "Other", emoji: "🛍️" };
+
+  // Reels: only ones with products, newest first (featured pinned on top)
+  const reels = (data.reels || [])
+    .filter(r => (r.products || []).length)
+    .sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || (b.id ?? 0) - (a.id ?? 0));
+
+  // Products: everything inside reels + standalone "products", de-duplicated by name
+  const pmap = new Map();
+  const addProduct = (p, reelId) => {
+    const key = (p.name || "").trim().toLowerCase();
+    if (!key) return;
+    if (!pmap.has(key)) pmap.set(key, { ...p, reels: [] });
+    const e = pmap.get(key);
+    if (reelId != null && !e.reels.includes(reelId)) e.reels.push(reelId);
+    for (const f of ["link", "price", "image", "category"]) if (!e[f] && p[f]) e[f] = p[f];
+  };
+  reels.forEach(r => r.products.forEach(p => addProduct(p, r.id)));
+  (data.products || []).forEach(p => addProduct(p, p.reel ?? null));
+  const products = [...pmap.values()].sort((a, b) =>
+    (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || Math.max(0, ...b.reels) - Math.max(0, ...a.reels));
 
   if (site.title) { $("title").textContent = site.title; document.title = site.title + " — Shop our reels"; }
   if (site.tagline) $("tagline").textContent = site.tagline;
   if (site.instagram) { $("ig").href = site.instagram; $("ig").hidden = false; }
 
+  // ---- state (mirrored in the URL so links can be shared) ----
   const params = new URLSearchParams(location.search);
+  let view = params.get("view") === "products" ? "products" : "reels";
   let active = params.get("c") || "all";
   if (active !== "all" && !catById[active]) active = "all";
   $("q").value = params.get("q") || "";
   let shown = PAGE, filtered = [];
 
-  // Normalise any instagram reel/post URL to a clean permalink, or null if invalid
   function permalink(url) {
     const m = String(url || "").match(/instagram\.com\/(?:[\w.]+\/)?(reel|reels|p|tv)\/([A-Za-z0-9_-]+)/);
     if (!m || /PASTE/i.test(m[2])) return null;
     return `https://www.instagram.com/${m[1] === "reels" ? "reel" : m[1]}/${m[2]}/`;
   }
+  const buy = p => p.link
+    ? `<span class="shop">Shop →</span>`
+    : `<span class="soon">Link soon</span>`;
 
   function renderChips() {
     const counts = {};
-    reels.forEach(r => counts[r.category] = (counts[r.category] || 0) + 1);
+    if (view === "reels") reels.forEach(r => new Set(r.products.map(p => p.category)).forEach(c => counts[c] = (counts[c] || 0) + 1));
+    else products.forEach(p => counts[p.category] = (counts[p.category] || 0) + 1);
+    const total = view === "reels" ? reels.length : products.length;
     const list = [{ id: "all", name: "All", emoji: "✨" }, ...cats.filter(c => counts[c.id])];
-    $("chips").innerHTML = list.map(c => {
-      const n = c.id === "all" ? reels.length : counts[c.id];
-      return `<button class="chip" data-id="${esc(c.id)}" aria-pressed="${c.id === active}">${esc(c.emoji || "")} ${esc(c.name)}<span class="n">${n}</span></button>`;
-    }).join("");
+    $("chips").innerHTML = list.map(c =>
+      `<button class="chip" data-id="${esc(c.id)}" aria-pressed="${c.id === active}">${esc(c.emoji || "")} ${esc(c.name)}<span class="n">${c.id === "all" ? total : counts[c.id]}</span></button>`
+    ).join("");
   }
 
-  function post(r) {
-    const c = catById[r.category] || { name: r.category || "", emoji: "" };
+  function reelCard(r) {
     const url = permalink(r.reel);
-    const reel = url
-      ? `<blockquote class="instagram-media" data-instgrm-permalink="${esc(url)}?utm_source=ig_embed" data-instgrm-version="14"><a href="${esc(url)}" target="_blank" rel="noopener">Watch this reel on Instagram</a></blockquote>`
-      : `<div class="reel-missing">Paste this reel's Instagram link<br>into products.json</div>`;
-    const prods = (r.products || []).map(p => `
-      <li><a class="prod" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">
-        ${p.image ? `<img class="thumb" src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}
-        <div class="prod-info">
-          <p class="prod-name">${esc(p.name)}</p>
-          ${p.price ? `<span class="prod-price">${esc(p.price)}</span>` : ""}
-        </div>
-        <span class="shop">Shop →</span>
-      </a></li>`).join("");
+    const embed = url
+      ? `<blockquote class="instagram-media" data-instgrm-permalink="${esc(url)}?utm_source=ig_embed" data-instgrm-version="14"><a class="reel-fallback" href="${esc(url)}" target="_blank" rel="noopener">▶ Watch on Instagram</a></blockquote>`
+      : "";
+    const rows = r.products.map(p => {
+      const inner = `<div class="prow-info"><p class="prow-name">${esc(p.name)}</p>${p.price ? `<span class="prow-price">${esc(p.price)}</span>` : ""}</div>${buy(p)}`;
+      return p.link
+        ? `<li><a class="prow" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">${inner}</a></li>`
+        : `<li><div class="prow">${inner}</div></li>`;
+    }).join("");
     return `<article class="post">
-      <div class="post-head">
-        ${r.id != null ? `<span class="num">#${esc(r.id)}</span>` : ""}
-        <p class="post-title">${esc(r.title || "")}</p>
-        <span class="cat">${esc(c.emoji || "")} ${esc(c.name)}</span>
-      </div>
-      <div class="reel">${reel}</div>
-      ${prods ? `<div class="products-label">Shop this reel</div><ul class="products">${prods}</ul>` : ""}
+      <div class="post-head"><span class="num">#${esc(r.id)}</span><p class="post-title">${esc(r.title || "")}</p></div>
+      <div class="reel">${embed}</div>
+      <div class="label">Shop this reel</div>
+      <ul class="plist">${rows}</ul>
     </article>`;
+  }
+
+  function productCard(p) {
+    const c = catOf(p.category);
+    const img = p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : "";
+    const latest = p.reels.length ? Math.max(...p.reels) : null;
+    const seen = latest != null
+      ? `<button class="seen" data-reel="${esc(latest)}">▶ Seen in reel #${esc(latest)}</button>` : "";
+    const btn = p.link
+      ? `<a class="shop" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">Shop →</a>`
+      : `<span class="soon">Link soon</span>`;
+    return `<div class="card">
+      <div class="media">${esc(c.emoji)}${img}</div>
+      <div class="body">
+        <span class="cat">${esc(c.name)}</span>
+        <p class="name">${esc(p.name)}</p>
+        ${seen}
+        <div class="foot">${p.price ? `<span class="price">${esc(p.price)}</span>` : ""}${btn}</div>
+      </div>
+    </div>`;
   }
 
   function loadEmbeds() {
     if (window.instgrm) { window.instgrm.Embeds.process(); return; }
-    if (document.getElementById("ig-embed")) return;
+    if ($("ig-embed")) return;
     const s = document.createElement("script");
     s.id = "ig-embed"; s.async = true; s.src = "https://www.instagram.com/embed.js";
-    document.body.appendChild(s); // processes all blockquotes on load
+    document.body.appendChild(s);
   }
 
   function draw() {
-    $("feed").innerHTML = filtered.slice(0, shown).map(post).join("");
+    $("view-reels").hidden = view !== "reels";
+    $("view-products").hidden = view !== "products";
+    if (view === "reels") {
+      $("reels").innerHTML = filtered.slice(0, shown).map(reelCard).join("");
+      $("more").hidden = shown >= filtered.length;
+      loadEmbeds();
+    } else {
+      $("grid").innerHTML = filtered.map(productCard).join("");
+      $("more").hidden = true;
+    }
     $("empty").hidden = filtered.length > 0;
-    $("more").hidden = shown >= filtered.length;
-    loadEmbeds();
   }
 
   function apply() {
     const q = $("q").value.trim().toLowerCase().replace(/^#/, "");
-    filtered = reels.filter(r => {
-      if (active !== "all" && r.category !== active) return false;
-      if (!q) return true;
-      if (/^\d+$/.test(q)) return String(r.id) === q;
-      const hay = [r.title, catById[r.category]?.name, ...(r.products || []).map(p => p.name)].join(" ").toLowerCase();
-      return hay.includes(q);
-    });
+    const isNum = /^\d+$/.test(q);
+    if (view === "reels") {
+      filtered = reels.filter(r => {
+        if (active !== "all" && !r.products.some(p => p.category === active)) return false;
+        if (!q) return true;
+        if (isNum) return String(r.id) === q;
+        return [r.title, ...r.products.map(p => p.name)].join(" ").toLowerCase().includes(q);
+      });
+    } else {
+      filtered = products.filter(p => {
+        if (active !== "all" && p.category !== active) return false;
+        if (!q) return true;
+        if (isNum) return p.reels.map(String).includes(q);
+        return [p.name, catOf(p.category).name].join(" ").toLowerCase().includes(q);
+      });
+    }
     shown = PAGE;
     draw();
     const u = new URLSearchParams();
+    if (view !== "reels") u.set("view", view);
     if (active !== "all") u.set("c", active);
     if (q) u.set("q", q);
     history.replaceState(null, "", u.toString() ? "?" + u : location.pathname);
   }
 
-  let t;
-  $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(apply, 250); });
+  function setView(v) {
+    view = v;
+    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
+    $("q").placeholder = v === "reels" ? "Search a product, or a reel number (e.g. 26)" : "Search products";
+    renderChips(); apply();
+  }
+
+  document.querySelector(".tabs").addEventListener("click", e => {
+    const t = e.target.closest(".tab"); if (!t || t.dataset.view === view) return;
+    active = "all"; $("q").value = ""; setView(t.dataset.view);
+  });
   $("chips").addEventListener("click", e => {
-    const b = e.target.closest(".chip");
-    if (!b) return;
+    const b = e.target.closest(".chip"); if (!b) return;
     active = b.dataset.id; renderChips(); apply();
   });
+  $("grid").addEventListener("click", e => {
+    const b = e.target.closest(".seen"); if (!b) return;
+    active = "all"; $("q").value = b.dataset.reel; setView("reels");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  let t;
+  $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(apply, 250); });
   $("more").addEventListener("click", () => { shown += PAGE; draw(); });
 
-  renderChips(); apply();
+  setView(view);
 })();
 </script>
 </body>

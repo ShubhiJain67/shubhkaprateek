@@ -6,22 +6,105 @@
   },
 
   "categories": [
-    { "id": "home",    "name": "Home",    "emoji": "🏠" },
-    { "id": "fashion", "name": "Fashion", "emoji": "👗" },
-    { "id": "gifts",   "name": "Gifts",   "emoji": "🎁" },
-    { "id": "tech",    "name": "Tech",    "emoji": "📱" }
+    { "id": "clothing",    "name": "Clothing",            "emoji": "👕" },
+    { "id": "toys",        "name": "Toys & Collectibles", "emoji": "🦸" },
+    { "id": "games",       "name": "Games",               "emoji": "🎮" },
+    { "id": "home",        "name": "Mugs & Home",         "emoji": "☕" },
+    { "id": "accessories", "name": "Accessories",         "emoji": "✨" }
   ],
 
   "reels": [
-    {
-      "id": 1,
-      "reel": "https://www.instagram.com/p/DemM1ceylf2/",
-      "category": "Games",
-      "title": "Play Retro - Blast Box",
-      "products": [
-        { "name": "Play Retro - Blast Box", "link": "https://www.amazon.in/", "price": "₹799" },
-        { "name": "His Tshirt", "link": "https://www.amazon.in/", "price": "₹1,299" }
-      ]
-    }
-  ]
+    { "id": 1,  "reel": "https://www.instagram.com/reel/DdlnYLpyrF1/", "title": "29 gifts, 29 days — the Marvel birthday month begins", "products": [] },
+    { "id": 2,  "reel": "https://www.instagram.com/reel/DdopFdUSfoA/", "title": "Day 1/29", "todo": "Product name not clear from caption — add it", "products": [] },
+    { "id": 3,  "reel": "https://www.instagram.com/reel/DdrMH5JSjEz/", "title": "Day 2/29 — Hulk day", "todo": "Hulk gift — add exact product name", "products": [] },
+    { "id": 4,  "reel": "https://www.instagram.com/reel/DdtILaSyNV-/", "title": "Day 3/29 — Deadpool", "todo": "Confirm product name", "products": [
+      { "name": "Deadpool car accessory", "category": "accessories", "link": "", "price": "" }
+    ]},
+    { "id": 5,  "reel": "https://www.instagram.com/reel/DdvXdbXSVkk/", "title": "Day 4/29 — Spider-Man web shooter", "products": [
+      { "name": "Spider-Man web shooter", "category": "toys", "link": "", "price": "" }
+    ]},
+    { "id": 6,  "reel": "https://www.instagram.com/reel/DdxwWwSSS8q/", "title": "Day 5/29 — Colour-it-yourself superhero puzzle", "products": [
+      { "name": "Colour-your-own superhero puzzle", "category": "games", "link": "", "price": "" }
+    ]},
+    { "id": 7,  "reel": "https://www.instagram.com/reel/Dd2p8_5yk5H/", "title": "Day 6/29 — Iron Man sneakers", "products": [
+      { "name": "Iron Man sneakers", "category": "clothing", "link": "", "price": "" }
+    ]},
+    { "id": 8,  "reel": "https://www.instagram.com/reel/Dd5W1NzSk8E/", "title": "Day 7/29 — Marvel Dobble", "products": [
+      { "name": "Marvel Dobble card game", "category": "games", "link": "", "price": "" }
+    ]},
+    { "id": 9,  "reel": "https://www.instagram.com/reel/Dd6otvVSOho/", "title": "Day 8/29 — Iron Man hoodie", "products": [
+      { "name": "Iron Man hoodie", "category": "clothing", "link": "", "price": "" }
+    ]},
+    { "id": 10, "reel": "https://www.instagram.com/reel/Dd9F_SOSmkS/", "title": "Day 9/29 — Arc Reactor hoodie", "products": [
+      { "name": "Arc Reactor hoodie", "category": "clothing", "link": "", "price": "" }
+    ]},
+    { "id": 11, "reel": "https://www.instagram.com/reel/Dd_-oaCyts5/", "title": "Day 10/29 — Marvel socks", "products": [
+      { "name": "Marvel socks", "category": "clothing", "link": "", "price": "" }
+    ]},
+    { "id": 12, "reel": "https://www.instagram.com/reel/DeCzq_uyf92/", "title": "Day 11/29 — Spider-Man brick art", "products": [
+      { "name": "Spider-Man LEGO brick art", "category": "toys", "link": "", "price": "" }
+    ]},
+    { "id": 13, "reel": "https://www.instagram.com/reel/DeFINBBSBtG/", "title": "Day 12/29 — A new Hulk T-shirt", "products": [
+      { "name": "Hulk T-shirt", "category": "clothing", "link": "", "price": "" }
+    ]},
+    { "id": 14, "reel": "https://www.instagram.com/reel/DeHv-DcS5ga/", "title": "Black Panther perfume", "products": [
+      { "name": "Black Panther perfume", "category": "accessories", "link": "", "price": "" }
+    ]},
+    { "id": 15, "reel": "https://www.instagram.com/reel/DeKaOxIyGGe/", "title": "Day 13/29 — Punisher", "todo": "Confirm product name", "products": [
+      { "name": "Punisher T-shirt", "category": "clothing", "link": "", "price": "" }
+    ]},
+    { "id": 16, "reel": "https://www.instagram.com/reel/DeMxvUiSz-0/", "title": "Day 15/29 — Marvel Crocs Jibbitz", "products": [
+      { "name": "Marvel Crocs Jibbitz", "category": "accessories", "link": "", "price": "" }
+    ]},
+    { "id": 17, "reel": "https://www.instagram.com/reel/DePIjh9SvrG/", "title": "Day 16/29 — Avengers Strike Squad", "products": [
+      { "name": "Avengers Strike Squad", "category": "toys", "link": "", "price": "" }
+    ]},
+    { "id": 18, "reel": "https://www.instagram.com/reel/DeRtxLfyJJR/", "title": "Day 17/29 — Marvel × Hot Wheels", "products": [
+      { "name": "Marvel × Hot Wheels cars", "category": "toys", "link": "", "price": "" }
+    ]},
+    { "id": 19, "reel": "https://www.instagram.com/reel/DeUe3x2S-w9/", "title": "Day 18/29 — Giant Hulk cuddle", "products": [
+      { "name": "Hulk plush toy", "category": "toys", "link": "", "price": "" }
+    ]},
+    { "id": 20, "reel": "https://www.instagram.com/reel/DeWTMPoSTpf/", "title": "Day 19/29 — Amazing Spider-Man tee", "products": [
+      { "name": "Amazing Spider-Man T-shirt", "category": "clothing", "link": "", "price": "" }
+    ]},
+    { "id": 21, "reel": "https://www.instagram.com/reel/DeZ0JksyZJw/", "title": "Day 20/29 — Spinning sword", "products": [
+      { "name": "Light-up spinning sword toy", "category": "toys", "link": "", "price": "" }
+    ]},
+    { "id": 22, "reel": "https://www.instagram.com/reel/DeccYpmSfkN/", "title": "Day 21/29 — Iron Man bricks", "products": [
+      { "name": "Iron Man building-block figure", "category": "toys", "link": "", "price": "" }
+    ]},
+    { "id": 23, "reel": "https://www.instagram.com/reel/Dee7RCayxox/", "title": "Day 22/29 — Spark & smoke", "todo": "Confirm product name", "products": [
+      { "name": "Smoke-effect light saber", "category": "toys", "link": "", "price": "" }
+    ]},
+    { "id": 24, "reel": "https://www.instagram.com/reel/Dehe4_OSwEm/", "title": "Day 23/29 — Thor mug", "products": [
+      { "name": "Thor mug", "category": "home", "link": "", "price": "" }
+    ]},
+    { "id": 25, "reel": "https://www.instagram.com/reel/DekIhN1yqnx/", "title": "Day 24/29 — Spider-Man era upgraded", "todo": "Confirm product name", "products": [
+      { "name": "Spider-Man jacket", "category": "clothing", "link": "", "price": "" }
+    ]},
+    { "id": 26, "reel": "https://www.instagram.com/reel/DemM1ceylf2/", "title": "Day 25/29 — Play Retro", "products": [
+      { "name": "Play Retro — Blast Box", "category": "games", "link": "", "price": "" },
+      { "name": "His T-shirt", "category": "clothing", "link": "", "price": "" }
+    ]},
+    { "id": 27, "reel": "https://www.instagram.com/reel/DepEo5aSPV2/", "title": "Day 26/29 — Spider-Man mask", "products": [
+      { "name": "Spider-Man mask", "category": "toys", "link": "", "price": "" }
+    ]},
+    { "id": 28, "reel": "https://www.instagram.com/reel/DetJoBuS1M3/", "title": "Day 27/29 — Iron Man mug", "products": [
+      { "name": "Iron Man mug", "category": "home", "link": "", "price": "" }
+    ]},
+    { "id": 29, "reel": "https://www.instagram.com/reel/Dew6U7ZS7Eq/", "title": "Day 28/29 — His little wishlist", "products": [] },
+    { "id": 30, "reel": "https://www.instagram.com/reel/DezXjJvzdYg/", "title": "Our 11:11 wish came true", "products": [] },
+    { "id": 31, "reel": "https://www.instagram.com/reel/De15_tiSMcS/", "title": "The final showdown", "products": [] },
+    { "id": 32, "reel": "https://www.instagram.com/reel/De4VkzLS1tE/", "title": "Day 29/29 — Marvel movie date night", "products": [] },
+    { "id": 33, "reel": "https://www.instagram.com/reel/De6a84ayKwv/", "title": "Automatic card dealer + shuffler", "products": [
+      { "name": "Automatic card dealer + shuffler", "category": "games", "link": "", "price": "" }
+    ]},
+    { "id": 34, "reel": "https://www.instagram.com/reel/De8uBTrSgB9/", "title": "Casino night for one at 1:30 AM", "products": [
+      { "name": "Automatic card dealer + shuffler", "category": "games", "link": "", "price": "" }
+    ]},
+    { "id": 35, "reel": "https://www.instagram.com/reel/De_J48aSgF0/", "title": "Our own Karwa Chauth tradition", "products": [] }
+  ],
+
+  "products": []
 }
