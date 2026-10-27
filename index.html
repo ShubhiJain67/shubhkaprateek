@@ -4,22 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Shubh ka Prateek — Shop our reels</title>
+<meta name="color-scheme" content="light dark">
 <meta name="description" content="Every product from @shubhkaprateek reels, in one place.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
+    --grad: #d9534f;
+    --grad-soft: linear-gradient(135deg, #f7d9cf, #f3e3c3);
     --bg: #fbf6f1; --surface: #ffffff; --ink: #2b1f1a; --muted: #7a6a62;
-    --line: #eadfd6; --accent: #d9534f; --accent-ink: #ffffff; --chip: #f3e8df;
-    --ph1: #f7d9cf; --ph2: #f3e3c3;
+    --line: #eadfd6; --field: #f3e8df; --pink: #d9534f;
     --shadow: 0 1px 2px rgba(43,31,26,.06), 0 8px 24px rgba(43,31,26,.06);
+    --radius: 16px;
+    --on-accent: #ffffff; --media-bg: #1f1915; --tab-on: #ffffff;
   }
   @media (prefers-color-scheme: dark) {
     :root {
+      --grad: #ef7a6f;
+      --grad-soft: linear-gradient(135deg, #4a2f2a, #4a3f2a);
       --bg: #1a1513; --surface: #241d1a; --ink: #f5ece6; --muted: #b3a39a;
-      --line: #3a2f2a; --accent: #ef7a6f; --accent-ink: #1a1513; --chip: #2f2622;
-      --ph1: #4a2f2a; --ph2: #4a3f2a; --shadow: none;
+      --line: #3a2f2a; --field: #2f2622; --pink: #ef7a6f;
+      --shadow: none; --on-accent: #1a1513; --media-bg: #0f0c0b; --tab-on: #3a2f2a;
     }
   }
   * { box-sizing: border-box; }
@@ -29,194 +35,294 @@
     font-family: Inter, system-ui, -apple-system, sans-serif;
     font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
-  button { font: inherit; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+  button { font: inherit; color: inherit; }
+  [hidden] { display: none !important; }
 
-  header { padding: 32px 0 14px; text-align: center; }
-  h1 {
-    font-family: Fraunces, Georgia, serif; font-weight: 700;
-    font-size: clamp(30px, 7vw, 44px); letter-spacing: -0.02em; margin: 0 0 4px;
+  /* ---------- Header ---------- */
+  .site-head { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); }
+  .site-head .wrap { display: flex; align-items: center; gap: 16px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; flex: 0 0 auto; }
+  .mark {
+    width: 36px; height: 36px; border-radius: 10px; background: var(--grad);
+    display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 11px; letter-spacing: -.02em;
   }
-  .tagline { color: var(--muted); margin: 0 0 10px; }
-  .ig { color: var(--accent); font-weight: 600; text-decoration: none; font-size: 14px; }
-  .ig:hover { text-decoration: underline; }
-
-  /* Section switch */
-  .tabs {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
-    max-width: 440px; margin: 18px auto 0; padding: 4px;
-    background: var(--chip); border-radius: 14px;
-  }
-  .tab {
-    border: 0; cursor: pointer; padding: 10px 8px; border-radius: 10px;
-    background: transparent; color: var(--muted); font-weight: 600; font-size: 14px;
-  }
-  .tab[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-
-  .controls {
-    position: sticky; top: 0; z-index: 5; background: var(--bg);
-    padding: 12px 0 10px; border-bottom: 1px solid var(--line);
-  }
+  .brand-name { font-family: Fraunces, Georgia, serif; font-weight: 700; font-size: 22px; letter-spacing: -.02em; }
+  @media (max-width: 640px) { .brand-name { font-size: 18px; } .site-head .wrap { gap: 10px; } }
   .search {
-    width: 100%; padding: 11px 14px; border: 1px solid var(--line); border-radius: 12px;
-    background: var(--surface); color: var(--ink); font: inherit; outline: none;
+    flex: 1; min-width: 0; max-width: 560px; height: 42px; padding: 0 16px 0 40px;
+    border: 1px solid transparent; border-radius: 12px; outline: none; font: inherit; color: var(--ink);
+    background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236f6c77' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 14px center;
   }
-  .search:focus { border-color: var(--accent); }
-  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 2px; scrollbar-width: none; }
-  .chips::-webkit-scrollbar { display: none; }
-  .chip {
-    flex: 0 0 auto; border: 0; cursor: pointer; padding: 7px 13px; border-radius: 999px;
-    background: var(--chip); color: var(--ink); font-size: 14px; font-weight: 500; white-space: nowrap;
+  .search:focus { border-color: var(--pink); background-color: var(--surface); }
+  .ig-btn {
+    flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; margin-left: auto;
+    height: 40px; padding: 0 14px; border-radius: 12px; text-decoration: none;
+    border: 1px solid var(--line); color: var(--ink); font-weight: 600; font-size: 14px;
   }
-  .chip .n { color: var(--muted); margin-left: 4px; font-size: 12px; }
-  .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
-  .chip[aria-pressed="true"] .n { color: inherit; opacity: .7; }
+  .ig-btn:hover { border-color: var(--pink); }
+  .ig-btn svg { width: 18px; height: 18px; }
+  @media (max-width: 640px) { .ig-btn span { display: none; } .ig-btn { padding: 0 10px; } }
 
-  /* ---------- Shop by reel ---------- */
-  .reels {
-    display: grid; gap: 20px; padding: 20px 0 24px;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 340px));
-    justify-content: center; align-items: start;
+  /* ---------- Hero ---------- */
+  .hero { margin: 0; padding: 30px 0 6px; text-align: center; }
+  .hero p { margin: 0 auto !important; }
+  @media (min-width: 768px) { .hero { padding: 40px 44px; } }
+  .hero h1 { margin: 0 0 6px; font-family: Fraunces, Georgia, serif; font-size: clamp(28px, 5vw, 44px); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+  .hero p { margin: 0; color: var(--muted); max-width: 520px; }
+  .hero-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; position: relative; z-index: 1; }
+  .hero-stats span {
+    background: var(--surface); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; color: var(--ink);
   }
-  .post {
-    background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
-    box-shadow: var(--shadow); overflow: hidden;
-  }
-  .post-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px 10px; }
-  .num {
-    background: var(--ink); color: var(--bg); font-size: 12px; font-weight: 600;
-    padding: 2px 8px; border-radius: 999px; flex: 0 0 auto;
-  }
-  .post-title { font-weight: 600; font-size: 14px; margin: 0; min-width: 0; }
-  .reel { padding: 0 10px; }
-  /* Show only the video area of Instagram's embed.
-     The embed is always rendered at its native 326px width (wider = Instagram stretches the image),
-     then scaled to the card width with --s, and its ~54px header / footer are cropped off. */
-  .frame {
-    --s: 1;
-    position: relative; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 12px;
-    background: linear-gradient(135deg, var(--ph1), var(--ph2));
-  }
-  .frame iframe {
-    position: absolute; left: 0; top: calc(-54px * var(--s));
-    width: 326px; height: 900px; border: 0;
-    transform: scale(var(--s)); transform-origin: 0 0;
-  }
-  /* Reel cover tile (covers/<code>.jpg) — tap opens the real reel on Instagram */
-  .cover {
-    position: relative; display: block; aspect-ratio: 9 / 16; overflow: hidden; border-radius: 12px;
-    background: linear-gradient(135deg, var(--ph1), var(--ph2));
-  }
-  .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .cover::after {
-    content: ""; position: absolute; inset: auto 0 0 0; height: 30%;
-    background: linear-gradient(transparent, rgba(0,0,0,.55));
-  }
-  .play {
-    position: absolute; z-index: 1; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
-    background: rgba(0,0,0,.45); backdrop-filter: blur(4px); color: #fff; font-size: 20px; padding-left: 4px;
-    transition: transform .15s ease;
-  }
-  .cover:hover .play { transform: translate(-50%, -50%) scale(1.08); }
-  .watch {
-    position: absolute; z-index: 1; left: 12px; bottom: 10px; color: #fff; font-size: 13px; font-weight: 600;
-  }
-  .reel-fallback {
-    display: grid; place-items: center; aspect-ratio: 4 / 5; border-radius: 12px;
-    background: linear-gradient(135deg, var(--ph1), var(--ph2));
-    color: var(--ink); text-decoration: none; font-weight: 600;
-  }
-  .label {
-    font-size: 11px; font-weight: 600; color: var(--muted);
-    text-transform: uppercase; letter-spacing: .07em; padding: 14px 14px 0;
-  }
-  .plist { list-style: none; margin: 0; padding: 8px 14px 14px; display: grid; gap: 8px; }
-  .prow {
-    display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px;
-    border: 1px solid var(--line); border-radius: 12px; text-decoration: none; color: inherit;
-  }
-  a.prow:hover { border-color: var(--accent); }
-  .prow-info { flex: 1; min-width: 0; }
-  .prow-name { font-weight: 500; font-size: 14px; margin: 0; }
-  .prow-price { color: var(--muted); font-size: 13px; }
 
-  .shop {
-    background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 13px;
-    padding: 7px 12px; border-radius: 10px; flex: 0 0 auto; white-space: nowrap;
+  /* ---------- Section switch + categories ---------- */
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin: 26px 0 14px; }
+  .seg { display: inline-flex; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+  .tab {
+    border: 0; background: none; cursor: pointer; padding: 9px 16px; border-radius: 10px;
+    font-weight: 700; font-size: 14px; color: var(--muted); white-space: nowrap;
   }
+  .tab[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+  .count { color: var(--muted); font-size: 14px; }
+
+  .cats { display: flex; gap: 10px; overflow-x: auto; padding: 2px 0 6px; scrollbar-width: none; }
+  .cats::-webkit-scrollbar { display: none; }
+  .cat-btn {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 8px; cursor: pointer;
+    padding: 8px 14px 8px 8px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface);
+    font-weight: 600; font-size: 14px; white-space: nowrap;
+  }
+  .cat-btn .ic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--field); font-size: 16px; }
+  .cat-btn .n { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .cat-btn[aria-pressed="true"] { border-color: transparent; background: var(--ink); color: var(--bg); }
+  .cat-btn[aria-pressed="true"] .n { color: inherit; opacity: .7; }
+  .cat-btn[aria-pressed="true"] .ic { background: rgba(255,255,255,.14); }
+
+  /* ---------- Shared bits ---------- */
+  .buy {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--pink); color: var(--on-accent); text-decoration: none; font-weight: 700; font-size: 13px;
+    padding: 9px 14px; border-radius: 10px; white-space: nowrap; transition: filter .15s;
+  }
+  .buy:hover { filter: brightness(1.08); }
   .soon {
-    background: var(--chip); color: var(--muted); font-weight: 500; font-size: 12px;
-    padding: 7px 10px; border-radius: 10px; flex: 0 0 auto; white-space: nowrap;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--field); color: var(--muted); font-weight: 600; font-size: 12px;
+    padding: 9px 12px; border-radius: 10px; white-space: nowrap;
   }
 
   /* ---------- Shop products ---------- */
-  .grid {
-    display: grid; gap: 14px; padding: 18px 0 24px;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  }
-  @media (min-width: 640px) { .grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px; } }
+  .grid { display: grid; gap: 14px; padding: 4px 0 32px; grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 720px)  { .grid { grid-template-columns: repeat(3, 1fr); gap: 20px; } }
+  @media (min-width: 1024px) { .grid { grid-template-columns: repeat(4, 1fr); } }
   .card {
-    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
-    overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow);
+    background: var(--surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; border: 1px solid var(--line); transition: transform .15s ease;
   }
+  .card:hover { transform: translateY(-3px); }
   .media {
-    position: relative; aspect-ratio: 1 / 1; display: grid; place-items: center; font-size: 46px;
-    background: linear-gradient(135deg, var(--ph1), var(--ph2));
+    position: relative; aspect-ratio: 1 / 1; display: grid; place-items: center; font-size: 54px;
+    background: var(--grad-soft); overflow: hidden;
   }
-  .media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .body { padding: 12px; display: flex; flex-direction: column; gap: 3px; flex: 1; }
-  .cat { color: var(--muted); font-size: 12px; }
-  .name { font-weight: 600; font-size: 15px; margin: 0; }
-  .seen {
-    border: 0; background: none; padding: 0; cursor: pointer; text-align: left;
-    color: var(--accent); font-size: 13px; font-weight: 500;
+  .media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: var(--surface); }
+  .badge {
+    text-decoration: none;
+    position: absolute; left: 10px; top: 10px; z-index: 1; border: 0; cursor: pointer;
+    background: rgba(22,21,26,.72); color: #fff; font-size: 11px; font-weight: 700;
+    padding: 5px 9px; border-radius: 8px; backdrop-filter: blur(4px);
   }
-  .seen:hover { text-decoration: underline; }
-  .foot { margin-top: auto; padding-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .price { font-weight: 600; }
-  .foot .shop, .foot .soon { margin-left: auto; text-decoration: none; }
+  .badge:hover { background: var(--pink); }
+  .body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px; flex: 1; }
+  .cat { color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+  .name { margin: 0; font-weight: 600; font-size: 15px; line-height: 1.3; }
+  .foot { margin-top: auto; padding-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .price { font-weight: 800; font-size: 16px; margin-right: auto; }
+  .foot .buy, .foot .soon { margin-left: auto; }
+  @media (max-width: 480px) { .foot .buy, .foot .soon { width: 100%; } .price { width: 100%; } }
 
-  .more-wrap { text-align: center; padding: 0 0 32px; }
+  /* ---------- Shop by reel: reel on top, products below ---------- */
+  .looks { display: grid; gap: 20px; padding: 4px 0 28px; grid-template-columns: 1fr; }
+  @media (min-width: 600px)  { .looks { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 900px)  { .looks { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 1150px) { .looks { grid-template-columns: repeat(4, 1fr); } }
+  .look {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column;
+  }
+  .look-media { position: relative; aspect-ratio: 4 / 5; background: var(--media-bg); overflow: hidden; }
+  .cover { position: absolute; inset: 0; display: block; }
+  .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .play {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+    background: rgba(0,0,0,.35); backdrop-filter: blur(6px); color: #fff; font-size: 18px; padding-left: 3px;
+  }
+  /* fallback when no cover: Instagram embed scaled from its 326px width and cropped to the video */
+  .frame { --s: 1; position: absolute; inset: 0; overflow: hidden; }
+  .frame iframe {
+    position: absolute; left: 0; top: calc(-54px * var(--s)); width: 326px; height: 900px; border: 0;
+    transform: scale(var(--s)); transform-origin: 0 0;
+  }
+  .look-body { padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  .look-title { margin: 0; font-weight: 700; font-size: 15px; line-height: 1.3; }
+  .items { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .item {
+    display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center;
+    padding: 8px; border: 1px solid var(--line); border-radius: 12px;
+  }
+  .thumb {
+    position: relative; width: 40px; height: 40px; border-radius: 8px; overflow: hidden; display: grid; place-items: center;
+    font-size: 19px; background: var(--grad-soft);
+  }
+  .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: var(--surface); }
+  .item-info { min-width: 0; }
+  .item-name { margin: 0; font-weight: 600; font-size: 13px; line-height: 1.25; }
+  .item-price { font-weight: 700; font-size: 13px; }
+  .item .buy, .item .soon { padding: 7px 10px; font-size: 12px; }
+  .watch {
+    margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px; border-radius: 10px; background: var(--field);
+    font-size: 13px; font-weight: 700; color: var(--ink); text-decoration: none;
+  }
+  .watch:hover { background: var(--line); }
+
+  .more-wrap { text-align: center; padding: 0 0 36px; }
   .more {
-    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
-    font-weight: 600; padding: 10px 22px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface); cursor: pointer;
+    font-weight: 700; padding: 11px 24px; border-radius: 12px;
   }
   .empty { text-align: center; color: var(--muted); padding: 60px 0; }
-  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 0 16px 30px; }
-  [hidden] { display: none !important; }
+  /* ---------- Can't find it? ---------- */
+  .ask {
+    margin: 8px 0 40px; padding: 28px 22px; border-radius: 20px;
+    background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
+    display: grid; gap: 24px;
+  }
+  @media (min-width: 820px) { .ask { grid-template-columns: 1fr 1.3fr; padding: 36px 40px; align-items: start; } }
+  .ask h2 { margin: 0 0 8px; font-family: Fraunces, Georgia, serif; font-size: clamp(24px, 4vw, 32px); letter-spacing: -.02em; line-height: 1.15; }
+  .ask-intro p { margin: 0; color: var(--muted); }
+  .ask form { display: grid; gap: 12px; }
+  .ask label { display: block; font-size: 13px; font-weight: 600; }
+  .ask label input, .ask label textarea { margin-top: 6px; }
+  .ask label span.opt { color: var(--muted); font-weight: 400; }
+  .ask input, .ask textarea {
+    width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 12px;
+    background: var(--bg); color: var(--ink); font: inherit; font-size: 15px; outline: none;
+  }
+  .ask textarea { min-height: 96px; resize: vertical; }
+  .ask input:focus, .ask textarea:focus { border-color: var(--pink); }
+  .ask-box { background: var(--bg); border: 1px solid var(--line); border-radius: 16px; padding: 6px 6px 18px; }
+  .ask-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 0 0 14px; }
+  .ask-tab {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px;
+    border: 0; border-radius: 11px; background: transparent; color: var(--muted);
+    font-weight: 700; font-size: 14px; cursor: pointer;
+  }
+  .ask-tab svg { width: 17px; height: 17px; }
+  .ask-tab[aria-selected="true"] { background: var(--tab-on); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .ask-pane { padding: 0 12px; display: grid; gap: 14px; }
+  .pane-text { margin: 4px 0 0; color: var(--muted); }
+  .ask-btn {
+    display: flex; align-items: center; justify-content: center; height: 48px; border: 0; border-radius: 12px;
+    background: var(--pink); color: var(--on-accent); font-weight: 700; font-size: 15px; text-decoration: none; cursor: pointer;
+  }
+  .ask-btn:hover { filter: brightness(1.05); }
+  .ask-btn[disabled] { opacity: .6; cursor: default; }
+  .reply { display: grid; gap: 8px; }
+  .reply-label { font-size: 13px; font-weight: 600; }
+  .reply-opts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ropt {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+    padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600;
+  }
+  .ropt[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .ask-status { font-size: 14px; font-weight: 600; margin: 0; }
+  .ask-status.ok { color: #2f8f5b; } .ask-status.err { color: var(--pink); }
+  .empty a { color: var(--pink); font-weight: 600; }
+  footer { border-top: 1px solid var(--line); text-align: center; color: var(--muted); font-size: 12px; padding: 22px 16px 32px; }
 </style>
 </head>
 <body>
-  <header class="wrap">
-    <h1 id="title">Shubh ka Prateek</h1>
-    <p class="tagline" id="tagline"></p>
-    <a class="ig" id="ig" href="#" target="_blank" rel="noopener" hidden>📸 Follow @shubhkaprateek</a>
-    <div class="tabs" role="tablist">
-      <button class="tab" role="tab" data-view="reels" aria-selected="true">🎬 Shop by reel</button>
-      <button class="tab" role="tab" data-view="products" aria-selected="false">🛍️ Shop products</button>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="./"><span class="brand-name">ShubhKaPrateek</span></a>
+      <input class="search" id="q" type="search" autocomplete="off" placeholder="Search products">
+      <a class="ig-btn" id="ig" href="#" target="_blank" rel="noopener" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+        <span id="ig-label">Follow</span>
+      </a>
     </div>
   </header>
 
-  <div class="controls">
-    <div class="wrap">
-      <input class="search" id="q" type="search" autocomplete="off">
-      <div class="chips" id="chips" role="toolbar" aria-label="Categories"></div>
-    </div>
-  </div>
-
   <main class="wrap">
-    <section id="view-reels"><div class="reels" id="reels"></div></section>
-    <section id="view-products" hidden><div class="grid" id="grid"></div></section>
-    <p class="empty" id="empty" hidden>Nothing here yet 👀</p>
-    <div class="more-wrap"><button class="more" id="more" hidden>Load more reels</button></div>
+    <section class="hero">
+      <h1 id="hero-title">Shop everything from our reels</h1>
+      <p id="tagline"></p>
+    </section>
+
+    <div class="toolbar">
+      <div class="seg" role="tablist">
+        <button class="tab" role="tab" data-view="products" aria-selected="true">🛍️ All products</button>
+        <button class="tab" role="tab" data-view="reels" aria-selected="false">🎬 Shop by reel</button>
+      </div>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="cats" id="chips" role="toolbar" aria-label="Categories"></div>
+
+    <section id="view-products"><div class="grid" id="grid"></div></section>
+    <section id="view-reels" hidden><div class="looks" id="reels"></div></section>
+    <p class="empty" id="empty" hidden>Couldn't find that 👀 — <a href="#ask">ask us and we'll send you the link</a></p>
+    <div class="more-wrap"><button class="more" id="more" hidden>Load more</button></div>
+    <section class="ask" id="ask">
+      <div class="ask-intro">
+        <h2>Can't find something?</h2>
+        <p>Saw something in our reels that isn't listed here? Ask us and we'll send you the link.</p>
+      </div>
+      <div class="ask-box">
+        <div class="ask-tabs" role="tablist">
+          <button type="button" class="ask-tab" role="tab" data-pane="ig" aria-selected="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+            Instagram
+          </button>
+          <button type="button" class="ask-tab" role="tab" data-pane="mail" aria-selected="false" id="ask-mail-tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+            Email
+          </button>
+        </div>
+
+        <div class="ask-pane" data-pane="ig">
+          <p class="pane-text">DM us on Instagram — send a screenshot of the reel or just tell us what you're looking for.</p>
+          <a class="ask-btn" id="ask-dm" href="#" target="_blank" rel="noopener">Message us on Instagram ↗</a>
+        </div>
+
+        <form class="ask-pane" data-pane="mail" id="ask-form" novalidate hidden>
+          <label>What are you looking for?
+            <textarea id="ask-msg" placeholder="e.g. The lamp in the background of the Diwali reel"></textarea>
+          </label>
+          <label>Your name <span class="opt">(optional)</span><input id="ask-name" autocomplete="name"></label>
+          <div class="reply">
+            <span class="reply-label">How should we reply?</span>
+            <div class="reply-opts" role="radiogroup">
+              <button type="button" class="ropt" data-type="instagram" aria-pressed="true">Instagram</button>
+              <button type="button" class="ropt" data-type="email" aria-pressed="false">Email</button>
+              <button type="button" class="ropt" data-type="phone" aria-pressed="false">Phone</button>
+            </div>
+            <input id="ask-contact" placeholder="@yourhandle" autocomplete="off">
+          </div>
+          <input type="checkbox" id="ask-botcheck" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0">
+          <button type="submit" class="ask-btn" id="ask-send">Send message</button>
+          <p class="ask-status" id="ask-status" hidden></p>
+        </form>
+      </div>
+    </section>
   </main>
 
   <footer>Some links may be affiliate links — we may earn a small commission at no extra cost to you.</footer>
 
 <script>
 (async function () {
-  const PAGE = 9; // reels per batch — Instagram embeds are heavy
+  const PAGE = 9; // reels per batch
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const $ = id => document.getElementById(id);
 
@@ -224,7 +330,7 @@
   try {
     data = await (await fetch("products.json", { cache: "no-cache" })).json();
   } catch (e) {
-    $("reels").innerHTML = '<p class="empty">Couldn\'t load products.json — check it for a JSON typo (missing comma or quote).</p>';
+    $("grid").innerHTML = '<p class="empty">Couldn\'t load products.json — check it for a JSON typo (missing comma or quote).</p>';
     console.error(e); return;
   }
 
@@ -233,12 +339,12 @@
   const catById = Object.fromEntries(cats.map(c => [c.id, c]));
   const catOf = id => catById[id] || { id, name: id || "Other", emoji: "🛍️" };
 
-  // Reels: only ones with products, newest first (featured pinned on top)
+  // Reels with products, newest first (featured pinned)
   const reels = (data.reels || [])
     .filter(r => (r.products || []).length)
     .sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || (b.id ?? 0) - (a.id ?? 0));
 
-  // Products: everything inside reels + standalone "products", de-duplicated by name
+  // Products from reels + standalone list, de-duplicated by name
   const pmap = new Map();
   const addProduct = (p, reelId) => {
     const key = (p.name || "").trim().toLowerCase();
@@ -253,13 +359,34 @@
   const products = [...pmap.values()].sort((a, b) =>
     (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || Math.max(0, ...b.reels) - Math.max(0, ...a.reels));
 
-  if (site.title) { $("title").textContent = site.title; document.title = site.title + " — Shop our reels"; }
-  if (site.tagline) $("tagline").textContent = site.tagline;
+  // Header / hero
+  if (site.title) document.title = site.title + " — Shop our reels";
+  if (site.heroTitle) $("hero-title").textContent = site.heroTitle;
+  $("tagline").textContent = site.tagline || "";
   if (site.instagram) { $("ig").href = site.instagram; $("ig").hidden = false; }
+  if (site.handle) $("ig-label").textContent = "@" + site.handle;
 
-  // ---- state (mirrored in the URL so links can be shared) ----
+  // "Buy on Amazon" etc. from the link's domain
+  const STORES = { amazon: "Amazon", amzn: "Amazon", myntra: "Myntra", flipkart: "Flipkart", fkrt: "Flipkart",
+    ajio: "AJIO", nykaa: "Nykaa", meesho: "Meesho", souledstore: "Souled Store", thesouledstore: "Souled Store",
+    tatacliq: "Tata CLiQ", bewakoof: "Bewakoof", firstcry: "FirstCry" };
+  function storeOf(link) {
+    try {
+      const host = new URL(link).hostname.replace(/^www\./, "");
+      for (const k in STORES) if (host.split(".").includes(k)) return STORES[k];
+      return host.split(".")[0].replace(/^\w/, c => c.toUpperCase());
+    } catch { return ""; }
+  }
+  const buyBtn = p => p.link
+    ? `<a class="buy" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">Buy${storeOf(p.link) ? " on " + esc(storeOf(p.link)) : ""} →</a>`
+    : `<span class="soon">Link coming soon</span>`;
+  const imgOr = (p, fallback) => p.image
+    ? `${fallback}<img src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
+    : fallback;
+
+  // ---- state (in the URL so links can be shared) ----
   const params = new URLSearchParams(location.search);
-  let view = params.get("view") === "products" ? "products" : "reels";
+  let view = params.get("view") === "reels" ? "reels" : "products";
   let active = params.get("c") || "all";
   if (active !== "all" && !catById[active]) active = "all";
   $("q").value = params.get("q") || "";
@@ -270,9 +397,6 @@
     if (!m || /PASTE/i.test(m[2])) return null;
     return `https://www.instagram.com/${m[1] === "reels" ? "reel" : m[1]}/${m[2]}/`;
   }
-  const buy = p => p.link
-    ? `<span class="shop">Shop →</span>`
-    : `<span class="soon">Link soon</span>`;
 
   function renderChips() {
     const counts = {};
@@ -281,62 +405,65 @@
     const total = view === "reels" ? reels.length : products.length;
     const list = [{ id: "all", name: "All", emoji: "✨" }, ...cats.filter(c => counts[c.id])];
     $("chips").innerHTML = list.map(c =>
-      `<button class="chip" data-id="${esc(c.id)}" aria-pressed="${c.id === active}">${esc(c.emoji || "")} ${esc(c.name)}<span class="n">${c.id === "all" ? total : counts[c.id]}</span></button>`
-    ).join("");
-  }
-
-  function reelCard(r) {
-    const url = permalink(r.reel);
-    const code = url ? url.split("/")[4] : "";
-    const embed = url
-      ? `<a class="cover" href="${esc(url)}" target="_blank" rel="noopener" data-embed="${esc(url)}embed/">
-           <img src="${esc(r.cover || `covers/${code}.jpg`)}" alt="${esc(r.title || "Reel")}" loading="lazy" onerror="toEmbed(this)">
-           <span class="play">▶</span><span class="watch">Watch reel ↗</span>
-         </a>`
-      : "";
-    const rows = r.products.map(p => {
-      const inner = `<div class="prow-info"><p class="prow-name">${esc(p.name)}</p>${p.price ? `<span class="prow-price">${esc(p.price)}</span>` : ""}</div>${buy(p)}`;
-      return p.link
-        ? `<li><a class="prow" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">${inner}</a></li>`
-        : `<li><div class="prow">${inner}</div></li>`;
-    }).join("");
-    return `<article class="post">
-      <div class="post-head"><span class="num">#${esc(r.id)}</span><p class="post-title">${esc(r.title || "")}</p></div>
-      <div class="reel">${embed}</div>
-      <div class="label">Shop this reel</div>
-      <ul class="plist">${rows}</ul>
-    </article>`;
+      `<button class="cat-btn" data-id="${esc(c.id)}" aria-pressed="${c.id === active}">
+         <span class="ic">${esc(c.emoji || "")}</span>${esc(c.name)} <span class="n">${c.id === "all" ? total : counts[c.id]}</span>
+       </button>`).join("");
   }
 
   function productCard(p) {
     const c = catOf(p.category);
-    const img = p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : "";
     const latest = p.reels.length ? Math.max(...p.reels) : null;
-    const seen = latest != null
-      ? `<button class="seen" data-reel="${esc(latest)}">▶ Seen in reel #${esc(latest)}</button>` : "";
-    const btn = p.link
-      ? `<a class="shop" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">Shop →</a>`
-      : `<span class="soon">Link soon</span>`;
+    const latestUrl = latest != null ? permalink((reels.find(r => r.id === latest) || {}).reel) : null;
     return `<div class="card">
-      <div class="media">${esc(c.emoji)}${img}</div>
+      <div class="media">${imgOr(p, esc(c.emoji))}
+        ${latestUrl ? `<a class="badge" href="${esc(latestUrl)}" target="_blank" rel="noopener">▶ Watch reel</a>` : ""}
+      </div>
       <div class="body">
         <span class="cat">${esc(c.name)}</span>
         <p class="name">${esc(p.name)}</p>
-        ${seen}
-        <div class="foot">${p.price ? `<span class="price">${esc(p.price)}</span>` : ""}${btn}</div>
+        <div class="foot">${p.price ? `<span class="price">${esc(p.price)}</span>` : ""}${buyBtn(p)}</div>
       </div>
     </div>`;
   }
 
-  // No cover image saved for this reel → fall back to Instagram's embed (cropped)
+  function lookCard(r) {
+    const url = permalink(r.reel);
+    const code = url ? url.split("/")[4] : "";
+    const media = url
+      ? `<a class="cover" href="${esc(url)}" target="_blank" rel="noopener" data-embed="${esc(url)}embed/">
+           <img src="${esc(r.cover || `covers/${code}.jpg`)}" alt="${esc(r.title || "Reel")}" loading="lazy" onerror="toEmbed(this)">
+           <span class="play">▶</span>
+         </a>` : "";
+    const items = r.products.map(p => {
+      const soonOrBuy = p.link
+        ? `<a class="buy" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">Buy →</a>`
+        : `<span class="soon">Soon</span>`;
+      return `<li class="item">
+        <span class="thumb">${imgOr(p, esc(catOf(p.category).emoji))}</span>
+        <div class="item-info">
+          <p class="item-name">${esc(p.name)}</p>
+          ${p.price ? `<span class="item-price">${esc(p.price)}</span>` : ""}
+        </div>
+        ${soonOrBuy}
+      </li>`;
+    }).join("");
+    return `<article class="look">
+      <div class="look-media">${media}</div>
+      <div class="look-body">
+        <p class="look-title">${esc((r.title || "").replace(/^Day\s*\d+\s*\/\s*\d+\s*[—–-]\s*/i, ""))}</p>
+        <ul class="items">${items}</ul>
+        ${url ? `<a class="watch" href="${esc(url)}" target="_blank" rel="noopener">▶ Watch on Instagram</a>` : ""}
+      </div>
+    </article>`;
+  }
+
+  // No cover image saved for this reel → fall back to Instagram's embed (cropped to the video)
   window.toEmbed = img => {
     const a = img.closest(".cover");
     const f = document.createElement("div"); f.className = "frame";
     f.innerHTML = `<iframe src="${a.dataset.embed}" loading="lazy" scrolling="no" allowtransparency="true" allow="encrypted-media; autoplay; clipboard-write"></iframe>`;
     a.replaceWith(f); fitFrames();
   };
-
-  // Scale each 326px-wide embed to fill its card exactly
   const EMBED_W = 326;
   function fitFrames() {
     document.querySelectorAll(".frame").forEach(f => f.style.setProperty("--s", f.clientWidth / EMBED_W));
@@ -347,7 +474,7 @@
     $("view-reels").hidden = view !== "reels";
     $("view-products").hidden = view !== "products";
     if (view === "reels") {
-      $("reels").innerHTML = filtered.slice(0, shown).map(reelCard).join("");
+      $("reels").innerHTML = filtered.slice(0, shown).map(lookCard).join("");
       $("more").hidden = shown >= filtered.length;
       fitFrames();
     } else {
@@ -355,30 +482,28 @@
       $("more").hidden = true;
     }
     $("empty").hidden = filtered.length > 0;
+    $("count").textContent = `${filtered.length} ${view === "reels" ? "reel" : "product"}${filtered.length === 1 ? "" : "s"}`;
   }
 
   function apply() {
     const q = $("q").value.trim().toLowerCase().replace(/^#/, "");
-    const isNum = /^\d+$/.test(q);
     if (view === "reels") {
       filtered = reels.filter(r => {
         if (active !== "all" && !r.products.some(p => p.category === active)) return false;
         if (!q) return true;
-        if (isNum) return String(r.id) === q;
         return [r.title, ...r.products.map(p => p.name)].join(" ").toLowerCase().includes(q);
       });
     } else {
       filtered = products.filter(p => {
         if (active !== "all" && p.category !== active) return false;
         if (!q) return true;
-        if (isNum) return p.reels.map(String).includes(q);
-        return [p.name, catOf(p.category).name].join(" ").toLowerCase().includes(q);
+        return [p.name, catOf(p.category).name, storeOf(p.link)].join(" ").toLowerCase().includes(q);
       });
     }
     shown = PAGE;
     draw();
     const u = new URLSearchParams();
-    if (view !== "reels") u.set("view", view);
+    if (view !== "products") u.set("view", view);
     if (active !== "all") u.set("c", active);
     if (q) u.set("q", q);
     history.replaceState(null, "", u.toString() ? "?" + u : location.pathname);
@@ -387,26 +512,77 @@
   function setView(v) {
     view = v;
     document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
-    $("q").placeholder = v === "reels" ? "Search a product, or a reel number (e.g. 26)" : "Search products";
+    $("q").placeholder = v === "reels" ? "Search reels" : "Search products";
     renderChips(); apply();
   }
 
-  document.querySelector(".tabs").addEventListener("click", e => {
+  document.querySelector(".seg").addEventListener("click", e => {
     const t = e.target.closest(".tab"); if (!t || t.dataset.view === view) return;
     active = "all"; $("q").value = ""; setView(t.dataset.view);
   });
   $("chips").addEventListener("click", e => {
-    const b = e.target.closest(".chip"); if (!b) return;
+    const b = e.target.closest(".cat-btn"); if (!b) return;
     active = b.dataset.id; renderChips(); apply();
-  });
-  $("grid").addEventListener("click", e => {
-    const b = e.target.closest(".seen"); if (!b) return;
-    active = "all"; $("q").value = b.dataset.reel; setView("reels");
-    window.scrollTo({ top: 0, behavior: "smooth" });
   });
   let t;
   $("q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(apply, 250); });
   $("more").addEventListener("click", () => { shown += PAGE; draw(); });
+
+  // ---------- "Can't find something?" ----------
+  const contact = data.contact || {};
+  const igHandle = contact.instagram || site.handle || "";
+  $("ask-dm").href = `https://ig.me/m/${encodeURIComponent(igHandle)}`;
+  if (!contact.formKey && !contact.email) $("ask-mail-tab").hidden = true;
+
+  document.querySelector(".ask-tabs").addEventListener("click", e => {
+    const t = e.target.closest(".ask-tab"); if (!t) return;
+    document.querySelectorAll(".ask-tab").forEach(x => x.setAttribute("aria-selected", x === t));
+    document.querySelectorAll(".ask-pane").forEach(p => p.hidden = p.dataset.pane !== t.dataset.pane);
+  });
+
+  const REPLY = {
+    instagram: { ph: "@yourhandle", ok: v => /^@?[A-Za-z0-9._]{1,30}$/.test(v), err: "Add your Instagram handle so we can reply", label: "Instagram" },
+    email:     { ph: "you@example.com", ok: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), err: "Add a valid email so we can reply", label: "Email" },
+    phone:     { ph: "+91 98765 43210", ok: v => v.replace(/[^0-9]/g, "").length >= 10, err: "Add a valid phone number so we can reply", label: "Phone" },
+  };
+  let replyType = "instagram";
+  document.querySelector(".reply-opts").addEventListener("click", e => {
+    const b = e.target.closest(".ropt"); if (!b) return;
+    replyType = b.dataset.type;
+    document.querySelectorAll(".ropt").forEach(x => x.setAttribute("aria-pressed", x === b));
+    const c = $("ask-contact"); c.placeholder = REPLY[replyType].ph;
+    c.type = replyType === "email" ? "email" : replyType === "phone" ? "tel" : "text";
+    c.focus();
+  });
+
+  const status = (msg, ok) => { const el = $("ask-status"); el.textContent = msg; el.className = "ask-status " + (ok ? "ok" : "err"); el.hidden = false; };
+  $("ask-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const msg = $("ask-msg").value.trim(), name = $("ask-name").value.trim(), who = $("ask-contact").value.trim();
+    if (!msg) { status("Tell us what you're looking for 🙂", false); $("ask-msg").focus(); return; }
+    if (!REPLY[replyType].ok(who)) { status(REPLY[replyType].err, false); $("ask-contact").focus(); return; }
+    const replyTo = `${REPLY[replyType].label}: ${who}`;
+    if (contact.formKey) {
+      if (Date.now() - (window.__lastSend || 0) < 30000) { status("Just sent — give it a few seconds 🙂", false); return; }
+      $("ask-send").disabled = true;
+      try {
+        const r = await fetch("https://api.web3forms.com/submit", {
+          method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ access_key: contact.formKey, botcheck: $("ask-botcheck").checked,
+            subject: "Product request from website", from_name: name || "Website visitor",
+            message: msg, "reply via": replyTo, ...(replyType === "email" ? { replyto: who } : {}) })
+        });
+        const j = await r.json();
+        if (!j.success) throw new Error(j.message);
+        window.__lastSend = Date.now();
+        status("Sent ✓ We'll reply on " + REPLY[replyType].label + " soon!", true); $("ask-form").reset();
+      } catch (err) { status("Couldn't send right now — try the Instagram tab instead.", false); console.error(err); }
+      $("ask-send").disabled = false;
+    } else {
+      const body = `Looking for: ${msg}` + (name ? `\nName: ${name}` : "") + `\nReply via ${replyTo}`;
+      location.href = `mailto:${contact.email}?subject=${encodeURIComponent("Product request from website")}&body=${encodeURIComponent(body)}`;
+    }
+  });
 
   setView(view);
 })();
