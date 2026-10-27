@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shubh ka Prateek — Shop our picks</title>
+<meta name="description" content="All the products shared on @shubhkaprateek, in one place.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbf6f1;
+    --surface: #ffffff;
+    --ink: #2b1f1a;
+    --muted: #7a6a62;
+    --line: #eadfd6;
+    --accent: #d9534f;
+    --accent-ink: #ffffff;
+    --chip: #f3e8df;
+    --ph1: #f7d9cf;
+    --ph2: #f3e3c3;
+    --shadow: 0 1px 2px rgba(43,31,26,.06), 0 8px 24px rgba(43,31,26,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1513;
+      --surface: #241d1a;
+      --ink: #f5ece6;
+      --muted: #b3a39a;
+      --line: #3a2f2a;
+      --accent: #ef7a6f;
+      --accent-ink: #1a1513;
+      --chip: #2f2622;
+      --ph1: #4a2f2a;
+      --ph2: #4a3f2a;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+
+  header { padding: 40px 0 20px; text-align: center; }
+  h1 {
+    font-family: Fraunces, Georgia, serif;
+    font-weight: 700;
+    font-size: clamp(30px, 7vw, 44px);
+    letter-spacing: -0.02em;
+    margin: 0 0 6px;
+  }
+  .tagline { color: var(--muted); margin: 0 0 14px; }
+  .ig {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--accent); font-weight: 600; text-decoration: none; font-size: 14px;
+  }
+  .ig:hover { text-decoration: underline; }
+
+  .controls {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--bg);
+    padding: 12px 0 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .search {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    outline: none;
+  }
+  .search:focus { border-color: var(--accent); }
+  .chips {
+    display: flex; gap: 8px; overflow-x: auto;
+    padding: 10px 0 2px; scrollbar-width: none;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto;
+    border: 0; cursor: pointer;
+    padding: 8px 14px; border-radius: 999px;
+    background: var(--chip); color: var(--ink);
+    font: inherit; font-size: 14px; font-weight: 500;
+    white-space: nowrap;
+  }
+  .chip .n { color: var(--muted); margin-left: 4px; font-size: 12px; }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  .chip[aria-pressed="true"] .n { color: inherit; opacity: .7; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+    padding: 18px 0 40px;
+  }
+  @media (min-width: 640px) {
+    .grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: var(--shadow);
+    text-decoration: none; color: inherit;
+    transition: transform .15s ease;
+  }
+  .card:hover { transform: translateY(-2px); }
+  .media {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    background: linear-gradient(135deg, var(--ph1), var(--ph2));
+    display: grid; place-items: center;
+    font-size: 48px;
+  }
+  .media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .num {
+    position: absolute; top: 8px; left: 8px;
+    background: rgba(0,0,0,.65); color: #fff;
+    font-size: 12px; font-weight: 600;
+    padding: 3px 8px; border-radius: 999px;
+  }
+  .star {
+    position: absolute; top: 8px; right: 8px;
+    background: var(--accent); color: var(--accent-ink);
+    font-size: 11px; font-weight: 600;
+    padding: 3px 8px; border-radius: 999px;
+  }
+  .body { padding: 12px 12px 14px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .cat { color: var(--muted); font-size: 12px; }
+  .name { font-weight: 600; font-size: 15px; margin: 0; }
+  .note { color: var(--muted); font-size: 13px; margin: 0; }
+  .foot { margin-top: auto; padding-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .price { font-weight: 600; }
+  .shop {
+    background: var(--accent); color: var(--accent-ink);
+    font-weight: 600; font-size: 13px;
+    padding: 7px 12px; border-radius: 10px; margin-left: auto;
+  }
+  .empty { text-align: center; color: var(--muted); padding: 60px 0; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 0 0 30px; }
+</style>
+</head>
+<body>
+  <header class="wrap">
+    <h1 id="title">Shubh ka Prateek</h1>
+    <p class="tagline" id="tagline"></p>
+    <a class="ig" id="ig" href="#" target="_blank" rel="noopener" hidden>📸 @shubhkaprateek</a>
+  </header>
+
+  <div class="controls">
+    <div class="wrap">
+      <input class="search" id="q" type="search" placeholder="Search a product or its number (e.g. 12)" autocomplete="off">
+      <div class="chips" id="chips" role="toolbar" aria-label="Categories"></div>
+    </div>
+  </div>
+
+  <main class="wrap">
+    <div class="grid" id="grid"></div>
+    <p class="empty" id="empty" hidden>Nothing here yet 👀</p>
+  </main>
+
+  <footer class="wrap">Some links may be affiliate links — we may earn a small commission at no extra cost to you.</footer>
+
+<script>
+(async function () {
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const $ = id => document.getElementById(id);
+
+  let data;
+  try {
+    const res = await fetch("products.json", { cache: "no-cache" });
+    data = await res.json();
+  } catch (e) {
+    $("grid").innerHTML = '<p class="empty">Couldn\'t load products.json — check it for a JSON typo (missing comma or quote).</p>';
+    console.error(e);
+    return;
+  }
+
+  const site = data.site || {};
+  const cats = data.categories || [];
+  const catById = Object.fromEntries(cats.map(c => [c.id, c]));
+  // featured first, then newest (highest id) first
+  const products = (data.products || []).slice().sort((a, b) =>
+    (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || (b.id ?? 0) - (a.id ?? 0));
+
+  if (site.title) { $("title").textContent = site.title; document.title = site.title + " — Shop our picks"; }
+  if (site.tagline) $("tagline").textContent = site.tagline;
+  if (site.instagram) { $("ig").href = site.instagram; $("ig").hidden = false; }
+
+  const params = new URLSearchParams(location.search);
+  let active = params.get("c") || "all";
+  if (active !== "all" && !catById[active]) active = "all";
+  $("q").value = params.get("q") || "";
+
+  function renderChips() {
+    const counts = {};
+    products.forEach(p => counts[p.category] = (counts[p.category] || 0) + 1);
+    const list = [{ id: "all", name: "All", emoji: "✨" }, ...cats.filter(c => counts[c.id])];
+    $("chips").innerHTML = list.map(c => {
+      const n = c.id === "all" ? products.length : counts[c.id];
+      return `<button class="chip" data-id="${esc(c.id)}" aria-pressed="${c.id === active}">${esc(c.emoji || "")} ${esc(c.name)}<span class="n">${n}</span></button>`;
+    }).join("");
+  }
+
+  function card(p) {
+    const c = catById[p.category] || { name: p.category || "", emoji: "🛍️" };
+    const img = p.image
+      ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
+      : "";
+    return `<a class="card" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">
+      <div class="media">${esc(c.emoji || "🛍️")}${img}
+        ${p.id != null ? `<span class="num">#${esc(p.id)}</span>` : ""}
+        ${p.featured ? `<span class="star">★ Fav</span>` : ""}
+      </div>
+      <div class="body">
+        <span class="cat">${esc(c.name)}</span>
+        <p class="name">${esc(p.name)}</p>
+        ${p.note ? `<p class="note">${esc(p.note)}</p>` : ""}
+        <div class="foot">
+          ${p.price ? `<span class="price">${esc(p.price)}</span>` : ""}
+          <span class="shop">Shop →</span>
+        </div>
+      </div>
+    </a>`;
+  }
+
+  function render() {
+    const q = $("q").value.trim().toLowerCase().replace(/^#/, "");
+    const list = products.filter(p => {
+      if (active !== "all" && p.category !== active) return false;
+      if (!q) return true;
+      if (/^\d+$/.test(q)) return String(p.id) === q;
+      return [p.name, p.note, catById[p.category]?.name].join(" ").toLowerCase().includes(q);
+    });
+    $("grid").innerHTML = list.map(card).join("");
+    $("empty").hidden = list.length > 0;
+
+    const u = new URLSearchParams();
+    if (active !== "all") u.set("c", active);
+    if (q) u.set("q", q);
+    history.replaceState(null, "", u.toString() ? "?" + u : location.pathname);
+  }
+
+  $("chips").addEventListener("click", e => {
+    const b = e.target.closest(".chip");
+    if (!b) return;
+    active = b.dataset.id;
+    renderChips(); render();
+  });
+  $("q").addEventListener("input", render);
+
+  renderChips(); render();
+})();
+</script>
+</body>
+</html>
