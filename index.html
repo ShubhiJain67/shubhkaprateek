@@ -335,9 +335,28 @@
   }
 
   const site = data.site || {};
-  const cats = data.categories || [];
+  const cats = (data.categories || []).slice();
   const catById = Object.fromEntries(cats.map(c => [c.id, c]));
   const catOf = id => catById[id] || { id, name: id || "Other", emoji: "🛍️" };
+
+  // A product's "category" can be one value ("toys") or a list (["toys", "Home Decor"]).
+  // Each value can be a category id OR its name. Anything not in "categories" becomes a new tab automatically.
+  const slug = v => String(v).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const pretty = v => String(v).trim().replace(/[-_]+/g, " ").replace(/\b\w/g, ch => ch.toUpperCase());
+  function resolveCat(v) {
+    if (v == null || String(v).trim() === "") return null;
+    if (catById[v]) return v;
+    const byName = cats.find(c => c.name.toLowerCase() === String(v).trim().toLowerCase() || c.id.toLowerCase() === String(v).trim().toLowerCase());
+    if (byName) return byName.id;
+    const id = slug(v);
+    if (!catById[id]) { const c = { id, name: pretty(v), emoji: "🛍️" }; cats.push(c); catById[id] = c; }
+    return id;
+  }
+  const normalize = p => { p.category = [...new Set((Array.isArray(p.category) ? p.category : [p.category]).map(resolveCat).filter(Boolean))]; };
+  (data.reels || []).forEach(r => (r.products || []).forEach(normalize));
+  (data.products || []).forEach(normalize);
+  const catsOf = p => (Array.isArray(p.category) ? p.category : [p.category]).filter(Boolean);
+  const inCat = (p, id) => catsOf(p).includes(id);
 
   // Reels with products, newest first (featured pinned)
   const reels = (data.reels || [])
@@ -352,7 +371,8 @@
     if (!pmap.has(key)) pmap.set(key, { ...p, reels: [] });
     const e = pmap.get(key);
     if (reelId != null && !e.reels.includes(reelId)) e.reels.push(reelId);
-    for (const f of ["link", "price", "image", "category"]) if (!e[f] && p[f]) e[f] = p[f];
+    for (const f of ["link", "price", "image"]) if (!e[f] && p[f]) e[f] = p[f];
+    e.category = [...new Set([...catsOf(e), ...catsOf(p)])];
   };
   reels.forEach(r => r.products.forEach(p => addProduct(p, r.id)));
   (data.products || []).forEach(p => addProduct(p, p.reel ?? null));
@@ -400,8 +420,8 @@
 
   function renderChips() {
     const counts = {};
-    if (view === "reels") reels.forEach(r => new Set(r.products.map(p => p.category)).forEach(c => counts[c] = (counts[c] || 0) + 1));
-    else products.forEach(p => counts[p.category] = (counts[p.category] || 0) + 1);
+    if (view === "reels") reels.forEach(r => new Set(r.products.flatMap(catsOf)).forEach(c => counts[c] = (counts[c] || 0) + 1));
+    else products.forEach(p => catsOf(p).forEach(c => counts[c] = (counts[c] || 0) + 1));
     const total = view === "reels" ? reels.length : products.length;
     const list = [{ id: "all", name: "All", emoji: "✨" }, ...cats.filter(c => counts[c.id])];
     $("chips").innerHTML = list.map(c =>
@@ -411,7 +431,7 @@
   }
 
   function productCard(p) {
-    const c = catOf(p.category);
+    const pcs = catsOf(p).map(catOf), c = pcs[0] || catOf("");
     const latest = p.reels.length ? Math.max(...p.reels) : null;
     const latestUrl = latest != null ? permalink((reels.find(r => r.id === latest) || {}).reel) : null;
     return `<div class="card">
@@ -419,9 +439,9 @@
         ${latestUrl ? `<a class="badge" href="${esc(latestUrl)}" target="_blank" rel="noopener">▶ Watch reel</a>` : ""}
       </div>
       <div class="body">
-        <span class="cat">${esc(c.name)}</span>
+        <span class="cat">${pcs.map(x => esc(x.name)).join(" · ")}</span>
         <p class="name">${esc(p.name)}</p>
-        <div class="foot">${p.price ? `<span class="price">${esc(p.price)}</span>` : ""}${buyBtn(p)}</div>
+        <div class="foot">${buyBtn(p)}</div>
       </div>
     </div>`;
   }
@@ -439,10 +459,9 @@
         ? `<a class="buy" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">Buy →</a>`
         : `<span class="soon">Soon</span>`;
       return `<li class="item">
-        <span class="thumb">${imgOr(p, esc(catOf(p.category).emoji))}</span>
+        <span class="thumb">${imgOr(p, esc(catOf(catsOf(p)[0]).emoji))}</span>
         <div class="item-info">
           <p class="item-name">${esc(p.name)}</p>
-          ${p.price ? `<span class="item-price">${esc(p.price)}</span>` : ""}
         </div>
         ${soonOrBuy}
       </li>`;
@@ -489,15 +508,15 @@
     const q = $("q").value.trim().toLowerCase().replace(/^#/, "");
     if (view === "reels") {
       filtered = reels.filter(r => {
-        if (active !== "all" && !r.products.some(p => p.category === active)) return false;
+        if (active !== "all" && !r.products.some(p => inCat(p, active))) return false;
         if (!q) return true;
         return [r.title, ...r.products.map(p => p.name)].join(" ").toLowerCase().includes(q);
       });
     } else {
       filtered = products.filter(p => {
-        if (active !== "all" && p.category !== active) return false;
+        if (active !== "all" && !inCat(p, active)) return false;
         if (!q) return true;
-        return [p.name, catOf(p.category).name, storeOf(p.link)].join(" ").toLowerCase().includes(q);
+        return [p.name, ...catsOf(p).map(id => catOf(id).name), storeOf(p.link)].join(" ").toLowerCase().includes(q);
       });
     }
     shown = PAGE;
