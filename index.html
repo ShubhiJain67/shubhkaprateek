@@ -240,12 +240,70 @@
   .ask-status { font-size: 14px; font-weight: 600; margin: 0; }
   .ask-status.ok { color: #2f8f5b; } .ask-status.err { color: var(--pink); }
   .empty a { color: var(--pink); font-weight: 600; }
+  /* ---------- Hamburger menu ---------- */
+  .menu-btn {
+    flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink); display: grid; place-items: center; cursor: pointer;
+  }
+  .menu-btn svg { width: 20px; height: 20px; }
+  .menu-btn:hover { border-color: var(--pink); }
+  @media (max-width: 640px) {
+    .site-head .wrap { flex-wrap: wrap; height: auto; padding-top: 10px; padding-bottom: 10px; row-gap: 10px; }
+    .site-head .search { order: 3; flex: 1 0 100%; max-width: none; }
+  }
+  .scrim { position: fixed; inset: 0; z-index: 40; background: rgba(20,14,12,.45); opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .drawer {
+    position: fixed; z-index: 50; top: 0; bottom: 0; left: 0; width: min(320px, 86vw);
+    background: var(--surface); border-right: 1px solid var(--line); box-shadow: 0 10px 40px rgba(0,0,0,.18);
+    transform: translateX(-102%); transition: transform .25s ease; display: flex; flex-direction: column; overflow-y: auto;
+  }
+  body.menu-open .scrim { opacity: 1; pointer-events: auto; }
+  body.menu-open .drawer { transform: none; }
+  body.menu-open { overflow: hidden; }
+  .drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 8px 20px; }
+  .drawer-head .brand-name { font-size: 20px; }
+  .drawer-close { width: 36px; height: 36px; border: 0; border-radius: 10px; background: var(--field); cursor: pointer; font-size: 18px; color: var(--ink); }
+  .drawer-sec { padding: 10px 12px; border-top: 1px solid var(--line); }
+  .drawer-sec:first-of-type { border-top: 0; }
+  .drawer-label { display: block; padding: 6px 10px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .drawer-item {
+    display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 10px; border: 0; border-radius: 12px;
+    background: none; color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer;
+  }
+  .drawer-item:hover, .drawer-item[aria-current="true"] { background: var(--field); }
+  .drawer-item .ic { width: 28px; text-align: center; font-size: 18px; }
+  .drawer-item .n { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: 500; }
   footer { border-top: 1px solid var(--line); text-align: center; color: var(--muted); font-size: 12px; padding: 22px 16px 32px; }
 </style>
 </head>
 <body>
+  <div class="scrim" id="scrim"></div>
+  <nav class="drawer" id="drawer" aria-label="Menu" aria-hidden="true">
+    <div class="drawer-head">
+      <span class="brand-name">ShubhKaPrateek</span>
+      <button class="drawer-close" id="drawer-close" aria-label="Close menu">✕</button>
+    </div>
+    <div class="drawer-sec">
+      <span class="drawer-label">Shop</span>
+      <button class="drawer-item" data-go="products"><span class="ic">🛍️</span>All products</button>
+      <button class="drawer-item" data-go="reels"><span class="ic">🎬</span>Shop by reel</button>
+    </div>
+    <div class="drawer-sec">
+      <span class="drawer-label">Categories</span>
+      <div id="drawer-cats"></div>
+    </div>
+    <div class="drawer-sec">
+      <span class="drawer-label">More</span>
+      <button class="drawer-item" data-go="ask"><span class="ic">💬</span>Can't find something?</button>
+      <a class="drawer-item" id="drawer-ig" href="#" target="_blank" rel="noopener"><span class="ic">📸</span>Follow us on Instagram</a>
+    </div>
+  </nav>
+
   <header class="site-head">
     <div class="wrap">
+      <button class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="drawer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
       <a class="brand" href="./"><span class="brand-name">ShubhKaPrateek</span></a>
       <input class="search" id="q" type="search" autocomplete="off" placeholder="Search products">
       <a class="ig-btn" id="ig" href="#" target="_blank" rel="noopener" hidden>
@@ -601,6 +659,36 @@
       const body = `Looking for: ${msg}` + (name ? `\nName: ${name}` : "") + `\nReply via ${replyTo}`;
       location.href = `mailto:${contact.email}?subject=${encodeURIComponent("Product request from website")}&body=${encodeURIComponent(body)}`;
     }
+  });
+
+  // ---------- Hamburger menu ----------
+  const openMenu = open => {
+    document.body.classList.toggle("menu-open", open);
+    $("menu-btn").setAttribute("aria-expanded", open);
+    $("drawer").setAttribute("aria-hidden", !open);
+    if (open) $("drawer-close").focus();
+  };
+  function buildMenu() {
+    const counts = {};
+    products.forEach(p => catsOf(p).forEach(c => counts[c] = (counts[c] || 0) + 1));
+    $("drawer-cats").innerHTML = cats.filter(c => counts[c.id]).map(c =>
+      `<button class="drawer-item" data-cat="${esc(c.id)}"><span class="ic">${esc(c.emoji || "")}</span>${esc(c.name)}<span class="n">${counts[c.id]}</span></button>`
+    ).join("");
+    $("drawer-ig").href = site.instagram || "#";
+    if (!site.instagram) $("drawer-ig").hidden = true;
+  }
+  buildMenu();
+  $("menu-btn").addEventListener("click", () => openMenu(true));
+  $("drawer-close").addEventListener("click", () => openMenu(false));
+  $("scrim").addEventListener("click", () => openMenu(false));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") openMenu(false); });
+  $("drawer").addEventListener("click", e => {
+    const b = e.target.closest(".drawer-item"); if (!b || b.tagName === "A") { if (b) openMenu(false); return; }
+    openMenu(false);
+    if (b.dataset.cat) { active = b.dataset.cat; $("q").value = ""; setView("products"); }
+    else if (b.dataset.go === "ask") { $("ask").scrollIntoView({ behavior: "smooth" }); return; }
+    else { active = "all"; $("q").value = ""; setView(b.dataset.go); }
+    document.querySelector(".toolbar").scrollIntoView({ behavior: "smooth" });
   });
 
   setView(view);
