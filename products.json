@@ -56,8 +56,7 @@
         {
           "name": "Spider man web",
           "category": [
-            "decor",
-            "marvel"
+            "decor"
           ],
           "link": "https://link.amazon/B01kMLyWc",
           "image": "https://m.media-amazon.com/images/I/51Oo93lGDsL._SL600_.jpg"
@@ -168,8 +167,7 @@
         {
           "name": "Superhero Jigsaw Puzzle",
           "category": [
-            "games",
-            "marvel"
+            "games"
           ],
           "link": "https://link.amazon/B0gGyIplr",
           "image": "https://m.media-amazon.com/images/I/81SZcf6c-%2BL._SL600_.jpg"
@@ -337,8 +335,7 @@
         {
           "name": "Crocs",
           "category": [
-            "clothing",
-            "marvel"
+            "clothing"
           ],
           "link": "https://link.amazon/B0fLTqU51",
           "image": "https://m.media-amazon.com/images/I/71sQ4F6WXJL._SL600_.jpg"
@@ -385,7 +382,7 @@
         {
           "name": "Hulk Comforter",
           "category": [
-            "accessories",
+            "home",
             "marvel"
           ],
           "link": "https://link.amazon/B05FkAfef",
@@ -448,8 +445,7 @@
         {
           "name": "Spark & smoke Sword",
           "category": [
-            "toys",
-            "marvel"
+            "toys"
           ],
           "link": "https://link.amazon/B04mBxCKT",
           "image": "https://m.media-amazon.com/images/I/81qM8v4%2BulL._SL600_.jpg"
@@ -543,7 +539,7 @@
         {
           "name": "Hulk Bobble Head",
           "category": [
-            "accessories",
+            "toys",
             "marvel"
           ],
           "link": "https://hamleys.in/product/marvel-hulk-bobble-head-collectible-action-figure-5y-13497276",
@@ -559,7 +555,7 @@
         {
           "name": "Hulk Comforter",
           "category": [
-            "accessories",
+            "home",
             "marvel"
           ],
           "link": "https://link.amazon/B05FkAfef",
@@ -608,7 +604,7 @@
         {
           "name": "Hulk Comforter",
           "category": [
-            "accessories",
+            "home",
             "marvel"
           ],
           "link": "https://link.amazon/B05FkAfef",
