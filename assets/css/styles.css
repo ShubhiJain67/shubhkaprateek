@@ -303,8 +303,13 @@ footer { border-top: 1px solid var(--line); text-align: center; color: var(--mut
 .rp-share { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
 .rp-title { margin: 0 0 6px; font-family: Fraunces, Georgia, serif; font-size: clamp(26px, 4vw, 38px); line-height: 1.15; letter-spacing: -.02em; }
 .rp-sub { margin: 0 0 18px; color: var(--muted); }
-.rp-products .grid { padding-top: 0; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
-@media (min-width: 640px) { .rp-products .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
+.rp-products .grid { padding-top: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }  /* phones: always 2 per row */
+@media (min-width: 640px) { .rp-products .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; } }
+@media (max-width: 639px) {
+  .rp-products .card .body { padding: 10px; }
+  .rp-products .card .name { font-size: 14px; }
+  .rp-products .card .buy, .rp-products .card .soon { width: 100%; padding: 8px 6px; font-size: 12px; }
+}
 .look-title a, .see-all { color: inherit; text-decoration: none; }
 .look-title a:hover { color: var(--pink); }
 .see-all {
