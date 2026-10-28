@@ -46,7 +46,7 @@
   const site = data.site || {};
   // categories.json is a tree: top-level categories (the tabs), each with optional "sub" categories.
   // Products use the most specific id ("mugs"); they automatically count under the parent ("home") too.
-  // "theme": true marks a cross-cutting collection like Marvel (a tab, but weighs less for "similar").
+  // "theme": true marks a cross-cutting collection like Marvel (gets its own "More in Marvel" rail, shown last).
   const cats = (data.categories || []).flatMap(c => [
     { ...c, sub: undefined, parent: null },
     ...(c.sub || []).map(s => ({ emoji: c.emoji, ...s, parent: c.id }))
@@ -505,31 +505,29 @@
   }
   // ---------- Product page: ?product=<id> — photo, options, every reel it's in, similar products ----------
   const productById = id => [...pmap.values()].find(p => String(p.id) === String(id));
-  // Similar = same kind of product first (same sub-category), then same character ("Hulk"),
-  // then same theme (Marvel). Same theme or same top category alone isn't enough to show up.
-  const STOP = new Set("the and for with set game games man kit marvel default light box".split(" "));
-  const wordsOf = p => new Set(String(p.name).toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 2 && !STOP.has(w)));
-  function similarTo(p, limit = 8) {
-    const own = catsOf(p), myReels = new Set(p.reels), myWords = wordsOf(p);
-    const leaf = new Set(own.filter(c => !(catById[c] || {}).theme)), theme = new Set(own.filter(c => (catById[c] || {}).theme));
-    const parents = new Set([...leaf].map(topOf));
-    const scored = [...pmap.values()]
-      .filter(o => o !== p)
-      .map(o => {
-        const oc = catsOf(o);
-        const score = oc.filter(c => leaf.has(c) && catById[c] && catById[c].parent).length * 6   // same sub-category
-          + oc.filter(c => leaf.has(c) && !(catById[c] && catById[c].parent)).length * 3           // same category (no subs)
-          + [...wordsOf(o)].filter(w => myWords.has(w)).length * 3                                  // same character / item word
-          + oc.filter(c => theme.has(c)).length                                                    // same theme
-          + (oc.some(c => parents.has(topOf(c)) && !leaf.has(c)) ? 0.5 : 0);                       // same top category
-        // being in the same reel only breaks ties — it never makes an unrelated product "similar"
-        return { o, score: score + (score >= 2 ? o.reels.filter(r => myReels.has(r)).length * 0.5 : 0), sameTop: oc.some(c => parents.has(topOf(c))) };
-      });
-    const good = scored.filter(x => x.score >= 2);
-    // nothing closely related? fall back to other products from the same top category
-    return (good.length ? good : scored.filter(x => x.sameTop))
-      .sort((a, b) => b.score - a.score || Math.max(0, ...b.o.reels) - Math.max(0, ...a.o.reels))
-      .slice(0, limit).map(x => x.o);
+  // "More in …" rails on a product page, in this order (each one only if it has something to show):
+  //   1) same character — names listed in data/site.json → "characters" (e.g. "More in Hulk")
+  //   2) same sub-category (e.g. "More in Comforters & Blankets")
+  //   3) same theme (e.g. "More in Marvel")
+  // A product appears in only one rail (the first that fits).
+  const norm = v => " " + String(v).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() + " ";
+  const characters = (site.characters || []).map(n => ({ name: n, key: norm(n) }));
+  function railsFor(p, limit = 12) {
+    const others = [...pmap.values()].filter(o => o !== p);
+    const mine = new Set(catsOf(p)), myReels = new Set(p.reels), used = new Set(), rails = [];
+    const rank = o => catsOf(o).filter(c => mine.has(c)).length * 2 + o.reels.filter(r => myReels.has(r)).length;
+    const add = (title, list) => {
+      list = list.filter(o => !used.has(o))
+        .sort((a, b) => rank(b) - rank(a) || Math.max(0, ...b.reels) - Math.max(0, ...a.reels)).slice(0, limit);
+      if (!list.length) return;
+      list.forEach(o => used.add(o)); rails.push({ title, list });
+    };
+    characters.filter(c => norm(p.name).includes(c.key))
+      .forEach(c => add("More in " + c.name, others.filter(o => norm(o.name).includes(c.key))));
+    const own = catsOf(p);
+    own.filter(c => !(catById[c] || {}).theme).forEach(c => add("More in " + catOf(c).name, others.filter(o => catsOf(o).includes(c))));
+    own.filter(c => (catById[c] || {}).theme).forEach(c => add("More in " + catOf(c).name, others.filter(o => catsOf(o).includes(c))));
+    return rails;
   }
   function reelTile(r) {
     const url = permalink(r.reel); if (!url) return "";
@@ -551,7 +549,7 @@
     }
     const pcs = catsOf(p).map(catOf), v = variantOf(p, 0);
     const inReels = reels.filter(r => p.reels.includes(r.id));
-    const similar = similarTo(p);
+    const rails = railsFor(p);
     sec.innerHTML = `
       <button class="rp-back" data-back>← Back</button>
       <div class="pd-grid" data-key="${esc(keyOf(p))}">
@@ -571,8 +569,12 @@
           <div class="pd-reels car-track">${inReels.map(reelTile).join("")}</div>
           <button class="car-btn next" type="button" aria-label="Next reels" data-car="1">›</button>
         </div>` : ""}
-      ${similar.length ? `<h3 class="pd-h">Similar products</h3>
-        <div class="rp-products"><div class="grid">${similar.map(productCard).join("")}</div></div>` : ""}`;
+      ${rails.map(r => `<h3 class="pd-h">${esc(r.title)}</h3>
+        <div class="carousel">
+          <button class="car-btn prev" type="button" aria-label="Previous" data-car="-1">‹</button>
+          <div class="car-track rail">${r.list.map(productCard).join("")}</div>
+          <button class="car-btn next" type="button" aria-label="Next" data-car="1">›</button>
+        </div>`).join("")}`;
     watchMedia(sec);
     sec.querySelectorAll(".carousel").forEach(c => requestAnimationFrame(() => carState(c)));
     document.title = p.name + " — " + (site.title || "ShubhKaPrateek");

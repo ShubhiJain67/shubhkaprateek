@@ -375,3 +375,8 @@ body.on-reel-page #sentinel { display: none !important; }
 .pd-reel-cover img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .2s; }
 .pd-reel:hover img { transform: scale(1.03); }
 .pd-reel-title { display: block; margin-top: 8px; font-size: 13px; font-weight: 600; line-height: 1.3; }
+
+/* "More in …" product rails on the product page */
+.car-track.rail { grid-auto-columns: 46%; }
+@media (min-width: 640px)  { .car-track.rail { grid-auto-columns: 220px; } }
+.car-track.rail .card { height: 100%; }

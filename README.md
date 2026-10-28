@@ -39,7 +39,7 @@ Each product is listed **once**, with a unique number `id` (use the highest id +
 - **Variations:** one variant = no option buttons. Add more (and rename "Default", e.g. "Maroon" / "Black") and option buttons appear; each switches the photo and Buy link. A variant with no `link` shows "Link coming soon". The Buy button names the shop from the link.
 - A product that isn't in any reel still shows under *All products*.
 - Each reel also gets its own page listing all its products: `shubhkaprateek.com/?reel=<reel code>` (handy for captions / link in bio).
-- Each product gets its own page too: `shubhkaprateek.com/?product=<id>` — photo, options, Buy button, every reel it's in, and similar products (same sub-category first, then same character like "Hulk", then same theme — a Marvel mug won't show up next to a Marvel comforter).
+- Each product gets its own page too: `shubhkaprateek.com/?product=<id>` — photo, options, Buy button, every reel it's in, and "More in …" rails: same character ("More in Hulk" — names come from `characters` in `data/site.json`), same sub-category ("More in Comforters & Blankets"), then same theme ("More in Marvel"). Empty rails are hidden; each product appears in only one rail.
 
 ## Add a reel — `data/reels.json`
 
