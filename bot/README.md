@@ -56,6 +56,16 @@ The bot sends the photos it found + a preview. Fix things by replying:
 
 Then tap **✅ Add to site**.
 
+### Removing things
+
+| Send | Removes |
+|---|---|
+| `/delete https://www.instagram.com/reel/ABC123/` | the reel + its products that **aren't in any other reel** (shared ones stay) |
+| `/delete Green Saree` or `/delete 48` | the product, from every reel; a reel left with **no products** is removed too |
+
+The bot first shows exactly what will go (and what stays) → tap **🗑 Yes, remove** or **Keep it**.
+Bot-uploaded covers/photos of removed items are deleted too. A name that matches several products → it lists them with ids.
+
 **Good to know**
 - **Amazon & Instagram sometimes block bots.** The bot tries a backup for Amazon photos; if a photo or the cover
   shows ❌ in the preview, send a screenshot with the caption as above. No cover → the site shows the Instagram preview.

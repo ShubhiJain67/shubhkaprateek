@@ -33,7 +33,12 @@ I'll send a preview. Fix anything by replying:
 <code>img 2 https://…photo.jpg</code>
 <code>remove 2</code>
 Send a <b>photo</b> with caption <code>cover</code> (reel cover) or <code>2</code> (product 2's photo).
-Then tap ✅ <b>Add to site</b>. /cancel drops the draft.`;
+Then tap ✅ <b>Add to site</b>. /cancel drops the draft.
+
+<b>Remove things from the site</b>
+<code>/delete https://www.instagram.com/reel/ABC123/</code> — the reel, plus its products that aren't in any other reel
+<code>/delete Green Saree</code> (or its id, e.g. <code>/delete 48</code>) — the product; a reel left with no products goes too
+I'll show exactly what goes before anything is removed.`;
 
 export default {
   async fetch(req, env, ctx) {
@@ -79,6 +84,7 @@ export async function handleUpdate(update, env) {
   if (cmd === "/start" || cmd === "/help") return say(env, chat, HELP);
   if (cmd === "/cancel") { await env.DRAFTS.delete(String(chat)); return say(env, chat, "🗑 Draft dropped."); }
   if (cmd === "/cats") return say(env, chat, await catsHelp(env));
+  if (cmd === "/delete" || cmd === "/remove") return onDelete(text.replace(/^\/\S+\s*/, "").trim(), env, chat);
   if (cmd === "/preview") { const d = await loadDraft(env, chat); return d ? sendPreview(env, chat, d) : say(env, chat, "No draft right now — send me a reel link + products."); }
 
   const draft = await loadDraft(env, chat);
@@ -328,6 +334,7 @@ async function commitFiles(env, message, files) {
   const head = await gh(env, `/git/commits/${ref.object.sha}`);
   const tree = [];
   for (const f of files) {
+    if (f.remove) { tree.push({ path: f.path, mode: "100644", type: "blob", sha: null }); continue; }
     if (f.base64) {
       const blob = await gh(env, `/git/blobs`, { method: "POST", body: JSON.stringify({ content: f.base64, encoding: "base64" }) });
       tree.push({ path: f.path, mode: "100644", type: "blob", sha: blob.sha });
@@ -505,6 +512,7 @@ async function onButton(q, env) {
   const chat = q.message.chat.id;
   if (!allowed(env, chat)) return tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Private bot" });
   const [action, id] = String(q.data || "").split(":");
+  if (action === "delok" || action === "delno") return onDeleteButton(q, env, action, id);
   const d = await loadDraft(env, chat);
   if (!d || d.id !== id) return tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "That preview is old — use the latest one.", show_alert: true });
   const done = label => tg(env, "editMessageReplyMarkup", { chat_id: chat, message_id: q.message.message_id, reply_markup: { inline_keyboard: [[{ text: label, callback_data: "noop:0" }]] } }).catch(() => {});
@@ -589,4 +597,117 @@ export async function publish(d, env) {
     notes.length ? `ℹ️ ${esc(notes.join("; "))}` : "",
     `\n💻 On your laptop, run <code>git pull</code> before editing the site files.`
   ].filter(Boolean).join("\n");
+}
+
+// ---------------------------------------------------------------- removing a reel / product
+// Rules: removing a product takes it out of every reel, and a reel left with no products is removed too.
+// Removing a reel also removes its products — but only the ones that aren't in any other reel.
+const delKey = chat => "del:" + chat;
+
+export function findProduct(q, products) {
+  const s = String(q).trim();
+  if (/^\d+$/.test(s)) { const p = products.find(p => String(p.id) === s); return p ? [p] : []; }
+  const link = (s.match(URL_RE) || [])[0];
+  if (link) return products.filter(p => (p.variants || []).some(v => (v.link || "").replace(/\/$/, "") === link.replace(/\/$/, "")));
+  const exact = products.filter(p => norm(p.name) === norm(s));
+  return exact.length ? exact : products.filter(p => norm(p.name).includes(norm(s).trim()));
+}
+
+// works out what a delete would remove, without changing anything
+export function planDelete(target, products, reels) {
+  const codeOf = r => ((r.reel || "").match(REEL_RE) || [])[1] || "";
+  const plan = { reels: [], products: [], kept: [], trimmed: [] };   // trimmed = reels that lose a product but stay
+  if (target.reel) {
+    const r = reels.find(r => codeOf(r).toLowerCase() === target.reel.toLowerCase());
+    if (!r) return null;
+    plan.reels.push(r);
+    for (const id of r.products) {
+      const p = products.find(p => p.id === id); if (!p) continue;
+      const elsewhere = reels.some(o => o !== r && o.products.includes(id));
+      (elsewhere ? plan.kept : plan.products).push(p);
+    }
+  } else {
+    const p = target.product;
+    plan.products.push(p);
+    for (const r of reels.filter(r => r.products.includes(p.id))) {
+      (r.products.every(id => id === p.id) ? plan.reels : plan.trimmed).push(r);
+    }
+  }
+  return plan;
+}
+
+export function applyDelete(plan, products, reels) {
+  const goneP = new Set(plan.products.map(p => p.id)), goneR = new Set(plan.reels.map(r => r.id));
+  const outReels = reels.filter(r => !goneR.has(r.id)).map(r => ({ ...r, products: r.products.filter(id => !goneP.has(id)) }));
+  return { products: products.filter(p => !goneP.has(p.id)), reels: outReels.filter(r => r.products.length) };
+}
+
+function describePlan(plan) {
+  const codeOf = r => ((r.reel || "").match(REEL_RE) || [])[1] || "";
+  const L = ["🗑 <b>This will remove:</b>"];
+  plan.reels.forEach(r => L.push(`🎬 Reel: <b>${esc(r.title)}</b> (${esc(codeOf(r))})`));
+  plan.products.forEach(p => L.push(`🛍 Product: <b>${esc(p.name)}</b> (id ${p.id})`));
+  if (plan.kept.length) L.push("", "Staying (they're in other reels too):", ...plan.kept.map(p => `• ${esc(p.name)}`));
+  if (plan.trimmed.length) L.push("", "Also taken out of these reels (they keep their other products):", ...plan.trimmed.map(r => `• ${esc(r.title)}`));
+  L.push("", "Sure?");
+  return L.join("\n");
+}
+
+async function onDelete(arg, env, chat) {
+  if (!arg) return say(env, chat, "Tell me what to remove:\n<code>/delete https://www.instagram.com/reel/ABC123/</code>\n<code>/delete Green Saree</code>  or  <code>/delete 48</code>");
+  const S = await loadSite(env);
+  const reelCode = (arg.match(REEL_RE) || [])[1];
+  let target;
+  if (reelCode) target = { reel: reelCode };
+  else {
+    const found = findProduct(arg, S.products);
+    if (!found.length) return say(env, chat, `I couldn't find a product matching “${esc(arg)}”.`);
+    if (found.length > 1) return say(env, chat, "Which one? Send <code>/delete</code> with the id:\n" + found.slice(0, 15).map(p => `• <code>${p.id}</code> ${esc(p.name)}`).join("\n"));
+    target = { product: found[0] };
+  }
+  const plan = planDelete(target, S.products, S.reels);
+  if (!plan) return say(env, chat, "That reel isn't on the site.");
+  const id = Date.now().toString(36);
+  await env.DRAFTS.put(delKey(chat), JSON.stringify({ id, target: target.reel ? { reel: target.reel } : { productId: target.product.id } }), { expirationTtl: 24 * 3600 });
+  return say(env, chat, describePlan(plan), { reply_markup: { inline_keyboard: [[{ text: "🗑 Yes, remove", callback_data: "delok:" + id }, { text: "Keep it", callback_data: "delno:" + id }]] } });
+}
+
+async function onDeleteButton(q, env, action, id) {
+  const chat = q.message.chat.id;
+  const raw = await env.DRAFTS.get(delKey(chat));
+  const pending = raw ? JSON.parse(raw) : null;
+  const done = label => tg(env, "editMessageReplyMarkup", { chat_id: chat, message_id: q.message.message_id, reply_markup: { inline_keyboard: [[{ text: label, callback_data: "noop:0" }]] } }).catch(() => {});
+  if (!pending || pending.id !== id) return tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "That's an old request — send /delete again.", show_alert: true });
+  await env.DRAFTS.delete(delKey(chat));
+  if (action === "delno") { await tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Kept" }); return done("👍 Kept"); }
+  await tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Removing…" });
+  await done("⏳ Removing…");
+  // work it out again on the latest files, in case something changed since you asked
+  const S = await loadSite(env);
+  let target = pending.target;
+  if (target.productId != null) {
+    const p = S.products.find(p => p.id === target.productId);
+    if (!p) { await done("Already gone"); return say(env, chat, "That product is already gone."); }
+    target = { product: p };
+  }
+  const plan = planDelete(target, S.products, S.reels);
+  if (!plan) { await done("Already gone"); return say(env, chat, "That reel is already gone."); }
+  const out = applyDelete(plan, S.products, S.reels);
+  const files = [
+    { path: "data/products.json", text: pretty(out.products, "category") },
+    { path: "data/reels.json", text: pretty(out.reels, "products") }
+  ];
+  // also delete the cover / photos the bot uploaded for them (only if those files exist)
+  const codeOf = r => ((r.reel || "").match(REEL_RE) || [])[1] || "";
+  const extra = [
+    ...plan.reels.map(r => `assets/covers/${codeOf(r)}.jpg`),
+    ...plan.products.flatMap(p => (p.variants || []).map(v => v.image).filter(i => /^assets\//.test(i || "")))
+  ];
+  for (const path of [...new Set(extra)]) {
+    try { await gh(env, `/contents/${path}?ref=${env.GITHUB_BRANCH || "main"}`); files.push({ path, remove: true }); } catch {}
+  }
+  const what = [plan.reels.length ? `${plan.reels.length} reel${plan.reels.length > 1 ? "s" : ""}` : "", plan.products.length ? `${plan.products.length} product${plan.products.length > 1 ? "s" : ""}` : ""].filter(Boolean).join(" + ");
+  await commitFiles(env, `Remove ${what} (via Telegram bot)`, files);
+  await done("🗑 Removed");
+  return say(env, chat, `🗑 <b>Removed</b> ${esc(what)}. Gone from the site in about a minute.\n\n💻 Run <code>git pull</code> on your laptop before editing.`);
 }
