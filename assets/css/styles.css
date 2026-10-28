@@ -266,6 +266,21 @@ body.menu-open { overflow: hidden; }
 .drawer-item .ic { width: 28px; text-align: center; font-size: 18px; }
 .drawer-item.sub { padding-left: 52px; font-size: 14px; font-weight: 500; color: var(--muted); }
 .drawer-item .n { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: 500; }
+/* collapsible sub-categories */
+.drawer-row { display: flex; align-items: center; gap: 2px; }
+.drawer-row .drawer-item { flex: 1; min-width: 0; }
+.drawer-toggle {
+  flex: none; width: 40px; height: 40px; border: 0; border-radius: 10px; background: none; cursor: pointer; color: var(--muted);
+  display: grid; place-items: center;
+}
+.drawer-toggle:hover { background: var(--field); color: var(--ink); }
+.drawer-toggle::before {
+  content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg); transition: transform .2s;
+}
+.drawer-toggle[aria-expanded="true"]::before { transform: translateY(2px) rotate(-135deg); }
+/* line up the counts: rows without a ▾ (and sub-category rows) leave room where the ▾ would be */
+#drawer-cats > .drawer-item, .drawer-subs .drawer-item { padding-right: 52px; }
 /* floating "Can't find something?" chat button — phones only */
 .ask-fab { display: none; }
 @media (max-width: 639px) {

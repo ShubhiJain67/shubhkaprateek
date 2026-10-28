@@ -426,7 +426,13 @@
   });
 
   // ---------- Hamburger menu ----------
+  const toggleGroup = (g, open) => {
+    g.querySelector(".drawer-toggle").setAttribute("aria-expanded", open);
+    g.querySelector(".drawer-subs").hidden = !open;
+  };
   const openMenu = open => {
+    // opening: show the sub-categories of the category you're browsing, keep the rest closed
+    if (open) document.querySelectorAll(".drawer-group").forEach(g => toggleGroup(g, g.dataset.group === topOf(active)));
     document.body.classList.toggle("menu-open", open);
     $("menu-btn").setAttribute("aria-expanded", open);
     $("drawer").setAttribute("aria-hidden", !open);
@@ -436,9 +442,14 @@
     const counts = {};
     products.forEach(p => allCatsOf(p).forEach(c => counts[c] = (counts[c] || 0) + 1));
     const item = (c, sub) => `<button class="drawer-item${sub ? " sub" : ""}" data-cat="${esc(c.id)}">${sub ? "" : `<span class="ic">${esc(c.emoji || "")}</span>`}${esc(c.name)}<span class="n">${counts[c.id]}</span></button>`;
+    // a category with sub-categories gets a ▾ button that opens/closes its list (closed by default)
     $("drawer-cats").innerHTML = tops().filter(c => counts[c.id]).map(c => {
       const subs = subsOf(c.id).filter(s => counts[s.id]);
-      return item(c) + (subs.length > 1 ? subs.map(s => item(s, true)).join("") : "");
+      if (subs.length < 2) return item(c);
+      return `<div class="drawer-group" data-group="${esc(c.id)}">
+        <div class="drawer-row">${item(c)}<button class="drawer-toggle" type="button" aria-expanded="false" aria-controls="sub-${esc(c.id)}" aria-label="Show ${esc(c.name)} sub-categories"></button></div>
+        <div class="drawer-subs" id="sub-${esc(c.id)}" hidden>${subs.map(s => item(s, true)).join("")}</div>
+      </div>`;
     }).join("");
     $("drawer-ig").href = site.instagram || "#";
     if (!site.instagram) $("drawer-ig").hidden = true;
@@ -458,6 +469,8 @@
   $("scrim").addEventListener("click", () => openMenu(false));
   document.addEventListener("keydown", e => { if (e.key === "Escape") openMenu(false); });
   $("drawer").addEventListener("click", e => {
+    const tg = e.target.closest(".drawer-toggle");
+    if (tg) { toggleGroup(tg.closest(".drawer-group"), tg.getAttribute("aria-expanded") !== "true"); return; }
     const b = e.target.closest(".drawer-item"); if (!b || b.tagName === "A") { if (b) openMenu(false); return; }
     openMenu(false);
     if (b.dataset.cat) { active = b.dataset.cat; $("q").value = ""; setView("products"); }
