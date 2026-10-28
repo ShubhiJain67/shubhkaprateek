@@ -10,6 +10,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/styles.css">
+<script>
+  // Start downloading the data straight away, all 4 files at once, while the CSS and app.js load (app.js uses these).
+  // no-cache = always check GitHub for the latest version, so changes show up right after publishing.
+  window.SKP_DATA = ["site", "categories", "products", "reels"].map(f =>
+    fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => r.json()).then(data => ({ f, data }), error => ({ f, error })));
+</script>
 </head>
 <body>
   <div class="scrim" id="scrim"></div>

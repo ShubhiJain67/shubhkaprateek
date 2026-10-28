@@ -12,16 +12,14 @@
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const $ = id => document.getElementById(id);
 
-  // ---- load data/ (each file has one job) ----
-  const FILES = ["site", "categories", "products", "reels"];
-  let raw = {};
-  for (const f of FILES) {
-    try {
-      raw[f] = await (await fetch(`data/${f}.json`, { cache: "no-cache" })).json();
-    } catch (e) {
+  // ---- load data/ (each file has one job) — the downloads were already started in index.html ----
+  const raw = {};
+  for (const { f, data, error } of await Promise.all(window.SKP_DATA)) {
+    if (error) {
       $("grid").innerHTML = `<p class="empty">Couldn't load data/${f}.json — check it for a JSON typo (missing comma or quote).</p>`;
-      console.error(f, e); return;
+      console.error(f, error); return;
     }
+    raw[f] = data;
   }
   // Join reels → products by id, so the rest of the app sees full product objects
   const catalogue = new Map((raw.products || []).map(p => [p.id, p]));
