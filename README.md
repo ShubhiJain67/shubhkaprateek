@@ -8,7 +8,7 @@ Every reel from @shubhkaprateek, playing on the page, with its products listed u
 ├── index.html              Page layout (header, sections, menu, forms) — rarely changes
 ├── data/                   ★ Everything you edit day-to-day — one file per job
 │   ├── products.json       Every product ONCE: name, categories, variations (buy link + photo)
-│   ├── reels.json          Every reel: Instagram link, title, and the ids of its products
+│   ├── reels.json          Every reel: Instagram link, title, and the id numbers of its products
 │   ├── categories.json     Category tabs: id, name, emoji
 │   └── site.json           Site title/tagline/Instagram + "Can't find something?" form settings
 ├── assets/
@@ -22,11 +22,11 @@ Every reel from @shubhkaprateek, playing on the page, with its products listed u
 
 ## Add a product — `data/products.json`
 
-Each product is listed **once**, with a short unique `id` (lowercase, dashes):
+Each product is listed **once**, with a unique number `id` (use the highest id + 1):
 
 ```json
 {
-  "id": "fairy-lights",
+  "id": 48,
   "name": "Fairy lights",
   "category": ["home", "decor"],
   "variants": [
@@ -38,6 +38,7 @@ Each product is listed **once**, with a short unique `id` (lowercase, dashes):
 - **Categories:** use a category id or name. One that isn't in `categories.json` yet becomes a new tab automatically (add it there only to choose its name/emoji).
 - **Variations:** one variant = no option buttons. Add more (and rename "Default", e.g. "Maroon" / "Black") and option buttons appear; each switches the photo and Buy link. A variant with no `link` shows "Link coming soon". The Buy button names the shop from the link.
 - A product that isn't in any reel still shows under *All products*.
+- Each reel also gets its own page listing all its products: `shubhkaprateek.com/?reel=<reel code>` (handy for captions / link in bio).
 
 ## Add a reel — `data/reels.json`
 
@@ -46,21 +47,21 @@ Each product is listed **once**, with a short unique `id` (lowercase, dashes):
   "id": 52,
   "reel": "https://www.instagram.com/reel/XXXXXXXXXXX/",
   "title": "Diwali balcony makeover",
-  "products": ["fairy-lights", "balloons"]
+  "products": [48, 14]
 }
 ```
 
 - `id` = highest number + 1 (only used for order — higher shows first; never displayed).
-- `products` = the product **ids** from `products.json`. Reuse ids freely — a product in 3 reels is still edited in one place.
+- `products` = the product **id numbers** from `products.json`. Reuse them freely — a product in 3 reels is still edited in one place.
 - Reels with no products are kept but not shown. `"featured": true` pins a reel to the top.
 - **Cover:** save the reel's 9:16 cover as `assets/covers/<reel code>.jpg` (code = part after `/reel/`), or the tile falls back to Instagram's squeezed preview.
 
 ## Categories & settings
 
 - `data/categories.json` — tab order = file order: `{ "id": "toys", "name": "Toys & Collectibles", "emoji": "🧸" }`
-- `data/site.json` — title, tagline, Instagram link, and the contact form (`contact.formKey` = Web3Forms key; meant to be public — regenerate it on web3forms.com if ever abused).
+- `data/site.json` — title, tagline, Instagram and YouTube links (remove `youtube` to hide the button), and the contact form (`contact.formKey` = Web3Forms key; meant to be public — regenerate it on web3forms.com if ever abused).
 
-**Watch the commas:** every `}` in a list needs a `,` after it except the last one. If the page says "Couldn't load data/<file>.json", paste that file into https://jsonlint.com. If a reel lists an id that isn't in `products.json`, the site skips it and logs a warning in the browser console.
+**Watch the commas:** every `}` in a list needs a `,` after it except the last one. If the page says "Couldn't load data/<file>.json", paste that file into https://jsonlint.com. If a reel lists a product id that isn't in `products.json`, the site skips it and logs a warning in the browser console.
 
 ## Publish a change
 

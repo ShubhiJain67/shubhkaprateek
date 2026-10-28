@@ -95,6 +95,7 @@
   $("tagline").textContent = site.tagline || "";
   if (site.instagram) { $("ig").href = site.instagram; $("ig").hidden = false; }
   if (site.handle) $("ig-label").textContent = "@" + site.handle;
+  if (site.youtube) { $("yt").href = site.youtube; $("yt").hidden = false; }
 
   // "Buy on Amazon" etc. from the link's domain
   const STORES = { amazon: "Amazon", amzn: "Amazon", myntra: "Myntra", flipkart: "Flipkart", fkrt: "Flipkart",
@@ -184,12 +185,14 @@
     </div>`;
   }
 
+  const cleanTitle = t => (t || "").replace(/^Day\s*\d+\s*\/\s*\d+\s*[—–-]\s*/i, "");
+
   function lookCard(r) {
     const url = permalink(r.reel);
     const code = url ? url.split("/")[4] : "";
     // Lazy: nothing is fetched until this card scrolls near the screen (see mediaObserver)
     const media = url
-      ? `<div class="lazy-media" data-url="${esc(url)}" data-cover="${esc(r.cover || `assets/covers/${code}.jpg`)}" data-alt="${esc(r.title || "Reel")}"></div>` : "";
+      ? `<div class="lazy-media" data-url="${esc(url)}" data-code="${esc(code)}" data-cover="${esc(r.cover || `assets/covers/${code}.jpg`)}" data-alt="${esc(r.title || "Reel")}"></div>` : "";
     const items = r.products.map(p0 => {
       const p = pmap.get(keyOf(p0)) || p0, v = variantOf(p, 0);
       return `<li class="item" data-key="${esc(keyOf(p))}" data-short="1">
@@ -204,8 +207,9 @@
     return `<article class="look">
       <div class="look-media">${media}</div>
       <div class="look-body">
-        <p class="look-title">${esc((r.title || "").replace(/^Day\s*\d+\s*\/\s*\d+\s*[—–-]\s*/i, ""))}</p>
+        <p class="look-title">${code ? `<a href="?reel=${esc(code)}" data-reel="${esc(code)}">${esc(cleanTitle(r.title))}</a>` : esc(cleanTitle(r.title))}</p>
         <ul class="items">${items}</ul>
+        ${code ? `<a class="see-all" href="?reel=${esc(code)}" data-reel="${esc(code)}">See all ${r.products.length} product${r.products.length === 1 ? "" : "s"} →</a>` : ""}
         ${url ? `<a class="watch" href="${esc(url)}" target="_blank" rel="noopener">▶ Watch on Instagram</a>` : ""}
       </div>
     </article>`;
@@ -213,7 +217,12 @@
 
   // No cover image saved for this reel → fall back to Instagram's embed (cropped to the video)
   window.toEmbed = img => {
-    const a = img.closest(".cover");
+    const a = img.closest(".cover, .rp-cover"); if (!a) return;
+    if (a.classList.contains("rp-cover")) {       // reel page: keep the 9:16 box, put the embed inside it
+      const f = document.createElement("div"); f.className = "frame";
+      f.innerHTML = `<iframe src="${a.dataset.embed}" loading="lazy" scrolling="no" allowtransparency="true" allow="encrypted-media; autoplay; clipboard-write"></iframe>`;
+      a.replaceChildren(f); fitFrames(); return;
+    }
     const f = document.createElement("div"); f.className = "frame";
     f.innerHTML = `<iframe src="${a.dataset.embed}" loading="lazy" scrolling="no" allowtransparency="true" allow="encrypted-media; autoplay; clipboard-write"></iframe>`;
     a.replaceWith(f); fitFrames();
@@ -228,8 +237,8 @@
   // a) Reel previews and product photos load only when they're about to come on screen
   const loadMedia = el => {
     if (el.tagName === "IMG") { el.src = el.dataset.src; el.removeAttribute("data-src"); return; }
-    const url = el.dataset.url;
-    el.outerHTML = `<a class="cover" href="${url}" target="_blank" rel="noopener" data-embed="${url}embed/">
+    const url = el.dataset.url, code = el.dataset.code;
+    el.outerHTML = `<a class="cover" href="?reel=${code}" data-reel="${code}" data-embed="${url}embed/">
         <img src="${el.dataset.cover}" alt="${el.dataset.alt}" onerror="toEmbed(this)"></a>`;
   };
   const mediaObserver = "IntersectionObserver" in window
@@ -285,6 +294,8 @@
   const productText = p => [p.name, ...catWords(p), storeOf(p.link), ...(p.variants || []).flatMap(v => [v.name, storeOf(v.link || "")]), ...p.reels.map(id => codeById[id])].join(" ").toLowerCase();
 
   function apply() {
+    // searching, switching tabs or picking a category leaves the reel page
+    if (document.body.classList.contains("on-reel-page")) closeReel();
     const raw = $("q").value.trim();
     const q = raw.toLowerCase().replace(/^#/, "");
     // A pasted Instagram link (or just its code) finds that exact reel
@@ -400,6 +411,7 @@
     ).join("");
     $("drawer-ig").href = site.instagram || "#";
     if (!site.instagram) $("drawer-ig").hidden = true;
+    if (site.youtube) { $("drawer-yt").href = site.youtube; $("drawer-yt").hidden = false; }
   }
   buildMenu();
   $("menu-btn").addEventListener("click", () => openMenu(true));
@@ -415,5 +427,71 @@
     document.querySelector(".toolbar").scrollIntoView({ behavior: "smooth" });
   });
 
-  setView(view);
+  // ---------- Reel page: ?reel=<code> shows one reel with all its products ----------
+  function reelByCode(code) { return reels.find(r => codeOf(r) === String(code || "").toLowerCase()); }
+  function openReel(code, push = true) {
+    const r = reelByCode(code);
+    const sec = $("view-reel");
+    document.body.classList.add("on-reel-page");
+    sec.hidden = false;
+    if (push) history.pushState({ reel: code }, "", "?reel=" + encodeURIComponent(code));
+    else history.replaceState({ reel: code }, "", "?reel=" + encodeURIComponent(code));
+    if (!r) {
+      sec.innerHTML = `<button class="rp-back" data-back>← All reels</button><p class="empty">We couldn't find that reel 👀 — <a href="#ask">ask us</a> and we'll send you the links.</p>`;
+      document.title = (site.title || "ShubhKaPrateek") + " — Reel not found";
+      return;
+    }
+    const url = permalink(r.reel), c = url.split("/")[4]; // keep the code's original case (cover file names are case-sensitive)
+    const prods = r.products.map(p0 => pmap.get(keyOf(p0)) || p0);
+    sec.innerHTML = `
+      <button class="rp-back" data-back>← All reels</button>
+      <div class="rp-grid">
+        <div class="rp-media">
+          <a class="rp-cover" href="${esc(url)}" target="_blank" rel="noopener" data-embed="${esc(url)}embed/">
+            <img src="${esc(r.cover || `assets/covers/${c}.jpg`)}" alt="${esc(cleanTitle(r.title))}" onerror="toEmbed(this)">
+          </a>
+          <div class="rp-actions">
+            <a class="rp-watch" href="${esc(url)}" target="_blank" rel="noopener">▶ Watch reel</a>
+            <button class="rp-share" type="button" data-share>🔗 Copy link</button>
+          </div>
+        </div>
+        <div class="rp-products">
+          <h2 class="rp-title">${esc(cleanTitle(r.title))}</h2>
+          <p class="rp-sub">${prods.length} product${prods.length === 1 ? "" : "s"} in this reel</p>
+          <div class="grid">${prods.map(productCard).join("")}</div>
+        </div>
+      </div>`;
+    watchMedia(sec);
+    document.title = cleanTitle(r.title) + " — " + (site.title || "ShubhKaPrateek");
+    window.scrollTo({ top: 0 });
+  }
+  function closeReel() {
+    document.body.classList.remove("on-reel-page");
+    $("view-reel").hidden = true; $("view-reel").innerHTML = "";
+    document.title = (site.title || "ShubhKaPrateek") + " — Shop our reels";
+  }
+  // Clicks on a reel's cover / title / "See all" open its page inside the site
+  document.addEventListener("click", e => {
+    const a = e.target.closest("[data-reel]");
+    if (a && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); openReel(a.dataset.reel); return; }
+    if (e.target.closest("[data-back]")) {
+      e.preventDefault();
+      if (history.state && history.state.reel) history.back();
+      else { closeReel(); view = "reels"; setView("reels"); }
+      return;
+    }
+    const sh = e.target.closest("[data-share]");
+    if (sh) {
+      navigator.clipboard?.writeText(location.href).then(() => { sh.textContent = "✓ Link copied"; setTimeout(() => sh.textContent = "🔗 Copy link", 1800); });
+    }
+  });
+  // Browser back/forward
+  addEventListener("popstate", () => {
+    const code = new URLSearchParams(location.search).get("reel");
+    if (code) openReel(code, false);
+    else { closeReel(); const v = new URLSearchParams(location.search).get("view"); setView(v === "reels" ? "reels" : view); }
+  });
+
+  const startReel = params.get("reel");
+  if (startReel) { setView(view); openReel(startReel, false); } else setView(view);
 })();
