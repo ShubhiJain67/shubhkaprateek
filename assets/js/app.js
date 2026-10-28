@@ -109,7 +109,7 @@
   if (site.youtube) { $("yt").href = site.youtube; $("yt").hidden = false; }
 
   // "Buy on Amazon" etc. from the link's domain
-  const STORES = { amazon: "Amazon", amzn: "Amazon", myntra: "Myntra", flipkart: "Flipkart", fkrt: "Flipkart",
+  const STORES = { amazon: "Amazon", amzn: "Amazon", myntra: "Myntra", nykaafashion: "Nykaa", flipkart: "Flipkart", fkrt: "Flipkart",
     ajio: "AJIO", nykaa: "Nykaa", meesho: "Meesho", souledstore: "Souled Store", thesouledstore: "Souled Store",
     tatacliq: "Tata CLiQ", bewakoof: "Bewakoof", firstcry: "FirstCry" };
   function storeOf(link) {
@@ -298,6 +298,15 @@
     addEventListener("scroll", fillScreen, { passive: true });
   }
 
+  // Jump to "Can't find something?" — first add the rest of the list, otherwise lazy loading keeps
+  // pushing the box further down while we scroll to it (photos still load only when seen)
+  function goAsk() {
+    while (shown < filtered.length) { const from = shown; shown += PAGE[view];
+      listEl().insertAdjacentHTML("beforeend", filtered.slice(from, shown).map(cardFn()).join("")); }
+    watchMedia(listEl());
+    $("ask").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function draw() {
     $("view-reels").hidden = view !== "reels";
     $("view-products").hidden = view !== "products";
@@ -445,6 +454,14 @@
     if (site.youtube) { $("drawer-yt").href = site.youtube; $("drawer-yt").hidden = false; }
   }
   buildMenu();
+
+  // ---------- Floating "Can't find it?" button (phones): jump to the ask box, hide while it's on screen ----------
+  const fab = $("ask-fab");
+  if (fab) {
+    fab.addEventListener("click", e => { e.preventDefault(); goAsk(); });
+    if ("IntersectionObserver" in window)
+      new IntersectionObserver(([en]) => fab.classList.toggle("hide", en.isIntersecting), { threshold: 0.15 }).observe($("ask"));
+  }
   $("menu-btn").addEventListener("click", () => openMenu(true));
   $("drawer-close").addEventListener("click", () => openMenu(false));
   $("scrim").addEventListener("click", () => openMenu(false));
@@ -453,7 +470,7 @@
     const b = e.target.closest(".drawer-item"); if (!b || b.tagName === "A") { if (b) openMenu(false); return; }
     openMenu(false);
     if (b.dataset.cat) { active = b.dataset.cat; $("q").value = ""; setView("products"); }
-    else if (b.dataset.go === "ask") { $("ask").scrollIntoView({ behavior: "smooth" }); return; }
+    else if (b.dataset.go === "ask") { goAsk(); return; }
     else { active = "all"; $("q").value = ""; setView(b.dataset.go); }
     document.querySelector(".toolbar").scrollIntoView({ behavior: "smooth" });
   });

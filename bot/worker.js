@@ -177,7 +177,7 @@ export function storeOf(link) {
   try {
     const h = new URL(link).hostname.replace(/^www\./, "").toLowerCase();
     if (/amazon|amzn|link\.amazon/.test(h)) return "Amazon";
-    const known = { "myntra.com": "Myntra", "flipkart.com": "Flipkart", "ajio.com": "Ajio", "meesho.com": "Meesho", "nykaa.com": "Nykaa", "hamleys.in": "Hamleys", "thesouledstore.com": "The Souled Store" };
+    const known = { "myntra.com": "Myntra", "flipkart.com": "Flipkart", "ajio.com": "Ajio", "meesho.com": "Meesho", "nykaa.com": "Nykaa", "nykaafashion.com": "Nykaa", "hamleys.in": "Hamleys", "thesouledstore.com": "The Souled Store" };
     for (const k in known) if (h.endsWith(k)) return known[k];
     const base = h.split(".").slice(-2, -1)[0] || h;
     return base.charAt(0).toUpperCase() + base.slice(1);
