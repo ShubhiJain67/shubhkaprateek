@@ -6,60 +6,65 @@ Every reel from @shubhkaprateek, playing on the page, with its products listed u
 
 ```
 ├── index.html              Page layout (header, sections, menu, forms) — rarely changes
-├── data/
-│   └── products.json       ★ The only file you edit day-to-day: reels, products, categories, contact
+├── data/                   ★ Everything you edit day-to-day — one file per job
+│   ├── products.json       Every product ONCE: name, categories, variations (buy link + photo)
+│   ├── reels.json          Every reel: Instagram link, title, and the ids of its products
+│   ├── categories.json     Category tabs: id, name, emoji
+│   └── site.json           Site title/tagline/Instagram + "Can't find something?" form settings
 ├── assets/
 │   ├── css/styles.css      Look & feel (colours at the top, dark mode right below)
-│   ├── js/app.js           Site logic (rendering, search, filters, lazy loading, menu, form)
+│   ├── js/app.js           Site logic (loads data/, rendering, search, filters, lazy loading, menu, form)
 │   └── covers/             Reel cover images, one per reel: <reel code>.jpg
 ├── CNAME                   Custom domain (shubhkaprateek.com) — don't delete
 ├── .nojekyll               Tells GitHub Pages to serve files as-is — don't delete
 └── .gitignore              Keeps local junk (.venv, .DS_Store) out of git
 ```
 
-## Add a reel (the only thing you ever edit)
+## Add a product — `data/products.json`
 
-Open `data/products.json` and add an entry to `"reels"` (`id` = highest id + 1; it's only used for ordering, never shown):
+Each product is listed **once**, with a short unique `id` (lowercase, dashes):
 
 ```json
 {
-  "id": 36,
-  "reel": "https://www.instagram.com/reel/XXXXXXXXXXX/",
-  "title": "Diwali balcony makeover",
-  "products": [
-    { "name": "Fairy lights", "category": ["home", "decor"],
-      "variants": [
-        { "name": "Default", "link": "https://amzn.to/xxxx", "image": "https://…/lights.jpg" }
-      ] }
+  "id": "fairy-lights",
+  "name": "Fairy lights",
+  "category": ["home", "decor"],
+  "variants": [
+    { "name": "Default", "link": "https://link.amazon/xxxx", "image": "https://…/lights.jpg" }
   ]
 }
 ```
 
-- Each product appears in **both** sections: under its reel in *Shop by reel*, and as a card in *All products* (with a "Watch reel" button that opens the reel on Instagram).
-- **Categories:** one (`"home"`) or several (`["home", "marvel"]`). Use a category's id *or* its name. A category that isn't in `"categories"` yet becomes a new tab automatically — add it to `"categories"` only if you want to pick its title/emoji.
-- Every product's link + photo live in its `variants` list. With one variant nothing extra shows; add a second variant and option buttons appear (rename "Default" to e.g. "Maroon" then). A variant with no `link` shows "Link coming soon". The button says "Buy on Amazon / Myntra / …" based on the link. `image` (optional) = product photo URL.
-- Reels with an empty `products` list stay in the file but aren't shown. `featured: true` pins a reel to the top.
-- **Variations** (colours, sizes, other shops): add a `variants` list. Each option gets its own button on the card; picking one switches the photo and the Buy link. The first option is selected by default. A variation without its own `image`/`link` uses the product's.
-  ```json
-  { "name": "Arc Reactor hoodie", "category": ["clothing", "marvel"],
-    "link": "https://link.amazon/xxxx", "image": "https://…/maroon.jpg",
-    "variants": [
-      { "name": "Maroon", "link": "https://link.amazon/xxxx", "image": "https://…/maroon.jpg" },
-      { "name": "Black",  "link": "https://www.myntra.com/…", "image": "https://…/black.jpg" }
-    ] }
-  ```
-- Same product in two reels? Use the exact same `name` — it shows once in *All products*.
-- Products not from any reel go in the top-level `"products"` list.
-- `todo` notes are ignored by the site — reminders for you.
-- **Reel cover (optional):** save as `assets/covers/<reel code>.jpg` (code = part after `/reel/` in the link). Otherwise the Instagram video preview is used.
+- **Categories:** use a category id or name. One that isn't in `categories.json` yet becomes a new tab automatically (add it there only to choose its name/emoji).
+- **Variations:** one variant = no option buttons. Add more (and rename "Default", e.g. "Maroon" / "Black") and option buttons appear; each switches the photo and Buy link. A variant with no `link` shows "Link coming soon". The Buy button names the shop from the link.
+- A product that isn't in any reel still shows under *All products*.
 
-**"Can't find something?" form:** messages go to the email linked to `contact.formKey` (web3forms.com). The key is meant to be public — if it's ever abused, make a new one there and replace it.
+## Add a reel — `data/reels.json`
 
-**Watch the commas:** every `}` in a list needs a `,` after it except the last one. If the page says "Couldn't load data/products.json", paste the file into https://jsonlint.com.
+```json
+{
+  "id": 52,
+  "reel": "https://www.instagram.com/reel/XXXXXXXXXXX/",
+  "title": "Diwali balcony makeover",
+  "products": ["fairy-lights", "balloons"]
+}
+```
+
+- `id` = highest number + 1 (only used for order — higher shows first; never displayed).
+- `products` = the product **ids** from `products.json`. Reuse ids freely — a product in 3 reels is still edited in one place.
+- Reels with no products are kept but not shown. `"featured": true` pins a reel to the top.
+- **Cover:** save the reel's 9:16 cover as `assets/covers/<reel code>.jpg` (code = part after `/reel/`), or the tile falls back to Instagram's squeezed preview.
+
+## Categories & settings
+
+- `data/categories.json` — tab order = file order: `{ "id": "toys", "name": "Toys & Collectibles", "emoji": "🧸" }`
+- `data/site.json` — title, tagline, Instagram link, and the contact form (`contact.formKey` = Web3Forms key; meant to be public — regenerate it on web3forms.com if ever abused).
+
+**Watch the commas:** every `}` in a list needs a `,` after it except the last one. If the page says "Couldn't load data/<file>.json", paste that file into https://jsonlint.com. If a reel lists an id that isn't in `products.json`, the site skips it and logs a warning in the browser console.
 
 ## Publish a change
 
-Edit `data/products.json` on github.com (pencil icon → Commit changes), or locally:
+Edit the files in `data/` on github.com (pencil icon → Commit changes), or locally:
 
 ```bash
 git add . && git commit -m "Add Diwali reel" && git push origin main

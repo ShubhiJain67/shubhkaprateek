@@ -1,1313 +1,701 @@
-{
-  "site": {
-    "title": "ShubhKaPrateek",
-    "handle": "shubhkaprateek",
-    "tagline": "Every gift, gadget and outfit from our reels — in one place 💛",
-    "instagram": "https://www.instagram.com/shubhkaprateek/"
+[
+  {
+    "id": "paint-your-own-portrait-kit-eazy-arts",
+    "name": "Paint-your-own portrait kit (Eazy Arts)",
+    "category": [
+      "diy",
+      "home"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://eazyarts.in/products/custom-paint-by-numbers?variant=50446403698755",
+        "image": "https://eazyarts.in/cdn/shop/products/Convert-photo-to-DIY-Painting-by-Eazy-Arts.jpg?v=1676040228&width=600"
+      }
+    ]
   },
-  "contact": {
-    "instagram": "shubhkaprateek",
-    "email": "",
-    "formKey": "763f253e-ff09-4420-ac95-3c8e01b7ecbc"
+  {
+    "id": "dice",
+    "name": "Dice",
+    "category": [
+      "games"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B00rNwB1K",
+        "image": "https://m.media-amazon.com/images/I/61-wPApDsdL._SL600_.jpg"
+      }
+    ]
   },
-  "categories": [
-    {
-      "id": "marvel",
-      "name": "Marvel",
-      "emoji": "🦸"
-    },
-    {
-      "id": "clothing",
-      "name": "Clothing",
-      "emoji": "👕"
-    },
-    {
-      "id": "toys",
-      "name": "Toys & Collectibles",
-      "emoji": "🧸"
-    },
-    {
-      "id": "games",
-      "name": "Games",
-      "emoji": "🎮"
-    },
-    {
-      "id": "home",
-      "name": "Mugs & Home",
-      "emoji": "☕"
-    },
-    {
-      "id": "decor",
-      "name": "Decor",
-      "emoji": "🎈"
-    },
-    {
-      "id": "accessories",
-      "name": "Accessories",
-      "emoji": "✨"
-    },
-    {
-      "id": "diy",
-      "name": "DIY & Art",
-      "emoji": "🎨"
-    }
-  ],
-  "reels": [
-    {
-      "id": 1,
-      "reel": "https://www.instagram.com/reel/DV2XLW2EuoN/",
-      "title": "Painting our own portraits",
-      "products": [
-        {
-          "name": "Paint-your-own portrait kit (Eazy Arts)",
-          "category": [
-            "diy",
-            "home"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://eazyarts.in/products/custom-paint-by-numbers?variant=50446403698755",
-              "image": "https://eazyarts.in/cdn/shop/products/Convert-photo-to-DIY-Painting-by-Eazy-Arts.jpg?v=1676040228&width=600"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "reel": "https://www.instagram.com/reel/DWF74l7Ekux/",
-      "title": "Who do you think made it?",
-      "products": [
-        {
-          "name": "Paint-your-own portrait kit (Eazy Arts)",
-          "category": [
-            "diy",
-            "home"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://eazyarts.in/products/custom-paint-by-numbers?variant=50446403698755",
-              "image": "https://eazyarts.in/cdn/shop/products/Convert-photo-to-DIY-Painting-by-Eazy-Arts.jpg?v=1676040228&width=600"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "reel": "https://www.instagram.com/reel/DYJHUQLygjz/",
-      "title": "Date night got intense real fast",
-      "products": [
-        {
-          "name": "Dice",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B00rNwB1K",
-              "image": "https://m.media-amazon.com/images/I/61-wPApDsdL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Markers",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B08EiB3lv",
-              "image": "https://m.media-amazon.com/images/I/61DJiLOO2xL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "reel": "https://www.instagram.com/reel/DYQ3KeASE35/",
-      "title": "Game Night Wars — 1 to 5 in the centre",
-      "products": [
-        {
-          "name": "Phase 10 card game",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B08pF57GL",
-              "image": "https://m.media-amazon.com/images/I/61PsNwfM-PL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "reel": "https://www.instagram.com/reel/DYV3BhlS2BN/",
-      "title": "Game Night Wars — card flip",
-      "products": [
-        {
-          "name": "Phase 10 card game",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B08pF57GL",
-              "image": "https://m.media-amazon.com/images/I/61PsNwfM-PL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 6,
-      "reel": "https://www.instagram.com/reel/DYhdeCVyP7x/",
-      "title": "Game Night Wars — flip 1 to 9 in order",
-      "products": [
-        {
-          "name": "Phase 10 card game",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B08pF57GL",
-              "image": "https://m.media-amazon.com/images/I/61PsNwfM-PL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 8,
-      "reel": "https://www.instagram.com/reel/DY7NYc_SJji/",
-      "title": "Game Night Wars — boxes & chips",
-      "products": [
-        {
-          "name": "Whiteboard",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0dLBJohP",
-              "image": "https://m.media-amazon.com/images/I/517AleMJ1FL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 10,
-      "reel": "https://www.instagram.com/reel/DY88XiIh01g/",
-      "title": "Game Night Wars — roll 1 to 6 for the remote",
-      "products": [
-        {
-          "name": "Phase 10 card game",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B08pF57GL",
-              "image": "https://m.media-amazon.com/images/I/61PsNwfM-PL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Dice",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B00rNwB1K",
-              "image": "https://m.media-amazon.com/images/I/61-wPApDsdL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 11,
-      "reel": "https://www.instagram.com/reel/DZAXLdbSs0D/",
-      "title": "Game Night Wars — colour sequence",
-      "products": [
-        {
-          "name": "Whiteboard",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0bDHCPPl",
-              "image": "https://m.media-amazon.com/images/I/517AleMJ1FL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Gems",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B023ENGOP",
-              "image": "https://m.media-amazon.com/images/I/71r81SkovML._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 12,
-      "reel": "https://www.instagram.com/reel/DZKrJ4dyfMC/",
-      "title": "Game Night Wars — mark all your numbers",
-      "products": [
-        {
-          "name": "Whiteboard",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "image": "https://m.media-amazon.com/images/I/517AleMJ1FL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 13,
-      "reel": "https://www.instagram.com/reel/DZP4qriSzla/",
-      "title": "Game Night Wars — closest to 100",
-      "products": [
-        {
-          "name": "Dice",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B00rNwB1K",
-              "image": "https://m.media-amazon.com/images/I/61-wPApDsdL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Sticky notes",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B039yPFs6",
-              "image": "https://m.media-amazon.com/images/I/81RFwqD8s2L._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 14,
-      "reel": "https://www.instagram.com/reel/DZShKoAyQN2/",
-      "title": "Game Night Wars — Magnet Race",
-      "products": [
-        {
-          "name": "Magnet Game",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0bkcqllU",
-              "image": "https://m.media-amazon.com/images/I/61zL%2B7pykCL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 15,
-      "reel": "https://www.instagram.com/reel/DcskcLbyyHw/",
-      "title": "When cuddling turns into a WWE match",
-      "products": [
-        {
-          "name": "Minion Comforter",
-          "category": [
-            "home"
-          ],
-          "variants": [
-            {
-              "name": "Minion Comforter",
-              "link": "https://link.amazon/B05UbqaUt",
-              "image": "https://m.media-amazon.com/images/I/71BC4JTNC5L._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 16,
-      "reel": "https://www.instagram.com/reel/DdWmp5fyKvb/",
-      "title": "Daily dose of love, comedy & drama",
-      "products": [
-        {
-          "name": "Coloring blanket",
-          "category": [
-            "home"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://storegenie.in/products/colornest%E2%84%A2-creative-blanket?variant=67818467262538",
-              "image": "https://storegenie.in/cdn/shop/files/An-Dv_BXNDCagYoeVgSKtkibQwVBO_g_vknWmmZms1C7RHiyRBk1UIRnqiMZRZB1txJseCYiRv-G2VkR6TI44LumMYocPj0hA0m3FXoH4Q6TXVIi24T3Q9NQqa5DQMIdyGkJJ8hb_q7JrsYAlytHgTH2RvWsoJgZBQpbAKxCABWGQr-RA_Ou5bF.jpg?v=1789674683&width=600"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 17,
-      "reel": "https://www.instagram.com/reel/Ddg3vjWSoEZ/",
-      "title": "Our last 2 brain cells at 2 AM",
-      "products": [
-        {
-          "name": "Google Eyes Drinking Straws",
-          "category": [
-            "home"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B02NAZ6Lg",
-              "image": "https://m.media-amazon.com/images/I/61rWBvSkrYL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 18,
-      "reel": "https://www.instagram.com/reel/DdlnYLpyrF1/",
-      "title": "29 gifts, 29 days — the Marvel birthday month begins",
-      "products": [
-        {
-          "name": "Spider man web",
-          "category": [
-            "decor"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B01kMLyWc",
-              "image": "https://m.media-amazon.com/images/I/51Oo93lGDsL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Balloon Inflater",
-          "category": [
-            "decor"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B08fDT6er",
-              "image": "https://m.media-amazon.com/images/I/61T1B0HtEeL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Balloons",
-          "category": [
-            "decor"
-          ],
-          "variants": [
-            {
-              "name": "Golden",
-              "link": "https://link.amazon/B0g94DDLs",
-              "image": "https://m.media-amazon.com/images/I/7148jxWYJzL._SL600_.jpg"
-            },
-            {
-              "name": "Blue",
-              "link": "https://link.amazon/B0iaRYtch",
-              "image": "https://m.media-amazon.com/images/I/71zPkYx8kvL._SL600_.jpg"
-            },
-            {
-              "name": "Silver",
-              "link": "https://link.amazon/B01Zus38L",
-              "image": "https://m.media-amazon.com/images/I/61x8bJJNTTL._SL600_.jpg"
-            },
-            {
-              "name": "Red",
-              "link": "https://link.amazon/B0ag1F5kg",
-              "image": "https://m.media-amazon.com/images/I/71IbXmTr0hL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Packing Paper",
-          "category": [
-            "decor"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0aw2FppU",
-              "image": "https://m.media-amazon.com/images/I/61ofkCoLA4L._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Golden Bows",
-          "category": [
-            "decor"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B018Dgep1",
-              "image": "https://m.media-amazon.com/images/I/51TrjPequcL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 19,
-      "reel": "https://www.instagram.com/reel/DdopFdUSfoA/",
-      "title": "Day 1/29 - Marvel Hoodie",
-      "products": [
-        {
-          "name": "Marvel Hoodie",
-          "category": [
-            "clothing",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0f7PKiph",
-              "image": "https://m.media-amazon.com/images/I/61hCICAPCuL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 20,
-      "reel": "https://www.instagram.com/reel/DdrMH5JSjEz/",
-      "title": "Day 2/29 — Hulk BrickSet",
-      "products": [
-        {
-          "name": "Hulk BrickSet",
-          "category": [
-            "toys",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://brickadda.com/products/gamma-monster",
-              "image": "https://brickadda.com/cdn/shop/files/hulk.png?v=1786019080&width=600"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 21,
-      "reel": "https://www.instagram.com/reel/DdtILaSyNV-/",
-      "title": "Day 3/29 — Deadpool car Accessory",
-      "products": [
-        {
-          "name": "Deadpool Car Accessory",
-          "category": [
-            "accessories",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0ftHbQ9h",
-              "image": "https://m.media-amazon.com/images/I/61ij8GJZ2gL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 22,
-      "reel": "https://www.instagram.com/reel/DdvXdbXSVkk/",
-      "title": "Day 4/29 — Spider-Man web shooter",
-      "products": [
-        {
-          "name": "Spider-Man web shooter",
-          "category": [
-            "toys",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B095ghzyP",
-              "image": "https://m.media-amazon.com/images/I/71sfPHicYpL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 23,
-      "reel": "https://www.instagram.com/reel/DdxwWwSSS8q/",
-      "title": "Day 5/29 — Superhero Jigsaw Puzzle",
-      "products": [
-        {
-          "name": "Superhero Jigsaw Puzzle",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0gGyIplr",
-              "image": "https://m.media-amazon.com/images/I/81SZcf6c-%2BL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 24,
-      "reel": "https://www.instagram.com/reel/Dd2p8_5yk5H/",
-      "title": "Day 6/29 — Iron Man sneakers",
-      "products": [
-        {
-          "name": "Iron Man sneakers",
-          "category": [
-            "clothing",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0hn89ozI",
-              "image": "https://m.media-amazon.com/images/I/51CqU9JvuaL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 25,
-      "reel": "https://www.instagram.com/reel/Dd5W1NzSk8E/",
-      "title": "Day 7/29 — Marvel Dobble",
-      "products": [
-        {
-          "name": "Marvel Dobble card game",
-          "category": [
-            "games",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0cniKtzC",
-              "image": "https://m.media-amazon.com/images/I/51nudUovW5L._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 26,
-      "reel": "https://www.instagram.com/reel/Dd6otvVSOho/",
-      "title": "Day 8/29 — Arc Reactor hoodie",
-      "products": [
-        {
-          "name": "Arc Reactor hoodie",
-          "category": [
-            "clothing",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0daVpeuw",
-              "image": "https://m.media-amazon.com/images/I/61O5sxd8ECL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 27,
-      "reel": "https://www.instagram.com/reel/Dd9F_SOSmkS/",
-      "title": "Day 9/29 — Gauntlet",
-      "products": [
-        {
-          "name": "Gauntlet",
-          "category": [
-            "toys",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0bdHY6GV",
-              "image": "https://m.media-amazon.com/images/I/81DSNDujFKL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 28,
-      "reel": "https://www.instagram.com/reel/Dd_-oaCyts5/",
-      "title": "Day 10/29 — Marvel socks",
-      "products": [
-        {
-          "name": "Marvel socks",
-          "category": [
-            "clothing",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B00YGSdpB",
-              "image": "https://m.media-amazon.com/images/I/71AV6rROReL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 29,
-      "reel": "https://www.instagram.com/reel/DeCzq_uyf92/",
-      "title": "Day 11/29 — Spider-Man brick set",
-      "products": [
-        {
-          "name": "Spider-Man brick set",
-          "category": [
-            "toys",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://brickadda.com/products/the-web-crawler",
-              "image": "https://brickadda.com/cdn/shop/files/Spider-Man.png?v=1786019426&width=600"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 30,
-      "reel": "https://www.instagram.com/reel/DeFINBBSBtG/",
-      "title": "Day 12/29 — Hulk T-shirt",
-      "products": [
-        {
-          "name": "Hulk T-shirt",
-          "category": [
-            "clothing",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0boWD7Lj",
-              "image": "https://m.media-amazon.com/images/I/61zPdgYb4mL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 31,
-      "reel": "https://www.instagram.com/reel/DeHv-DcS5ga/",
-      "title": "Day 13/29 - Black Panther perfume",
-      "products": [
-        {
-          "name": "Black Panther perfume",
-          "category": [
-            "accessories",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://www.thesouledstore.com/product/black-panther-the-king-men-perfumes",
-              "image": "https://prod-img.thesouledstore.com/public/theSoul/uploads/catalog/product/1784529604_6341578.jpg?w=600"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 32,
-      "reel": "https://www.instagram.com/reel/DeKaOxIyGGe/",
-      "title": "Day 13/29 — Punisher Sweater",
-      "products": [
-        {
-          "name": "Punisher Sweater",
-          "category": [
-            "clothing",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B05udIk2K",
-              "image": "https://m.media-amazon.com/images/I/71NUk0Q35nL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 33,
-      "reel": "https://www.instagram.com/reel/DeMxvUiSz-0/",
-      "title": "Day 15/29 — Crocs with Marvel Jibbitz",
-      "products": [
-        {
-          "name": "Marvel Jibbitz",
-          "category": [
-            "accessories",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://www.flipkart.com/funblast-12-pcs-cartoon-design-shoe-decoration-charms-crocs-sandals-wristbands/p/itm3eba95e4a2927?pid=ACKHJA5EHUNAYAFZ&lid=LSTACKHJA5EHUNAYAFZBKIASS",
-              "image": "https://rukminim2.flixcart.com/image/480/640/xif0q/art-craft-kit/3/3/i/3-12-pcs-cartoon-design-shoe-decoration-charms-for-crocs-sandals-original-imahja5ewhhvfrcg.jpeg?q=90"
-            }
-          ]
-        },
-        {
-          "name": "Crocs",
-          "category": [
-            "clothing"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0fLTqU51",
-              "image": "https://m.media-amazon.com/images/I/71sQ4F6WXJL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 34,
-      "reel": "https://www.instagram.com/reel/DePIjh9SvrG/",
-      "title": "Day 16/29 — Avengers Strike Squad Game",
-      "products": [
-        {
-          "name": "Avengers Strike Squad Game",
-          "category": [
-            "games",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0cl2sPxK",
-              "image": "https://m.media-amazon.com/images/I/613JvOYDscL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 35,
-      "reel": "https://www.instagram.com/reel/DeRtxLfyJJR/",
-      "title": "Day 17/29 — Marvel Go Collection Die Cast",
-      "products": [
-        {
-          "name": "Marvel Go Collection Die Cast",
-          "category": [
-            "toys",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B0bS0HOwc",
-              "image": "https://m.media-amazon.com/images/I/61ibMUeUo2L._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 36,
-      "reel": "https://www.instagram.com/reel/DeUe3x2S-w9/",
-      "title": "Day 18/29 — Hulk Comforter",
-      "products": [
-        {
-          "name": "Hulk Comforter",
-          "category": [
-            "home",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B05FkAfef",
-              "image": "https://m.media-amazon.com/images/I/71z8PvvrQmL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 37,
-      "reel": "https://www.instagram.com/reel/DeWTMPoSTpf/",
-      "title": "Day 19/29 — Spider-Man T-shirt",
-      "products": [
-        {
-          "name": "Spider-Man T-shirt",
-          "category": [
-            "clothing",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B01r0EyVs",
-              "image": "https://m.media-amazon.com/images/I/61Xm7FGsEiL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 38,
-      "reel": "https://www.instagram.com/reel/DeZ0JksyZJw/",
-      "title": "Day 20/29 — Spinning sword",
-      "products": [
-        {
-          "name": "Light-up spinning sword",
-          "category": [
-            "toys"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://www.amazon.in/dp/B0GXWJJ6PZ?tag=shubhkaprat01-21",
-              "image": "https://m.media-amazon.com/images/I/81uehY0bYbL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 39,
-      "reel": "https://www.instagram.com/reel/DeccYpmSfkN/",
-      "title": "Day 21/29 — Iron Man brick set",
-      "products": [
-        {
-          "name": "Iron Man building-block figure",
-          "category": [
-            "toys",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://brickadda.com/products/the-mark-one",
-              "image": "https://brickadda.com/cdn/shop/files/iron-Man.png?v=1786019328&width=600"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 40,
-      "reel": "https://www.instagram.com/reel/Dee7RCayxox/",
-      "title": "Day 22/29 — Spark & smoke Sword",
-      "products": [
-        {
-          "name": "Spark & smoke Sword",
-          "category": [
-            "toys"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B04mBxCKT",
-              "image": "https://m.media-amazon.com/images/I/81qM8v4%2BulL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 41,
-      "reel": "https://www.instagram.com/reel/Dehe4_OSwEm/",
-      "title": "Day 23/29 — Thor Mug",
-      "products": [
-        {
-          "name": "Thor Mug",
-          "category": [
-            "home",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://www.the7dots.com/products/thor-hammer-ceramic-coffee-mug",
-              "image": "https://www.the7dots.com/cdn/shop/files/Thorcopy.webp?v=1771055999&width=600"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 42,
-      "reel": "https://www.instagram.com/reel/DekIhN1yqnx/",
-      "title": "Day 24/29 — Spider-Man Lower",
-      "products": [
-        {
-          "name": "Spider-Man Lower",
-          "category": [
-            "clothing",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B007JKu1t",
-              "image": "https://m.media-amazon.com/images/I/51tAg5PP71L._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 43,
-      "reel": "https://www.instagram.com/reel/DemM1ceylf2/",
-      "title": "Day 25/29 — Play Retro Blast Box",
-      "products": [
-        {
-          "name": "Play Retro — Blast Box",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://playretro.shop/products/90sblastbox",
-              "image": "https://playretro.shop/cdn/shop/files/Mailer_Box_Mockup_3.png?v=1711861946&width=600"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 44,
-      "reel": "https://www.instagram.com/reel/DepEo5aSPV2/",
-      "title": "Day 26/29 — Spider-Man mask",
-      "products": [
-        {
-          "name": "Spider-Man mask",
-          "category": [
-            "toys",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B02zl5Mcx",
-              "image": "https://m.media-amazon.com/images/I/61cQ2LRwyGL._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 45,
-      "reel": "https://www.instagram.com/reel/DetJoBuS1M3/",
-      "title": "Day 27/29 — Iron Man mug",
-      "products": [
-        {
-          "name": "Iron Man mug",
-          "category": [
-            "home",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://www.the7dots.com/products/marvel-iron-man-3d-coffee-mug",
-              "image": "https://www.the7dots.com/cdn/shop/files/7Dots_IronmanMugShowcasedesign_01.webp?v=1788340427&width=600"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 46,
-      "reel": "https://www.instagram.com/reel/Dew6U7ZS7Eq/",
-      "title": "Day 28/29 — Hulk Bobble Head",
-      "products": [
-        {
-          "name": "Hulk Bobble Head",
-          "category": [
-            "toys",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://hamleys.in/product/marvel-hulk-bobble-head-collectible-action-figure-5y-13497276",
-              "image": "https://cdn.fynd.com/v2/falling-surf-7c8bb8/fyprod/wrkr/products/pictures/item/free/original/000000000494491733/Gw34Kyyx3HJ-494491733-1.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 47,
-      "reel": "https://www.instagram.com/reel/De15_tiSMcS/",
-      "title": "The final showdown",
-      "products": [
-        {
-          "name": "Hulk Comforter",
-          "category": [
-            "home",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B05FkAfef",
-              "image": "https://m.media-amazon.com/images/I/71z8PvvrQmL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Play Retro — Blast Box",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://playretro.shop/products/90sblastbox",
-              "image": "https://playretro.shop/cdn/shop/files/Mailer_Box_Mockup_3.png?v=1711861946&width=600"
-            }
-          ]
-        },
-        {
-          "name": "Balloon Inflater",
-          "category": [
-            "decor"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B08fDT6er",
-              "image": "https://m.media-amazon.com/images/I/61T1B0HtEeL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Balloons",
-          "category": [
-            "decor"
-          ],
-          "variants": [
-            {
-              "name": "Golden",
-              "link": "https://link.amazon/B0g94DDLs",
-              "image": "https://m.media-amazon.com/images/I/7148jxWYJzL._SL600_.jpg"
-            },
-            {
-              "name": "Blue",
-              "link": "https://link.amazon/B0iaRYtch",
-              "image": "https://m.media-amazon.com/images/I/71zPkYx8kvL._SL600_.jpg"
-            },
-            {
-              "name": "Silver",
-              "link": "https://link.amazon/B01Zus38L",
-              "image": "https://m.media-amazon.com/images/I/61x8bJJNTTL._SL600_.jpg"
-            },
-            {
-              "name": "Red",
-              "link": "https://link.amazon/B0ag1F5kg",
-              "image": "https://m.media-amazon.com/images/I/71IbXmTr0hL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Astronaut Light",
-          "category": [
-            "decor",
-            "home"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B08ctshIx",
-              "image": "https://m.media-amazon.com/images/I/71Hq4fQz2ML._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 49,
-      "reel": "https://www.instagram.com/reel/De4VkzLS1tE/",
-      "title": "Day 29/29 — Marvel movie date night",
-      "products": [
-        {
-          "name": "Hulk Comforter",
-          "category": [
-            "home",
-            "marvel"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B05FkAfef",
-              "image": "https://m.media-amazon.com/images/I/71z8PvvrQmL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Play Retro — Blast Box",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://playretro.shop/products/90sblastbox",
-              "image": "https://playretro.shop/cdn/shop/files/Mailer_Box_Mockup_3.png?v=1711861946&width=600"
-            }
-          ]
-        },
-        {
-          "name": "Balloon Inflater",
-          "category": [
-            "decor"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B08fDT6er",
-              "image": "https://m.media-amazon.com/images/I/61T1B0HtEeL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Balloons",
-          "category": [
-            "decor"
-          ],
-          "variants": [
-            {
-              "name": "Golden",
-              "link": "https://link.amazon/B0g94DDLs",
-              "image": "https://m.media-amazon.com/images/I/7148jxWYJzL._SL600_.jpg"
-            },
-            {
-              "name": "Blue",
-              "link": "https://link.amazon/B0iaRYtch",
-              "image": "https://m.media-amazon.com/images/I/71zPkYx8kvL._SL600_.jpg"
-            },
-            {
-              "name": "Silver",
-              "link": "https://link.amazon/B01Zus38L",
-              "image": "https://m.media-amazon.com/images/I/61x8bJJNTTL._SL600_.jpg"
-            },
-            {
-              "name": "Red",
-              "link": "https://link.amazon/B0ag1F5kg",
-              "image": "https://m.media-amazon.com/images/I/71IbXmTr0hL._SL600_.jpg"
-            }
-          ]
-        },
-        {
-          "name": "Astronaut Light",
-          "category": [
-            "decor",
-            "home"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://link.amazon/B08ctshIx",
-              "image": "https://m.media-amazon.com/images/I/71Hq4fQz2ML._SL600_.jpg"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 50,
-      "reel": "https://www.instagram.com/reel/De6a84ayKwv/",
-      "title": "Automatic card dealer + shuffler",
-      "products": [
-        {
-          "name": "Automatic card dealer + shuffler",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://tipsytap.co/products/card-shuffler",
-              "image": "https://tipsytap.co/cdn/shop/files/hf_20260820_125505_6a3ce9fd-b336-4335-8865-f4b199291d9b_1_1.png?v=1792780519&width=600"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 51,
-      "reel": "https://www.instagram.com/reel/De8uBTrSgB9/",
-      "title": "Casino night for one at 1:30 AM",
-      "products": [
-        {
-          "name": "Automatic card dealer + shuffler",
-          "category": [
-            "games"
-          ],
-          "variants": [
-            {
-              "name": "Default",
-              "link": "https://tipsytap.co/products/card-shuffler",
-              "image": "https://tipsytap.co/cdn/shop/files/hf_20260820_125505_6a3ce9fd-b336-4335-8865-f4b199291d9b_1_1.png?v=1792780519&width=600"
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  "products": []
-}
+  {
+    "id": "markers",
+    "name": "Markers",
+    "category": [
+      "games"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B08EiB3lv",
+        "image": "https://m.media-amazon.com/images/I/61DJiLOO2xL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "phase-10-card-game",
+    "name": "Phase 10 card game",
+    "category": [
+      "games"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B08pF57GL",
+        "image": "https://m.media-amazon.com/images/I/61PsNwfM-PL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "whiteboard",
+    "name": "Whiteboard",
+    "category": [
+      "games"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0dLBJohP",
+        "image": "https://m.media-amazon.com/images/I/517AleMJ1FL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "gems",
+    "name": "Gems",
+    "category": [
+      "games"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B023ENGOP",
+        "image": "https://m.media-amazon.com/images/I/71r81SkovML._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "sticky-notes",
+    "name": "Sticky notes",
+    "category": [
+      "games"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B039yPFs6",
+        "image": "https://m.media-amazon.com/images/I/81RFwqD8s2L._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "magnet-game",
+    "name": "Magnet Game",
+    "category": [
+      "games"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0bkcqllU",
+        "image": "https://m.media-amazon.com/images/I/61zL%2B7pykCL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "minion-comforter",
+    "name": "Minion Comforter",
+    "category": [
+      "home"
+    ],
+    "variants": [
+      {
+        "name": "Minion Comforter",
+        "link": "https://link.amazon/B05UbqaUt",
+        "image": "https://m.media-amazon.com/images/I/71BC4JTNC5L._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "coloring-blanket",
+    "name": "Coloring blanket",
+    "category": [
+      "home"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://storegenie.in/products/colornest%E2%84%A2-creative-blanket?variant=67818467262538",
+        "image": "https://storegenie.in/cdn/shop/files/An-Dv_BXNDCagYoeVgSKtkibQwVBO_g_vknWmmZms1C7RHiyRBk1UIRnqiMZRZB1txJseCYiRv-G2VkR6TI44LumMYocPj0hA0m3FXoH4Q6TXVIi24T3Q9NQqa5DQMIdyGkJJ8hb_q7JrsYAlytHgTH2RvWsoJgZBQpbAKxCABWGQr-RA_Ou5bF.jpg?v=1789674683&width=600"
+      }
+    ]
+  },
+  {
+    "id": "google-eyes-drinking-straws",
+    "name": "Google Eyes Drinking Straws",
+    "category": [
+      "home"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B02NAZ6Lg",
+        "image": "https://m.media-amazon.com/images/I/61rWBvSkrYL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "spider-man-web",
+    "name": "Spider man web",
+    "category": [
+      "decor"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B01kMLyWc",
+        "image": "https://m.media-amazon.com/images/I/51Oo93lGDsL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "balloon-inflater",
+    "name": "Balloon Inflater",
+    "category": [
+      "decor"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B08fDT6er",
+        "image": "https://m.media-amazon.com/images/I/61T1B0HtEeL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "balloons",
+    "name": "Balloons",
+    "category": [
+      "decor"
+    ],
+    "variants": [
+      {
+        "name": "Golden",
+        "link": "https://link.amazon/B0g94DDLs",
+        "image": "https://m.media-amazon.com/images/I/7148jxWYJzL._SL600_.jpg"
+      },
+      {
+        "name": "Blue",
+        "link": "https://link.amazon/B0iaRYtch",
+        "image": "https://m.media-amazon.com/images/I/71zPkYx8kvL._SL600_.jpg"
+      },
+      {
+        "name": "Silver",
+        "link": "https://link.amazon/B01Zus38L",
+        "image": "https://m.media-amazon.com/images/I/61x8bJJNTTL._SL600_.jpg"
+      },
+      {
+        "name": "Red",
+        "link": "https://link.amazon/B0ag1F5kg",
+        "image": "https://m.media-amazon.com/images/I/71IbXmTr0hL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "packing-paper",
+    "name": "Packing Paper",
+    "category": [
+      "decor"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0aw2FppU",
+        "image": "https://m.media-amazon.com/images/I/61ofkCoLA4L._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "golden-bows",
+    "name": "Golden Bows",
+    "category": [
+      "decor"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B018Dgep1",
+        "image": "https://m.media-amazon.com/images/I/51TrjPequcL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "marvel-hoodie",
+    "name": "Marvel Hoodie",
+    "category": [
+      "clothing",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0f7PKiph",
+        "image": "https://m.media-amazon.com/images/I/61hCICAPCuL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "hulk-brickset",
+    "name": "Hulk BrickSet",
+    "category": [
+      "toys",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://brickadda.com/products/gamma-monster",
+        "image": "https://brickadda.com/cdn/shop/files/hulk.png?v=1786019080&width=600"
+      }
+    ]
+  },
+  {
+    "id": "deadpool-car-accessory",
+    "name": "Deadpool Car Accessory",
+    "category": [
+      "accessories",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0ftHbQ9h",
+        "image": "https://m.media-amazon.com/images/I/61ij8GJZ2gL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "spider-man-web-shooter",
+    "name": "Spider-Man web shooter",
+    "category": [
+      "toys",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B095ghzyP",
+        "image": "https://m.media-amazon.com/images/I/71sfPHicYpL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "superhero-jigsaw-puzzle",
+    "name": "Superhero Jigsaw Puzzle",
+    "category": [
+      "games"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0gGyIplr",
+        "image": "https://m.media-amazon.com/images/I/81SZcf6c-%2BL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "iron-man-sneakers",
+    "name": "Iron Man sneakers",
+    "category": [
+      "clothing",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0hn89ozI",
+        "image": "https://m.media-amazon.com/images/I/51CqU9JvuaL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "marvel-dobble-card-game",
+    "name": "Marvel Dobble card game",
+    "category": [
+      "games",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0cniKtzC",
+        "image": "https://m.media-amazon.com/images/I/51nudUovW5L._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "arc-reactor-hoodie",
+    "name": "Arc Reactor hoodie",
+    "category": [
+      "clothing",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0daVpeuw",
+        "image": "https://m.media-amazon.com/images/I/61O5sxd8ECL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "gauntlet",
+    "name": "Gauntlet",
+    "category": [
+      "toys",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0bdHY6GV",
+        "image": "https://m.media-amazon.com/images/I/81DSNDujFKL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "marvel-socks",
+    "name": "Marvel socks",
+    "category": [
+      "clothing",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B00YGSdpB",
+        "image": "https://m.media-amazon.com/images/I/71AV6rROReL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "spider-man-brick-set",
+    "name": "Spider-Man brick set",
+    "category": [
+      "toys",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://brickadda.com/products/the-web-crawler",
+        "image": "https://brickadda.com/cdn/shop/files/Spider-Man.png?v=1786019426&width=600"
+      }
+    ]
+  },
+  {
+    "id": "hulk-t-shirt",
+    "name": "Hulk T-shirt",
+    "category": [
+      "clothing",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0boWD7Lj",
+        "image": "https://m.media-amazon.com/images/I/61zPdgYb4mL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "black-panther-perfume",
+    "name": "Black Panther perfume",
+    "category": [
+      "accessories",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://www.thesouledstore.com/product/black-panther-the-king-men-perfumes",
+        "image": "https://prod-img.thesouledstore.com/public/theSoul/uploads/catalog/product/1784529604_6341578.jpg?w=600"
+      }
+    ]
+  },
+  {
+    "id": "punisher-sweater",
+    "name": "Punisher Sweater",
+    "category": [
+      "clothing",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B05udIk2K",
+        "image": "https://m.media-amazon.com/images/I/71NUk0Q35nL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "marvel-jibbitz",
+    "name": "Marvel Jibbitz",
+    "category": [
+      "accessories",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://www.flipkart.com/funblast-12-pcs-cartoon-design-shoe-decoration-charms-crocs-sandals-wristbands/p/itm3eba95e4a2927?pid=ACKHJA5EHUNAYAFZ&lid=LSTACKHJA5EHUNAYAFZBKIASS",
+        "image": "https://rukminim2.flixcart.com/image/480/640/xif0q/art-craft-kit/3/3/i/3-12-pcs-cartoon-design-shoe-decoration-charms-for-crocs-sandals-original-imahja5ewhhvfrcg.jpeg?q=90"
+      }
+    ]
+  },
+  {
+    "id": "crocs",
+    "name": "Crocs",
+    "category": [
+      "clothing"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0fLTqU51",
+        "image": "https://m.media-amazon.com/images/I/71sQ4F6WXJL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "avengers-strike-squad-game",
+    "name": "Avengers Strike Squad Game",
+    "category": [
+      "games",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0cl2sPxK",
+        "image": "https://m.media-amazon.com/images/I/613JvOYDscL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "marvel-go-collection-die-cast",
+    "name": "Marvel Go Collection Die Cast",
+    "category": [
+      "toys",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0bS0HOwc",
+        "image": "https://m.media-amazon.com/images/I/61ibMUeUo2L._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "hulk-comforter",
+    "name": "Hulk Comforter",
+    "category": [
+      "home",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B05FkAfef",
+        "image": "https://m.media-amazon.com/images/I/71z8PvvrQmL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "spider-man-t-shirt",
+    "name": "Spider-Man T-shirt",
+    "category": [
+      "clothing",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B01r0EyVs",
+        "image": "https://m.media-amazon.com/images/I/61Xm7FGsEiL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "light-up-spinning-sword",
+    "name": "Light-up spinning sword",
+    "category": [
+      "toys"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://www.amazon.in/dp/B0GXWJJ6PZ?tag=shubhkaprat01-21",
+        "image": "https://m.media-amazon.com/images/I/81uehY0bYbL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "iron-man-building-block-figure",
+    "name": "Iron Man building-block figure",
+    "category": [
+      "toys",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://brickadda.com/products/the-mark-one",
+        "image": "https://brickadda.com/cdn/shop/files/iron-Man.png?v=1786019328&width=600"
+      }
+    ]
+  },
+  {
+    "id": "spark-smoke-sword",
+    "name": "Spark & smoke Sword",
+    "category": [
+      "toys"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B04mBxCKT",
+        "image": "https://m.media-amazon.com/images/I/81qM8v4%2BulL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "thor-mug",
+    "name": "Thor Mug",
+    "category": [
+      "home",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://www.the7dots.com/products/thor-hammer-ceramic-coffee-mug",
+        "image": "https://www.the7dots.com/cdn/shop/files/Thorcopy.webp?v=1771055999&width=600"
+      }
+    ]
+  },
+  {
+    "id": "spider-man-lower",
+    "name": "Spider-Man Lower",
+    "category": [
+      "clothing",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B007JKu1t",
+        "image": "https://m.media-amazon.com/images/I/51tAg5PP71L._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "play-retro-blast-box",
+    "name": "Play Retro — Blast Box",
+    "category": [
+      "games"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://playretro.shop/products/90sblastbox",
+        "image": "https://playretro.shop/cdn/shop/files/Mailer_Box_Mockup_3.png?v=1711861946&width=600"
+      }
+    ]
+  },
+  {
+    "id": "spider-man-mask",
+    "name": "Spider-Man mask",
+    "category": [
+      "toys",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B02zl5Mcx",
+        "image": "https://m.media-amazon.com/images/I/61cQ2LRwyGL._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "iron-man-mug",
+    "name": "Iron Man mug",
+    "category": [
+      "home",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://www.the7dots.com/products/marvel-iron-man-3d-coffee-mug",
+        "image": "https://www.the7dots.com/cdn/shop/files/7Dots_IronmanMugShowcasedesign_01.webp?v=1788340427&width=600"
+      }
+    ]
+  },
+  {
+    "id": "hulk-bobble-head",
+    "name": "Hulk Bobble Head",
+    "category": [
+      "toys",
+      "marvel"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://hamleys.in/product/marvel-hulk-bobble-head-collectible-action-figure-5y-13497276",
+        "image": "https://cdn.fynd.com/v2/falling-surf-7c8bb8/fyprod/wrkr/products/pictures/item/free/original/000000000494491733/Gw34Kyyx3HJ-494491733-1.jpg"
+      }
+    ]
+  },
+  {
+    "id": "astronaut-light",
+    "name": "Astronaut Light",
+    "category": [
+      "decor",
+      "home"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B08ctshIx",
+        "image": "https://m.media-amazon.com/images/I/71Hq4fQz2ML._SL600_.jpg"
+      }
+    ]
+  },
+  {
+    "id": "automatic-card-dealer-shuffler",
+    "name": "Automatic card dealer + shuffler",
+    "category": [
+      "games"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://tipsytap.co/products/card-shuffler",
+        "image": "https://tipsytap.co/cdn/shop/files/hf_20260820_125505_6a3ce9fd-b336-4335-8865-f4b199291d9b_1_1.png?v=1792780519&width=600"
+      }
+    ]
+  }
+]

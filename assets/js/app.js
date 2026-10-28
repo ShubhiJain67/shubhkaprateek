@@ -1,19 +1,47 @@
 // ShubhKaPrateek — site logic.
-// Reads data/products.json and renders: All products, Shop by reel, category tabs,
+// Reads the files in data/ and renders: All products, Shop by reel, category tabs,
 // search, lazy loading, hamburger menu, variations and the "Can't find something?" form.
+//
+//   data/site.json        site title/tagline/Instagram + contact form settings
+//   data/categories.json  category tabs (id, name, emoji)
+//   data/products.json    every product ONCE: id, name, category, variants (link + photo)
+//   data/reels.json       every reel: link, title, cover, and the ids of its products
 
 (async function () {
   const PAGE = { reels: 9, products: 12 }; // cards added per batch while scrolling
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const $ = id => document.getElementById(id);
 
-  let data;
-  try {
-    data = await (await fetch("data/products.json", { cache: "no-cache" })).json();
-  } catch (e) {
-    $("grid").innerHTML = '<p class="empty">Couldn\'t load data/products.json — check it for a JSON typo (missing comma or quote).</p>';
-    console.error(e); return;
+  // ---- load data/ (each file has one job) ----
+  const FILES = ["site", "categories", "products", "reels"];
+  let raw = {};
+  for (const f of FILES) {
+    try {
+      raw[f] = await (await fetch(`data/${f}.json`, { cache: "no-cache" })).json();
+    } catch (e) {
+      $("grid").innerHTML = `<p class="empty">Couldn't load data/${f}.json — check it for a JSON typo (missing comma or quote).</p>`;
+      console.error(f, e); return;
+    }
   }
+  // Join reels → products by id, so the rest of the app sees full product objects
+  const catalogue = new Map((raw.products || []).map(p => [p.id, p]));
+  const used = new Set();
+  const missing = [];
+  const data = {
+    ...raw.site,
+    categories: raw.categories || [],
+    reels: (raw.reels || []).map(r => ({
+      ...r,
+      products: (r.products || []).map(id => {
+        const p = catalogue.get(id);
+        if (!p) { missing.push(`${id} (in "${r.title}")`); return null; }
+        used.add(id); return p;
+      }).filter(Boolean)
+    })),
+    // products that aren't in any reel still show under All products
+    products: (raw.products || []).filter(p => !used.has(p.id))
+  };
+  if (missing.length) console.warn("reels.json points to product ids that aren't in products.json:", missing);
 
   const site = data.site || {};
   const cats = (data.categories || []).slice();

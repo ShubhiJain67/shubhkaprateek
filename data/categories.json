@@ -1,0 +1,42 @@
+[
+  {
+    "id": "marvel",
+    "name": "Marvel",
+    "emoji": "🦸"
+  },
+  {
+    "id": "clothing",
+    "name": "Clothing",
+    "emoji": "👕"
+  },
+  {
+    "id": "toys",
+    "name": "Toys & Collectibles",
+    "emoji": "🧸"
+  },
+  {
+    "id": "games",
+    "name": "Games",
+    "emoji": "🎮"
+  },
+  {
+    "id": "home",
+    "name": "Mugs & Home",
+    "emoji": "☕"
+  },
+  {
+    "id": "decor",
+    "name": "Decor",
+    "emoji": "🎈"
+  },
+  {
+    "id": "accessories",
+    "name": "Accessories",
+    "emoji": "✨"
+  },
+  {
+    "id": "diy",
+    "name": "DIY & Art",
+    "emoji": "🎨"
+  }
+]
