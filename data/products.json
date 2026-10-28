@@ -2,10 +2,7 @@
   {
     "id": 1,
     "name": "Paint-your-own portrait kit (Eazy Arts)",
-    "category": [
-      "diy",
-      "home"
-    ],
+    "category": ["diy"],
     "variants": [
       {
         "name": "Default",
@@ -17,9 +14,7 @@
   {
     "id": 2,
     "name": "Dice",
-    "category": [
-      "games"
-    ],
+    "category": ["game-night"],
     "variants": [
       {
         "name": "Default",
@@ -31,9 +26,7 @@
   {
     "id": 3,
     "name": "Markers",
-    "category": [
-      "games"
-    ],
+    "category": ["game-night"],
     "variants": [
       {
         "name": "Default",
@@ -45,9 +38,7 @@
   {
     "id": 4,
     "name": "Phase 10 card game",
-    "category": [
-      "games"
-    ],
+    "category": ["board-games"],
     "variants": [
       {
         "name": "Default",
@@ -59,9 +50,7 @@
   {
     "id": 5,
     "name": "Whiteboard",
-    "category": [
-      "games"
-    ],
+    "category": ["game-night"],
     "variants": [
       {
         "name": "Default",
@@ -73,9 +62,7 @@
   {
     "id": 6,
     "name": "Gems",
-    "category": [
-      "games"
-    ],
+    "category": ["game-night"],
     "variants": [
       {
         "name": "Default",
@@ -87,9 +74,7 @@
   {
     "id": 7,
     "name": "Sticky notes",
-    "category": [
-      "games"
-    ],
+    "category": ["game-night"],
     "variants": [
       {
         "name": "Default",
@@ -101,9 +86,7 @@
   {
     "id": 8,
     "name": "Magnet Game",
-    "category": [
-      "games"
-    ],
+    "category": ["board-games"],
     "variants": [
       {
         "name": "Default",
@@ -115,9 +98,7 @@
   {
     "id": 9,
     "name": "Minion Comforter",
-    "category": [
-      "home"
-    ],
+    "category": ["bedding"],
     "variants": [
       {
         "name": "Minion Comforter",
@@ -129,9 +110,7 @@
   {
     "id": 10,
     "name": "Coloring blanket",
-    "category": [
-      "home"
-    ],
+    "category": ["bedding"],
     "variants": [
       {
         "name": "Default",
@@ -143,9 +122,7 @@
   {
     "id": 11,
     "name": "Google Eyes Drinking Straws",
-    "category": [
-      "home"
-    ],
+    "category": ["mugs"],
     "variants": [
       {
         "name": "Default",
@@ -157,9 +134,7 @@
   {
     "id": 12,
     "name": "Spider man web",
-    "category": [
-      "decor"
-    ],
+    "category": ["party-decor", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -171,9 +146,7 @@
   {
     "id": 13,
     "name": "Balloon Inflater",
-    "category": [
-      "decor"
-    ],
+    "category": ["party-decor"],
     "variants": [
       {
         "name": "Default",
@@ -185,9 +158,7 @@
   {
     "id": 14,
     "name": "Balloons",
-    "category": [
-      "decor"
-    ],
+    "category": ["party-decor"],
     "variants": [
       {
         "name": "Golden",
@@ -214,9 +185,7 @@
   {
     "id": 15,
     "name": "Packing Paper",
-    "category": [
-      "decor"
-    ],
+    "category": ["gift-wrap"],
     "variants": [
       {
         "name": "Default",
@@ -228,9 +197,7 @@
   {
     "id": 16,
     "name": "Golden Bows",
-    "category": [
-      "decor"
-    ],
+    "category": ["gift-wrap"],
     "variants": [
       {
         "name": "Default",
@@ -242,10 +209,7 @@
   {
     "id": 17,
     "name": "Marvel Hoodie",
-    "category": [
-      "clothing",
-      "marvel"
-    ],
+    "category": ["topwear", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -257,10 +221,7 @@
   {
     "id": 18,
     "name": "Hulk BrickSet",
-    "category": [
-      "toys",
-      "marvel"
-    ],
+    "category": ["building-sets", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -272,10 +233,7 @@
   {
     "id": 19,
     "name": "Deadpool Car Accessory",
-    "category": [
-      "accessories",
-      "marvel"
-    ],
+    "category": ["car-accessories", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -287,10 +245,7 @@
   {
     "id": 20,
     "name": "Spider-Man web shooter",
-    "category": [
-      "toys",
-      "marvel"
-    ],
+    "category": ["role-play", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -302,9 +257,7 @@
   {
     "id": 21,
     "name": "Superhero Jigsaw Puzzle",
-    "category": [
-      "games"
-    ],
+    "category": ["board-games"],
     "variants": [
       {
         "name": "Default",
@@ -316,10 +269,7 @@
   {
     "id": 22,
     "name": "Iron Man sneakers",
-    "category": [
-      "clothing",
-      "marvel"
-    ],
+    "category": ["footwear", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -331,10 +281,7 @@
   {
     "id": 23,
     "name": "Marvel Dobble card game",
-    "category": [
-      "games",
-      "marvel"
-    ],
+    "category": ["board-games", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -346,10 +293,7 @@
   {
     "id": 24,
     "name": "Arc Reactor hoodie",
-    "category": [
-      "clothing",
-      "marvel"
-    ],
+    "category": ["topwear", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -361,10 +305,7 @@
   {
     "id": 25,
     "name": "Gauntlet",
-    "category": [
-      "toys",
-      "marvel"
-    ],
+    "category": ["role-play", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -376,10 +317,7 @@
   {
     "id": 26,
     "name": "Marvel socks",
-    "category": [
-      "clothing",
-      "marvel"
-    ],
+    "category": ["footwear", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -391,10 +329,7 @@
   {
     "id": 27,
     "name": "Spider-Man brick set",
-    "category": [
-      "toys",
-      "marvel"
-    ],
+    "category": ["building-sets", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -406,10 +341,7 @@
   {
     "id": 28,
     "name": "Hulk T-shirt",
-    "category": [
-      "clothing",
-      "marvel"
-    ],
+    "category": ["topwear", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -421,10 +353,7 @@
   {
     "id": 29,
     "name": "Black Panther perfume",
-    "category": [
-      "accessories",
-      "marvel"
-    ],
+    "category": ["fashion-accessories", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -436,10 +365,7 @@
   {
     "id": 30,
     "name": "Punisher Sweater",
-    "category": [
-      "clothing",
-      "marvel"
-    ],
+    "category": ["topwear", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -451,10 +377,7 @@
   {
     "id": 31,
     "name": "Marvel Jibbitz",
-    "category": [
-      "accessories",
-      "marvel"
-    ],
+    "category": ["fashion-accessories", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -466,9 +389,7 @@
   {
     "id": 32,
     "name": "Crocs",
-    "category": [
-      "clothing"
-    ],
+    "category": ["footwear"],
     "variants": [
       {
         "name": "Default",
@@ -480,10 +401,7 @@
   {
     "id": 33,
     "name": "Avengers Strike Squad Game",
-    "category": [
-      "games",
-      "marvel"
-    ],
+    "category": ["board-games", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -495,10 +413,7 @@
   {
     "id": 34,
     "name": "Marvel Go Collection Die Cast",
-    "category": [
-      "toys",
-      "marvel"
-    ],
+    "category": ["figures", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -510,10 +425,7 @@
   {
     "id": 35,
     "name": "Hulk Comforter",
-    "category": [
-      "home",
-      "marvel"
-    ],
+    "category": ["bedding", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -525,10 +437,7 @@
   {
     "id": 36,
     "name": "Spider-Man T-shirt",
-    "category": [
-      "clothing",
-      "marvel"
-    ],
+    "category": ["topwear", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -540,9 +449,7 @@
   {
     "id": 37,
     "name": "Light-up spinning sword",
-    "category": [
-      "toys"
-    ],
+    "category": ["role-play"],
     "variants": [
       {
         "name": "Default",
@@ -554,10 +461,7 @@
   {
     "id": 38,
     "name": "Iron Man building-block figure",
-    "category": [
-      "toys",
-      "marvel"
-    ],
+    "category": ["building-sets", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -569,9 +473,7 @@
   {
     "id": 39,
     "name": "Spark & smoke Sword",
-    "category": [
-      "toys"
-    ],
+    "category": ["role-play"],
     "variants": [
       {
         "name": "Default",
@@ -583,10 +485,7 @@
   {
     "id": 40,
     "name": "Thor Mug",
-    "category": [
-      "home",
-      "marvel"
-    ],
+    "category": ["mugs", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -598,10 +497,7 @@
   {
     "id": 41,
     "name": "Spider-Man Lower",
-    "category": [
-      "clothing",
-      "marvel"
-    ],
+    "category": ["bottomwear", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -613,9 +509,7 @@
   {
     "id": 42,
     "name": "Play Retro — Blast Box",
-    "category": [
-      "games"
-    ],
+    "category": ["game-gadgets"],
     "variants": [
       {
         "name": "Default",
@@ -627,10 +521,7 @@
   {
     "id": 43,
     "name": "Spider-Man mask",
-    "category": [
-      "toys",
-      "marvel"
-    ],
+    "category": ["role-play", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -642,10 +533,7 @@
   {
     "id": 44,
     "name": "Iron Man mug",
-    "category": [
-      "home",
-      "marvel"
-    ],
+    "category": ["mugs", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -657,10 +545,7 @@
   {
     "id": 45,
     "name": "Hulk Bobble Head",
-    "category": [
-      "toys",
-      "marvel"
-    ],
+    "category": ["figures", "marvel"],
     "variants": [
       {
         "name": "Default",
@@ -672,10 +557,7 @@
   {
     "id": 46,
     "name": "Astronaut Light",
-    "category": [
-      "decor",
-      "home"
-    ],
+    "category": ["lighting"],
     "variants": [
       {
         "name": "Default",
@@ -687,9 +569,7 @@
   {
     "id": 47,
     "name": "Automatic card dealer + shuffler",
-    "category": [
-      "games"
-    ],
+    "category": ["game-gadgets"],
     "variants": [
       {
         "name": "Default",

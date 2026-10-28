@@ -1,42 +1,32 @@
 [
-  {
-    "id": "marvel",
-    "name": "Marvel",
-    "emoji": "🦸"
-  },
-  {
-    "id": "clothing",
-    "name": "Clothing",
-    "emoji": "👕"
-  },
-  {
-    "id": "toys",
-    "name": "Toys & Collectibles",
-    "emoji": "🧸"
-  },
-  {
-    "id": "games",
-    "name": "Games",
-    "emoji": "🎮"
-  },
-  {
-    "id": "home",
-    "name": "Mugs & Home",
-    "emoji": "☕"
-  },
-  {
-    "id": "decor",
-    "name": "Decor",
-    "emoji": "🎈"
-  },
-  {
-    "id": "accessories",
-    "name": "Accessories",
-    "emoji": "✨"
-  },
-  {
-    "id": "diy",
-    "name": "DIY & Art",
-    "emoji": "🎨"
-  }
+  { "id": "marvel", "name": "Marvel", "emoji": "🦸", "theme": true },
+  { "id": "clothing", "name": "Clothing & Footwear", "emoji": "👕", "sub": [
+    { "id": "topwear", "name": "T-shirts & Hoodies" },
+    { "id": "bottomwear", "name": "Bottomwear" },
+    { "id": "footwear", "name": "Footwear & Socks" }
+  ] },
+  { "id": "toys", "name": "Toys & Collectibles", "emoji": "🧸", "sub": [
+    { "id": "building-sets", "name": "Building sets" },
+    { "id": "figures", "name": "Figures & Bobbleheads" },
+    { "id": "role-play", "name": "Role-play & Costumes" }
+  ] },
+  { "id": "games", "name": "Games", "emoji": "🎲", "sub": [
+    { "id": "board-games", "name": "Board, Card & Puzzle games" },
+    { "id": "game-gadgets", "name": "Game gadgets" },
+    { "id": "game-night", "name": "Game-night supplies" }
+  ] },
+  { "id": "home", "name": "Home", "emoji": "🏠", "sub": [
+    { "id": "bedding", "name": "Comforters & Blankets" },
+    { "id": "mugs", "name": "Mugs & Drinkware" },
+    { "id": "lighting", "name": "Lights & Lamps" }
+  ] },
+  { "id": "decor", "name": "Party & Gifting", "emoji": "🎈", "sub": [
+    { "id": "party-decor", "name": "Balloons & Party decor" },
+    { "id": "gift-wrap", "name": "Gift wrapping" }
+  ] },
+  { "id": "accessories", "name": "Accessories", "emoji": "✨", "sub": [
+    { "id": "fashion-accessories", "name": "Perfume & Charms" },
+    { "id": "car-accessories", "name": "Car accessories" }
+  ] },
+  { "id": "diy", "name": "DIY & Art", "emoji": "🎨" }
 ]

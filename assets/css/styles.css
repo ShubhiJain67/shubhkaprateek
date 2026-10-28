@@ -89,6 +89,16 @@ button { font: inherit; color: inherit; }
 .cat-btn[aria-pressed="true"] { border-color: transparent; background: var(--ink); color: var(--bg); }
 .cat-btn[aria-pressed="true"] .n { color: inherit; opacity: .7; }
 .cat-btn[aria-pressed="true"] .ic { background: rgba(255,255,255,.14); }
+.subcats { display: flex; gap: 8px; overflow-x: auto; padding: 6px 0 8px; scrollbar-width: none; }
+.subcats::-webkit-scrollbar { display: none; }
+.subcats[hidden] { display: none; }
+.sub-btn {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap;
+  padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink); font: inherit; font-size: 13px; font-weight: 500;
+}
+.sub-btn .n { color: var(--muted); font-size: 12px; }
+.sub-btn[aria-pressed="true"] { background: var(--field); border-color: var(--ink); font-weight: 600; }
 
 /* ---------- Shared bits ---------- */
 .buy {
@@ -273,6 +283,7 @@ body.menu-open { overflow: hidden; }
 }
 .drawer-item:hover, .drawer-item[aria-current="true"] { background: var(--field); }
 .drawer-item .ic { width: 28px; text-align: center; font-size: 18px; }
+.drawer-item.sub { padding-left: 52px; font-size: 14px; font-weight: 500; color: var(--muted); }
 .drawer-item .n { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: 500; }
 footer { border-top: 1px solid var(--line); text-align: center; color: var(--muted); font-size: 12px; padding: 22px 16px 32px; }
 

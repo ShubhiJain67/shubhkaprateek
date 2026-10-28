@@ -28,18 +28,18 @@ Each product is listed **once**, with a unique number `id` (use the highest id +
 {
   "id": 48,
   "name": "Fairy lights",
-  "category": ["home", "decor"],
+  "category": ["mugs", "marvel"],
   "variants": [
     { "name": "Default", "link": "https://link.amazon/xxxx", "image": "https://…/lights.jpg" }
   ]
 }
 ```
 
-- **Categories:** use a category id or name. One that isn't in `categories.json` yet becomes a new tab automatically (add it there only to choose its name/emoji).
+- **Categories:** use the most specific one — a sub-category id like `"mugs"` (it shows under *Home* automatically), plus a theme like `"marvel"` if it fits. An id/name that isn't in `categories.json` yet becomes a new top-level tab automatically.
 - **Variations:** one variant = no option buttons. Add more (and rename "Default", e.g. "Maroon" / "Black") and option buttons appear; each switches the photo and Buy link. A variant with no `link` shows "Link coming soon". The Buy button names the shop from the link.
 - A product that isn't in any reel still shows under *All products*.
 - Each reel also gets its own page listing all its products: `shubhkaprateek.com/?reel=<reel code>` (handy for captions / link in bio).
-- Each product gets its own page too: `shubhkaprateek.com/?product=<id>` — photo, options, Buy button, every reel it's in, and similar products (same categories / same reels).
+- Each product gets its own page too: `shubhkaprateek.com/?product=<id>` — photo, options, Buy button, every reel it's in, and similar products (same sub-category first, then same character like "Hulk", then same theme — a Marvel mug won't show up next to a Marvel comforter).
 
 ## Add a reel — `data/reels.json`
 
@@ -59,7 +59,14 @@ Each product is listed **once**, with a unique number `id` (use the highest id +
 
 ## Categories & settings
 
-- `data/categories.json` — tab order = file order: `{ "id": "toys", "name": "Toys & Collectibles", "emoji": "🧸" }`
+- `data/categories.json` — a tree. Top-level entries are the tabs (order = file order); `sub` lists the sub-categories that appear as a second row when that tab is picked:
+  ```json
+  { "id": "home", "name": "Home", "emoji": "🏠", "sub": [
+    { "id": "bedding", "name": "Comforters & Blankets" },
+    { "id": "mugs", "name": "Mugs & Drinkware" }
+  ] }
+  ```
+  `"theme": true` (used on Marvel) marks a collection that cuts across categories — it's still a tab, but on its own it doesn't make two products "similar".
 - `data/site.json` — title, tagline, Instagram and YouTube links (remove `youtube` to hide the button), and the contact form (`contact.formKey` = Web3Forms key; meant to be public — regenerate it on web3forms.com if ever abused).
 
 **Watch the commas:** every `}` in a list needs a `,` after it except the last one. If the page says "Couldn't load data/<file>.json", paste that file into https://jsonlint.com. If a reel lists a product id that isn't in `products.json`, the site skips it and logs a warning in the browser console.

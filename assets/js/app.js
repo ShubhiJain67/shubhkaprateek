@@ -44,8 +44,17 @@
   if (missing.length) console.warn("reels.json points to product ids that aren't in products.json:", missing);
 
   const site = data.site || {};
-  const cats = (data.categories || []).slice();
+  // categories.json is a tree: top-level categories (the tabs), each with optional "sub" categories.
+  // Products use the most specific id ("mugs"); they automatically count under the parent ("home") too.
+  // "theme": true marks a cross-cutting collection like Marvel (a tab, but weighs less for "similar").
+  const cats = (data.categories || []).flatMap(c => [
+    { ...c, sub: undefined, parent: null },
+    ...(c.sub || []).map(s => ({ emoji: c.emoji, ...s, parent: c.id }))
+  ]);
   const catById = Object.fromEntries(cats.map(c => [c.id, c]));
+  const tops = () => cats.filter(c => !c.parent);
+  const subsOf = id => cats.filter(c => c.parent === id);
+  const topOf = id => (catById[id] && catById[id].parent) || id;
   const catOf = id => catById[id] || { id, name: id || "Other", emoji: "🛍️" };
 
   // A product's "category" can be one value ("toys") or a list (["toys", "Home Decor"]).
@@ -65,7 +74,9 @@
   (data.reels || []).forEach(r => (r.products || []).forEach(normalize));
   (data.products || []).forEach(normalize);
   const catsOf = p => (Array.isArray(p.category) ? p.category : [p.category]).filter(Boolean);
-  const inCat = (p, id) => catsOf(p).includes(id);
+  // a product's own categories + their parents (a "mugs" product is also in "home")
+  const allCatsOf = p => [...new Set(catsOf(p).flatMap(id => [id, catById[id] && catById[id].parent].filter(Boolean)))];
+  const inCat = (p, id) => allCatsOf(p).includes(id);
 
   // Reels with products, newest first (featured pinned)
   const reels = (data.reels || [])
@@ -157,14 +168,27 @@
   function renderChips() {
     const pool = searched || (view === "reels" ? reels : products);
     const counts = {};
-    if (view === "reels") pool.forEach(r => new Set(r.products.flatMap(catsOf)).forEach(c => counts[c] = (counts[c] || 0) + 1));
-    else pool.forEach(p => catsOf(p).forEach(c => counts[c] = (counts[c] || 0) + 1));
-    // hide empty categories, but keep the selected one visible so it can be switched off
-    const list = [{ id: "all", name: "All", emoji: "✨" }, ...cats.filter(c => counts[c.id] || c.id === active)];
+    if (view === "reels") pool.forEach(r => new Set(r.products.flatMap(allCatsOf)).forEach(c => counts[c] = (counts[c] || 0) + 1));
+    else pool.forEach(p => allCatsOf(p).forEach(c => counts[c] = (counts[c] || 0) + 1));
+    // top level: hide empty categories, but keep the selected one visible so it can be switched off
+    const top = topOf(active);
+    const list = [{ id: "all", name: "All", emoji: "✨" }, ...tops().filter(c => counts[c.id] || c.id === top)];
     $("chips").innerHTML = list.map(c =>
-      `<button class="cat-btn" data-id="${esc(c.id)}" aria-pressed="${c.id === active}">
+      `<button class="cat-btn" data-id="${esc(c.id)}" aria-pressed="${c.id === top}">
          <span class="ic">${esc(c.emoji || "")}</span>${esc(c.name)} <span class="n">${c.id === "all" ? pool.length : (counts[c.id] || 0)}</span>
        </button>`).join("");
+    // second row: the sub-categories of the selected category
+    const subs = top === "all" ? [] : subsOf(top).filter(c => counts[c.id] || c.id === active);
+    $("subchips").hidden = subs.length < 2;
+    $("subchips").innerHTML = subs.length < 2 ? "" : [{ id: top, name: "All " + catOf(top).name }, ...subs].map(c =>
+      `<button class="sub-btn" data-id="${esc(c.id)}" aria-pressed="${c.id === active}">${esc(c.name)}<span class="n">${counts[c.id] || 0}</span></button>`).join("");
+    // keep the selected chips in view (rows scroll sideways on phones)
+    ["chips", "subchips"].forEach(id => {
+      const row = $(id), on = row.querySelector('[aria-pressed="true"]');
+      if (!on) return;
+      const r = row.getBoundingClientRect(), o = on.getBoundingClientRect();
+      if (o.left < r.left || o.right > r.right) row.scrollLeft += o.left - r.left - 16;
+    });
   }
 
   function productCard(p) {
@@ -290,7 +314,7 @@
   const REEL_RE = /instagram\.com\/(?:[\w.]+\/)?(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/i;
   const codeOf = r => ((String(r.reel || "").match(REEL_RE) || [])[1] || "").toLowerCase();
   const codeById = Object.fromEntries(reels.map(r => [r.id, codeOf(r)]));
-  const catWords = p => catsOf(p).flatMap(id => [id, catOf(id).name]);
+  const catWords = p => allCatsOf(p).flatMap(id => [id, catOf(id).name]);
   const reelText = r => [r.title, codeOf(r), ...r.products.flatMap(p => [p.name, ...catWords(p), ...(p.variants || []).map(v => v.name)])].join(" ").toLowerCase();
   const productText = p => [p.name, ...catWords(p), storeOf(p.link), ...(p.variants || []).flatMap(v => [v.name, storeOf(v.link || "")]), ...p.reels.map(id => codeById[id])].join(" ").toLowerCase();
 
@@ -333,6 +357,10 @@
   document.querySelector(".seg").addEventListener("click", e => {
     const t = e.target.closest(".tab"); if (!t || t.dataset.view === view) return;
     active = "all"; $("q").value = ""; setView(t.dataset.view);
+  });
+  $("subchips").addEventListener("click", e => {
+    const b = e.target.closest(".sub-btn"); if (!b) return;
+    active = b.dataset.id; apply();
   });
   $("chips").addEventListener("click", e => {
     const b = e.target.closest(".cat-btn"); if (!b) return;
@@ -406,10 +434,12 @@
   };
   function buildMenu() {
     const counts = {};
-    products.forEach(p => catsOf(p).forEach(c => counts[c] = (counts[c] || 0) + 1));
-    $("drawer-cats").innerHTML = cats.filter(c => counts[c.id]).map(c =>
-      `<button class="drawer-item" data-cat="${esc(c.id)}"><span class="ic">${esc(c.emoji || "")}</span>${esc(c.name)}<span class="n">${counts[c.id]}</span></button>`
-    ).join("");
+    products.forEach(p => allCatsOf(p).forEach(c => counts[c] = (counts[c] || 0) + 1));
+    const item = (c, sub) => `<button class="drawer-item${sub ? " sub" : ""}" data-cat="${esc(c.id)}">${sub ? "" : `<span class="ic">${esc(c.emoji || "")}</span>`}${esc(c.name)}<span class="n">${counts[c.id]}</span></button>`;
+    $("drawer-cats").innerHTML = tops().filter(c => counts[c.id]).map(c => {
+      const subs = subsOf(c.id).filter(s => counts[s.id]);
+      return item(c) + (subs.length > 1 ? subs.map(s => item(s, true)).join("") : "");
+    }).join("");
     $("drawer-ig").href = site.instagram || "#";
     if (!site.instagram) $("drawer-ig").hidden = true;
     if (site.youtube) { $("drawer-yt").href = site.youtube; $("drawer-yt").hidden = false; }
@@ -475,12 +505,29 @@
   }
   // ---------- Product page: ?product=<id> — photo, options, every reel it's in, similar products ----------
   const productById = id => [...pmap.values()].find(p => String(p.id) === String(id));
+  // Similar = same kind of product first (same sub-category), then same character ("Hulk"),
+  // then same theme (Marvel). Same theme or same top category alone isn't enough to show up.
+  const STOP = new Set("the and for with set game games man kit marvel default light box".split(" "));
+  const wordsOf = p => new Set(String(p.name).toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length > 2 && !STOP.has(w)));
   function similarTo(p, limit = 8) {
-    const mine = new Set(catsOf(p)), myReels = new Set(p.reels);
-    return [...pmap.values()]
+    const own = catsOf(p), myReels = new Set(p.reels), myWords = wordsOf(p);
+    const leaf = new Set(own.filter(c => !(catById[c] || {}).theme)), theme = new Set(own.filter(c => (catById[c] || {}).theme));
+    const parents = new Set([...leaf].map(topOf));
+    const scored = [...pmap.values()]
       .filter(o => o !== p)
-      .map(o => ({ o, score: catsOf(o).filter(c => mine.has(c)).length * 2 + o.reels.filter(r => myReels.has(r)).length }))
-      .filter(x => x.score > 0)
+      .map(o => {
+        const oc = catsOf(o);
+        const score = oc.filter(c => leaf.has(c) && catById[c] && catById[c].parent).length * 6   // same sub-category
+          + oc.filter(c => leaf.has(c) && !(catById[c] && catById[c].parent)).length * 3           // same category (no subs)
+          + [...wordsOf(o)].filter(w => myWords.has(w)).length * 3                                  // same character / item word
+          + oc.filter(c => theme.has(c)).length                                                    // same theme
+          + (oc.some(c => parents.has(topOf(c)) && !leaf.has(c)) ? 0.5 : 0);                       // same top category
+        // being in the same reel only breaks ties — it never makes an unrelated product "similar"
+        return { o, score: score + (score >= 2 ? o.reels.filter(r => myReels.has(r)).length * 0.5 : 0), sameTop: oc.some(c => parents.has(topOf(c))) };
+      });
+    const good = scored.filter(x => x.score >= 2);
+    // nothing closely related? fall back to other products from the same top category
+    return (good.length ? good : scored.filter(x => x.sameTop))
       .sort((a, b) => b.score - a.score || Math.max(0, ...b.o.reels) - Math.max(0, ...a.o.reels))
       .slice(0, limit).map(x => x.o);
   }
