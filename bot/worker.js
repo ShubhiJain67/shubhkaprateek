@@ -385,7 +385,12 @@ async function onNewPost(text, env, chat) {
 const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export function previewText(d, cats, siteUrl) {
-  const catName = id => (cats.find(c => c.id === id) || { name: id }).name;
+  // show the full path so it's clear where it lands on the site: "Clothing & Footwear › Ethnic wear"
+  const catName = id => {
+    const c = cats.find(c => c.id === id) || { name: id };
+    const parent = c.parent && cats.find(x => x.id === c.parent);
+    return parent ? `${parent.name} › ${c.name}` : c.name;
+  };
   const lines = [];
   const problems = [];
   if (d.reel) {
