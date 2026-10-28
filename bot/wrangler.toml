@@ -1,0 +1,13 @@
+# Cloudflare Worker settings for the Telegram bot. setup.sh fills in the KV id.
+name = "shubhkaprateek-bot"
+main = "worker.js"
+compatibility_date = "2025-06-01"
+
+[[kv_namespaces]]
+binding = "DRAFTS"
+id = "cc3ed0c7ca624ba3a93a9ecdef1bba4a"
+
+[vars]
+GITHUB_REPO = "ShubhiJain67/shubhkaprateek"
+GITHUB_BRANCH = "main"
+SITE_URL = "https://shubhkaprateek.com"
