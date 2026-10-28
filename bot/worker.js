@@ -85,6 +85,8 @@ export async function handleUpdate(update, env) {
   if (cmd === "/cancel") { await env.DRAFTS.delete(String(chat)); return say(env, chat, "🗑 Draft dropped."); }
   if (cmd === "/cats") return say(env, chat, await catsHelp(env));
   if (cmd === "/delete" || cmd === "/remove") return onDelete(text.replace(/^\/\S+\s*/, "").trim(), env, chat);
+  // any other /command is never treated as a product name
+  if (cmd.startsWith("/")) return say(env, chat, `I don't know <code>${esc(cmd)}</code> — see /help.`);
   if (cmd === "/preview") { const d = await loadDraft(env, chat); return d ? sendPreview(env, chat, d) : say(env, chat, "No draft right now — send me a reel link + products."); }
 
   const draft = await loadDraft(env, chat);
