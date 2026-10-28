@@ -172,13 +172,14 @@
     const latest = p.reels.length ? Math.max(...p.reels) : null;
     const latestUrl = latest != null ? permalink((reels.find(r => r.id === latest) || {}).reel) : null;
     const v = variantOf(p, 0);
+    const pid = p.id != null ? esc(p.id) : "";
     return `<div class="card" data-key="${esc(keyOf(p))}">
-      <div class="media"><span class="vimg">${imgOr(v, esc(c.emoji))}</span>
+      <div class="media"${pid ? ` data-product="${pid}" role="link" tabindex="0" aria-label="${esc(p.name)}"` : ""}><span class="vimg">${imgOr(v, esc(c.emoji))}</span>
         ${latestUrl ? `<a class="badge" href="${esc(latestUrl)}" target="_blank" rel="noopener">▶ Watch reel</a>` : ""}
       </div>
       <div class="body">
         <span class="cat">${pcs.map(x => esc(x.name)).join(" · ")}</span>
-        <p class="name">${esc(p.name)}</p>
+        <p class="name">${pid ? `<a href="?product=${pid}" data-product="${pid}">${esc(p.name)}</a>` : esc(p.name)}</p>
         ${variantPills(p)}
         <div class="foot"><span class="vbuy">${buyBtn(v)}</span></div>
       </div>
@@ -198,7 +199,7 @@
       return `<li class="item" data-key="${esc(keyOf(p))}" data-short="1">
         <span class="thumb vimg">${imgOr(v, esc(catOf(catsOf(p)[0]).emoji))}</span>
         <div class="item-info">
-          <p class="item-name">${esc(p.name)}</p>
+          <p class="item-name">${p.id != null ? `<a href="?product=${esc(p.id)}" data-product="${esc(p.id)}">${esc(p.name)}</a>` : esc(p.name)}</p>
           ${variantPills(p)}
         </div>
         <span class="vbuy">${shortBuy(v)}</span>
@@ -432,6 +433,7 @@
   function openReel(code, push = true) {
     const r = reelByCode(code);
     const sec = $("view-reel");
+    $("view-product").hidden = true; $("view-product").innerHTML = "";
     document.body.classList.add("on-reel-page");
     sec.hidden = false;
     if (push) history.pushState({ reel: code }, "", "?reel=" + encodeURIComponent(code));
@@ -468,15 +470,95 @@
   function closeReel() {
     document.body.classList.remove("on-reel-page");
     $("view-reel").hidden = true; $("view-reel").innerHTML = "";
+    $("view-product").hidden = true; $("view-product").innerHTML = "";
     document.title = (site.title || "ShubhKaPrateek") + " — Shop our reels";
   }
+  // ---------- Product page: ?product=<id> — photo, options, every reel it's in, similar products ----------
+  const productById = id => [...pmap.values()].find(p => String(p.id) === String(id));
+  function similarTo(p, limit = 8) {
+    const mine = new Set(catsOf(p)), myReels = new Set(p.reels);
+    return [...pmap.values()]
+      .filter(o => o !== p)
+      .map(o => ({ o, score: catsOf(o).filter(c => mine.has(c)).length * 2 + o.reels.filter(r => myReels.has(r)).length }))
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score || Math.max(0, ...b.o.reels) - Math.max(0, ...a.o.reels))
+      .slice(0, limit).map(x => x.o);
+  }
+  function reelTile(r) {
+    const url = permalink(r.reel); if (!url) return "";
+    const c = url.split("/")[4];
+    return `<a class="pd-reel" href="?reel=${esc(c)}" data-reel="${esc(c)}">
+      <span class="pd-reel-cover"><img loading="lazy" src="${esc(r.cover || `assets/covers/${c}.jpg`)}" alt="" onerror="this.remove()"></span>
+      <span class="pd-reel-title">${esc(cleanTitle(r.title))}</span></a>`;
+  }
+  function openProduct(id, push = true) {
+    const p = productById(id), sec = $("view-product");
+    $("view-reel").hidden = true; $("view-reel").innerHTML = "";
+    document.body.classList.add("on-reel-page");
+    sec.hidden = false;
+    const qs = "?product=" + encodeURIComponent(id);
+    if (push) history.pushState({ product: id }, "", qs); else history.replaceState({ product: id }, "", qs);
+    if (!p) {
+      sec.innerHTML = `<button class="rp-back" data-back>← Back</button><p class="empty">We couldn't find that product 👀 — <a href="#ask">ask us</a>.</p>`;
+      document.title = (site.title || "ShubhKaPrateek") + " — Product not found"; return;
+    }
+    const pcs = catsOf(p).map(catOf), v = variantOf(p, 0);
+    const inReels = reels.filter(r => p.reels.includes(r.id));
+    const similar = similarTo(p);
+    sec.innerHTML = `
+      <button class="rp-back" data-back>← Back</button>
+      <div class="pd-grid" data-key="${esc(keyOf(p))}">
+        <div class="media pd-media"><span class="vimg">${imgOr(v, esc((pcs[0] || catOf("")).emoji))}</span></div>
+        <div class="pd-info">
+          <span class="cat">${pcs.map(x => esc(x.name)).join(" · ")}</span>
+          <h2 class="rp-title">${esc(p.name)}</h2>
+          ${variantPills(p)}
+          <div class="pd-actions"><span class="vbuy">${buyBtn(v)}</span>
+            <button class="rp-share" type="button" data-share>🔗 Copy link</button></div>
+          ${inReels.length ? `<p class="rp-sub">Featured in ${inReels.length} reel${inReels.length === 1 ? "" : "s"}</p>` : ""}
+        </div>
+      </div>
+      ${inReels.length ? `<h3 class="pd-h">Seen in ${inReels.length === 1 ? "this reel" : "these reels"}</h3>
+        <div class="carousel">
+          <button class="car-btn prev" type="button" aria-label="Previous reels" data-car="-1">‹</button>
+          <div class="pd-reels car-track">${inReels.map(reelTile).join("")}</div>
+          <button class="car-btn next" type="button" aria-label="Next reels" data-car="1">›</button>
+        </div>` : ""}
+      ${similar.length ? `<h3 class="pd-h">Similar products</h3>
+        <div class="rp-products"><div class="grid">${similar.map(productCard).join("")}</div></div>` : ""}`;
+    watchMedia(sec);
+    sec.querySelectorAll(".carousel").forEach(c => requestAnimationFrame(() => carState(c)));
+    document.title = p.name + " — " + (site.title || "ShubhKaPrateek");
+    window.scrollTo({ top: 0 });
+  }
+
+  // ---------- Carousels: swipe on phones, arrows on desktop ----------
+  const carState = car => {
+    const t = car.querySelector(".car-track"); if (!t) return;
+    const max = t.scrollWidth - t.clientWidth - 2;
+    car.querySelector(".prev").disabled = t.scrollLeft <= 2;
+    car.querySelector(".next").disabled = t.scrollLeft >= max;
+    car.classList.toggle("no-scroll", max <= 0);
+  };
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-car]"); if (!b) return;
+    const t = b.closest(".carousel").querySelector(".car-track");
+    t.scrollBy({ left: +b.dataset.car * t.clientWidth * 0.85, behavior: "smooth" });
+  });
+  document.addEventListener("scroll", e => { if (e.target.classList?.contains("car-track")) carState(e.target.closest(".carousel")); }, true);
+  addEventListener("resize", () => document.querySelectorAll(".carousel").forEach(carState));
+
   // Clicks on a reel's cover / title / "See all" open its page inside the site
   document.addEventListener("click", e => {
+    const pr = e.target.closest("[data-product]");
+    if (pr && !e.target.closest("a.badge, .buy, .vbtn, .soon") && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+      e.preventDefault(); openProduct(pr.dataset.product); return;
+    }
     const a = e.target.closest("[data-reel]");
     if (a && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); openReel(a.dataset.reel); return; }
     if (e.target.closest("[data-back]")) {
       e.preventDefault();
-      if (history.state && history.state.reel) history.back();
+      if (history.state && (history.state.reel || history.state.product)) history.back();
       else { closeReel(); view = "reels"; setView("reels"); }
       return;
     }
@@ -487,11 +569,14 @@
   });
   // Browser back/forward
   addEventListener("popstate", () => {
-    const code = new URLSearchParams(location.search).get("reel");
+    const q = new URLSearchParams(location.search), code = q.get("reel"), prod = q.get("product");
     if (code) openReel(code, false);
+    else if (prod) openProduct(prod, false);
     else { closeReel(); const v = new URLSearchParams(location.search).get("view"); setView(v === "reels" ? "reels" : view); }
   });
 
-  const startReel = params.get("reel");
-  if (startReel) { setView(view); openReel(startReel, false); } else setView(view);
+  const startReel = params.get("reel"), startProduct = params.get("product");
+  if (startReel) { setView(view); openReel(startReel, false); }
+  else if (startProduct) { setView(view); openProduct(startProduct, false); }
+  else setView(view);
 })();
