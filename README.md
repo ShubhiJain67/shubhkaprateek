@@ -15,10 +15,16 @@ Every reel from @shubhkaprateek, playing on the page, with its products listed u
 │   ├── css/styles.css      Look & feel (colours at the top, dark mode right below)
 │   ├── js/app.js           Site logic (loads data/, rendering, search, filters, lazy loading, menu, form)
 │   └── covers/             Reel cover images, one per reel: <reel code>.jpg
+├── bot/                    Telegram bot (Cloudflare Worker) — add reels from your phone, see bot/README.md
 ├── CNAME                   Custom domain (shubhkaprateek.com) — don't delete
 ├── .nojekyll               Tells GitHub Pages to serve files as-is — don't delete
 └── .gitignore              Keeps local junk (.venv, .DS_Store) out of git
 ```
+
+## 📱 Easiest: the Telegram bot
+
+Send a reel link + products to the bot from your phone, check the preview, tap ✅ — done, laptop not needed.
+Setup and how to use it: [`bot/README.md`](bot/README.md). (The bot commits to GitHub, so `git pull` before editing here.)
 
 ## Add a product — `data/products.json`
 

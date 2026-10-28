@@ -1,32 +1,34 @@
 [
-  { "id": "marvel", "name": "Marvel", "emoji": "🦸", "theme": true },
+  { "id": "marvel", "name": "Marvel", "emoji": "🦸", "theme": true,
+    "keywords": ["marvel", "avengers", "avenger", "hulk", "spider-man", "spiderman", "iron man", "ironman", "thor", "loki", "deadpool", "black panther", "wakanda", "punisher", "captain america", "wolverine", "groot", "venom", "thanos", "gauntlet", "infinity gauntlet", "arc reactor", "x-men", "doctor strange", "black widow", "hawkeye"] },
   { "id": "clothing", "name": "Clothing & Footwear", "emoji": "👕", "sub": [
-    { "id": "topwear", "name": "T-shirts & Hoodies" },
-    { "id": "bottomwear", "name": "Bottomwear" },
-    { "id": "footwear", "name": "Footwear & Socks" }
+    { "id": "topwear", "name": "T-shirts & Hoodies", "keywords": ["t-shirt", "tshirt", "tee", "shirt", "hoodie", "sweatshirt", "sweater", "jacket", "top", "polo"] },
+    { "id": "ethnic-wear", "name": "Ethnic wear", "keywords": ["saree", "sari", "lehenga", "kurta", "kurti", "anarkali", "salwar", "suit set", "dupatta", "sherwani", "nehru jacket", "ethnic", "blouse"] },
+    { "id": "bottomwear", "name": "Bottomwear", "keywords": ["lower", "jogger", "joggers", "pyjama", "pajama", "pants", "trousers", "shorts", "jeans", "boxers"] },
+    { "id": "footwear", "name": "Footwear & Socks", "keywords": ["sneaker", "sneakers", "shoe", "shoes", "crocs", "clog", "clogs", "slipper", "slippers", "slides", "sandal", "sandals", "flip flops", "socks", "sock"] }
   ] },
   { "id": "toys", "name": "Toys & Collectibles", "emoji": "🧸", "sub": [
-    { "id": "building-sets", "name": "Building sets" },
-    { "id": "figures", "name": "Figures & Bobbleheads" },
-    { "id": "role-play", "name": "Role-play & Costumes" }
+    { "id": "building-sets", "name": "Building sets", "keywords": ["brick", "bricks", "brickset", "building block", "building blocks", "lego", "blocks"] },
+    { "id": "figures", "name": "Figures & Bobbleheads", "keywords": ["figure", "figurine", "bobble", "bobble head", "bobblehead", "die cast", "diecast", "funko", "collectible", "statue"] },
+    { "id": "role-play", "name": "Role-play & Costumes", "keywords": ["mask", "costume", "web shooter", "sword", "shield", "gauntlet", "glove", "cape", "role play", "roleplay", "blaster"] }
   ] },
   { "id": "games", "name": "Games", "emoji": "🎲", "sub": [
-    { "id": "board-games", "name": "Board, Card & Puzzle games" },
-    { "id": "game-gadgets", "name": "Game gadgets" },
-    { "id": "game-night", "name": "Game-night supplies" }
+    { "id": "board-games", "name": "Board, Card & Puzzle games", "keywords": ["game", "card game", "board game", "cards", "puzzle", "jigsaw", "dobble", "uno", "chess", "ludo"] },
+    { "id": "game-gadgets", "name": "Game gadgets", "keywords": ["shuffler", "card dealer", "dealer", "console", "retro", "arcade", "controller", "blast box"] },
+    { "id": "game-night", "name": "Game-night supplies", "keywords": ["dice", "marker", "markers", "whiteboard", "gems", "sticky notes", "timer", "buzzer", "scoreboard"] }
   ] },
   { "id": "home", "name": "Home", "emoji": "🏠", "sub": [
-    { "id": "bedding", "name": "Comforters & Blankets" },
-    { "id": "mugs", "name": "Mugs & Drinkware" },
-    { "id": "lighting", "name": "Lights & Lamps" }
+    { "id": "bedding", "name": "Comforters & Blankets", "keywords": ["comforter", "blanket", "quilt", "bedsheet", "bed sheet", "duvet", "pillow", "cushion", "throw"] },
+    { "id": "mugs", "name": "Mugs & Drinkware", "keywords": ["mug", "mugs", "cup", "bottle", "sipper", "straw", "straws", "glass", "tumbler", "coaster"] },
+    { "id": "lighting", "name": "Lights & Lamps", "keywords": ["lamp", "night light", "projector", "led", "fairy lights", "light", "lights"] }
   ] },
   { "id": "decor", "name": "Party & Gifting", "emoji": "🎈", "sub": [
-    { "id": "party-decor", "name": "Balloons & Party decor" },
-    { "id": "gift-wrap", "name": "Gift wrapping" }
+    { "id": "party-decor", "name": "Balloons & Party decor", "keywords": ["balloon", "balloons", "inflater", "inflator", "pump", "banner", "party", "streamers", "confetti", "web", "garland", "cake topper"] },
+    { "id": "gift-wrap", "name": "Gift wrapping", "keywords": ["wrapping", "wrap", "packing paper", "gift bag", "bow", "bows", "ribbon", "gift box", "tissue paper"] }
   ] },
   { "id": "accessories", "name": "Accessories", "emoji": "✨", "sub": [
-    { "id": "fashion-accessories", "name": "Perfume & Charms" },
-    { "id": "car-accessories", "name": "Car accessories" }
+    { "id": "fashion-accessories", "name": "Perfume & Charms", "keywords": ["perfume", "fragrance", "deo", "jibbitz", "charm", "charms", "keychain", "watch", "wallet", "cap", "bag", "bracelet"] },
+    { "id": "car-accessories", "name": "Car accessories", "keywords": ["car", "dashboard", "car accessory", "air freshener"] }
   ] },
-  { "id": "diy", "name": "DIY & Art", "emoji": "🎨" }
+  { "id": "diy", "name": "DIY & Art", "emoji": "🎨", "keywords": ["diy", "paint", "painting", "canvas", "paint by numbers", "craft", "art kit", "sketch"] }
 ]
