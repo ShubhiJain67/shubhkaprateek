@@ -41,7 +41,7 @@ Then tap ✅ <b>Add to site</b>. /cancel drops the draft.
 I'll show exactly what goes before anything is removed.`;
 
 export default {
-  async fetch(req, env, ctx) {
+  async fetch(req, env) {
     const url = new URL(req.url);
     if (req.method !== "POST" || url.pathname !== "/telegram") return new Response("ShubhKaPrateek bot is running.");
     if (req.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.WEBHOOK_SECRET) return new Response("nope", { status: 401 });
@@ -199,8 +199,7 @@ export function extractProduct(html, finalUrl) {
   if (!title) title = meta(html, "og:title", "twitter:title");
   if (!title) { const t = html.slice(0, 300_000).match(/<title[^>]*>([\s\S]{1,300}?)<\/title>/i); if (t) title = decode(t[1]).replace(/\s+/g, " ").trim(); }
   if (image && image.startsWith("//")) image = "https:" + image;
-  const blocked = isAmazon && /captcha|Robot Check|api-services-support@amazon/i.test(html.slice(0, 20000)) && !image;
-  return { image, title: cleanTitle(title), blocked };
+  return { image, title: cleanTitle(title) };
 }
 
 export function cleanTitle(t) {
@@ -238,12 +237,10 @@ async function enrichProduct(p) {
       v.image = info.image || "";
       if (!v.image && /amazon\.|amzn|link\.amazon/i.test(page.finalUrl + v.link)) {
         v.image = await amazonImageByAsin(asinOf(page.finalUrl) || asinOf(v.link));
-        if (v.image) info.blocked = false;
       }
-      v.blocked = info.blocked || (!info.image && page.status >= 400);
       if (!p.name && info.title) p.name = info.title;
       if (!p.pageTitle && info.title) p.pageTitle = info.title;
-    } catch (e) { v.image = ""; v.blocked = true; }
+    } catch { v.image = ""; }
   }
   if (!p.name) { p.name = "Untitled product"; p.needsName = true; }
 }
@@ -393,7 +390,7 @@ async function onNewPost(text, env, chat) {
 // ---------------------------------------------------------------- preview
 const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-export function previewText(d, cats, siteUrl) {
+export function previewText(d, cats) {
   // show the full path so it's clear where it lands on the site: "Clothing & Footwear › Ethnic wear"
   const catName = id => {
     const c = cats.find(c => c.id === id) || { name: id };
@@ -439,7 +436,7 @@ async function sendPreview(env, chat, d, S) {
   d.products.forEach((p, i) => p.existingId == null && p.variants.forEach(v => (v.photoFile || v.image) && media.push({ type: "photo", media: v.photoFile || v.image, caption: `${i + 1}. ${p.name}${p.variants.length > 1 ? " — " + v.name : ""}` })));
   if (media.length >= 2) await tg(env, "sendMediaGroup", { chat_id: chat, media: media.slice(0, 10) }).catch(() => {});
   else if (media.length === 1) await tg(env, "sendPhoto", { chat_id: chat, photo: media[0].media, caption: media[0].caption }).catch(() => {});
-  return say(env, chat, previewText(d, S.cats, env.SITE_URL), {
+  return say(env, chat, previewText(d, S.cats), {
     reply_markup: { inline_keyboard: [[{ text: "✅ Add to site", callback_data: "add:" + d.id }, { text: "❌ Cancel", callback_data: "cancel:" + d.id }]] }
   });
 }

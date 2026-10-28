@@ -60,7 +60,7 @@ Each product is listed **once**, with a unique number `id` (use the highest id +
 
 - `id` = highest number + 1 (only used for order — higher shows first; never displayed).
 - `products` = the product **id numbers** from `products.json`. Reuse them freely — a product in 3 reels is still edited in one place.
-- Reels with no products are kept but not shown. `"featured": true` pins a reel to the top.
+- Reels with no products are kept but not shown.
 - **Cover:** save the reel's 9:16 cover as `assets/covers/<reel code>.jpg` (code = part after `/reel/`), or the tile falls back to Instagram's squeezed preview.
 
 ## Categories & settings

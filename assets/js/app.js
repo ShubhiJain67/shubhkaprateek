@@ -74,31 +74,27 @@
   (data.reels || []).forEach(r => (r.products || []).forEach(normalize));
   (data.products || []).forEach(normalize);
   const catsOf = p => (Array.isArray(p.category) ? p.category : [p.category]).filter(Boolean);
+  const keyOf = p => String(p.id);   // products are matched by id everywhere
   // a product's own categories + their parents (a "mugs" product is also in "home")
   const allCatsOf = p => [...new Set(catsOf(p).flatMap(id => [id, catById[id] && catById[id].parent].filter(Boolean)))];
   const inCat = (p, id) => allCatsOf(p).includes(id);
 
-  // Reels with products, newest first (featured pinned)
+  // Reels with products, newest first
   const reels = (data.reels || [])
     .filter(r => (r.products || []).length)
-    .sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || (b.id ?? 0) - (a.id ?? 0));
+    .sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
 
-  // Products from reels + standalone list, de-duplicated by name
+  // Every product once (by id), with the ids of the reels it's in
   const pmap = new Map();
   const addProduct = (p, reelId) => {
-    const key = (p.name || "").trim().toLowerCase();
-    if (!key) return;
+    const key = keyOf(p);
     if (!pmap.has(key)) pmap.set(key, { ...p, reels: [] });
     const e = pmap.get(key);
     if (reelId != null && !e.reels.includes(reelId)) e.reels.push(reelId);
-    for (const f of ["link", "price", "image"]) if (!e[f] && p[f]) e[f] = p[f];
-    if (!(e.variants || []).length && (p.variants || []).length) e.variants = p.variants;
-    e.category = [...new Set([...catsOf(e), ...catsOf(p)])];
   };
   reels.forEach(r => r.products.forEach(p => addProduct(p, r.id)));
-  (data.products || []).forEach(p => addProduct(p, p.reel ?? null));
-  const products = [...pmap.values()].sort((a, b) =>
-    (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || Math.max(0, ...b.reels) - Math.max(0, ...a.reels));
+  (data.products || []).forEach(p => addProduct(p, null));
+  const products = [...pmap.values()].sort((a, b) => Math.max(0, ...b.reels) - Math.max(0, ...a.reels));
 
   // Header / hero
   if (site.title) document.title = site.title + " — Shop our reels";
@@ -123,12 +119,8 @@
     ? `<a class="buy" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">Buy${storeOf(p.link) ? " on " + esc(storeOf(p.link)) : ""} →</a>`
     : `<span class="soon">Link coming soon</span>`;
   // ---- Variations: "variants": [{ "name": "Red", "link": "...", "image": "..." }] ----
-  const keyOf = p => (p.name || "").trim().toLowerCase();
-  // The selected variation, falling back to the product's own link/photo
-  const variantOf = (p, i) => {
-    const v = (p.variants || [])[i] || {};
-    return { ...p, link: v.link || p.link, image: v.image || p.image };
-  };
+  // The selected variation: { name, link, image }
+  const variantOf = (p, i) => (p.variants || [])[i] || {};
   const variantPills = p => (p.variants || []).length > 1
     ? `<div class="variants" role="radiogroup" aria-label="Options">${p.variants.map((v, i) =>
         `<button type="button" class="vbtn" data-i="${i}" aria-pressed="${i === 0}">${esc(v.name || "Option " + (i + 1))}</button>`).join("")}</div>`
@@ -159,7 +151,7 @@
 
   function permalink(url) {
     const m = String(url || "").match(/instagram\.com\/(?:[\w.]+\/)?(reel|reels|p|tv)\/([A-Za-z0-9_-]+)/);
-    if (!m || /PASTE/i.test(m[2])) return null;
+    if (!m) return null;
     return `https://www.instagram.com/${m[1] === "reels" ? "reel" : m[1]}/${m[2]}/`;
   }
 
@@ -324,7 +316,7 @@
   const codeById = Object.fromEntries(reels.map(r => [r.id, codeOf(r)]));
   const catWords = p => allCatsOf(p).flatMap(id => [id, catOf(id).name]);
   const reelText = r => [r.title, codeOf(r), ...r.products.flatMap(p => [p.name, ...catWords(p), ...(p.variants || []).map(v => v.name)])].join(" ").toLowerCase();
-  const productText = p => [p.name, ...catWords(p), storeOf(p.link), ...(p.variants || []).flatMap(v => [v.name, storeOf(v.link || "")]), ...p.reels.map(id => codeById[id])].join(" ").toLowerCase();
+  const productText = p => [p.name, ...catWords(p), ...(p.variants || []).flatMap(v => [v.name, storeOf(v.link || "")]), ...p.reels.map(id => codeById[id])].join(" ").toLowerCase();
 
   function apply() {
     // searching, switching tabs or picking a category leaves the reel page
