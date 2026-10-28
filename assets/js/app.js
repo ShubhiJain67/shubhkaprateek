@@ -183,6 +183,36 @@
     });
   }
 
+  // ---------- Featured tile(s) on the landing page — ids in data/site.json → "featured" (set from Telegram: /feature) ----------
+  function featuredTile(p) {
+    const v = variantOf(p, 0), id = esc(p.id);
+    const latest = p.reels.length ? permalink((reels.find(r => r.id === Math.max(...p.reels)) || {}).reel) : null;
+    return `<div class="feat-tile" data-key="${esc(keyOf(p))}">
+      <div class="media feat-media" data-product="${id}" role="link" tabindex="0" aria-label="${esc(p.name)}"><span class="vimg">${imgOr(v, esc(catOf(catsOf(p)[0]).emoji))}</span></div>
+      <div class="feat-info">
+        <span class="feat-label">⭐ Featured</span>
+        <span class="cat">${catsOf(p).map(c => esc(catOf(c).name)).join(" · ")}</span>
+        <h3 class="feat-name"><a href="?product=${id}" data-product="${id}">${esc(p.name)}</a></h3>
+        ${variantPills(p)}
+        <div class="feat-actions"><span class="vbuy">${buyBtn(v)}</span>
+          ${latest ? `<a class="feat-reel" href="${esc(latest)}" target="_blank" rel="noopener">▶ Watch reel</a>` : ""}</div>
+      </div>
+    </div>`;
+  }
+  function renderFeatured() {
+    const list = [].concat(site.featured || []).map(id => pmap.get(String(id))).filter(Boolean);
+    const box = $("featured");
+    if (!list.length) return;
+    box.innerHTML = list.length === 1 ? featuredTile(list[0]) : `<div class="carousel">
+        <button class="car-btn prev" type="button" aria-label="Previous" data-car="-1">‹</button>
+        <div class="car-track feat-track">${list.map(featuredTile).join("")}</div>
+        <button class="car-btn next" type="button" aria-label="Next" data-car="1">›</button>
+      </div>`;
+    box.dataset.ready = "1";
+    watchMedia(box);
+    box.querySelectorAll(".carousel").forEach(c => requestAnimationFrame(() => carState(c)));
+  }
+
   function productCard(p) {
     const pcs = catsOf(p).map(catOf), c = pcs[0] || catOf("");
     const latest = p.reels.length ? Math.max(...p.reels) : null;
@@ -338,6 +368,8 @@
       searched = products.filter(p => code ? p.reels.some(id => codeById[id] === code) : (!words.length || matches(productText(p))));
       filtered = searched.filter(p => active === "all" || inCat(p, active));
     }
+    // featured tile only on the plain landing page (not while searching or filtering)
+    $("featured").hidden = !$("featured").dataset.ready || !!raw || active !== "all";
     renderChips();
     draw();
     const u = new URLSearchParams();
@@ -645,6 +677,7 @@
     else { closeReel(); const v = new URLSearchParams(location.search).get("view"); setView(v === "reels" ? "reels" : view); }
   });
 
+  renderFeatured();
   const startReel = params.get("reel"), startProduct = params.get("product");
   if (startReel) { setView(view); openReel(startReel, false); }
   else if (startProduct) { setView(view); openProduct(startProduct, false); }

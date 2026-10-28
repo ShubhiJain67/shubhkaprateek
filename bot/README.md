@@ -56,6 +56,17 @@ The bot sends the photos it found + a preview. Fix things by replying:
 
 Then tap **✅ Add to site**.
 
+### ⭐ Featured tile on the home page
+
+| Send | Does |
+|---|---|
+| `/feature Hulk Comforter` or `/feature 35` | adds it to the featured tile |
+| `/unfeature Hulk Comforter` · `/unfeature all` | takes it off · clears the tile |
+| `/featured` | shows what's featured now |
+
+The bot shows what the tile will look like → tap **✅ Update home page**. Several featured products become a swipeable row.
+It's saved as `"featured": [35]` in `data/site.json`.
+
 ### Removing things
 
 | Send | Removes |

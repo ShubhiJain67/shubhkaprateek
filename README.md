@@ -74,6 +74,7 @@ Each product is listed **once**, with a unique number `id` (use the highest id +
   ```
   `"theme": true` (used on Marvel) marks a collection that cuts across categories — it's still a tab, but on its own it doesn't make two products "similar".
 - `data/site.json` — title, tagline, Instagram and YouTube links (remove `youtube` to hide the button), and the contact form (`contact.formKey` = Web3Forms key; meant to be public — regenerate it on web3forms.com if ever abused).
+  `"featured": [35]` = product ids shown in the ⭐ Featured tile on the home page (easiest from Telegram: `/feature Hulk Comforter`); `"characters"` = names that get a "More in …" row on product pages.
 
 **Watch the commas:** every `}` in a list needs a `,` after it except the last one. If the page says "Couldn't load data/<file>.json", paste that file into https://jsonlint.com. If a reel lists a product id that isn't in `products.json`, the site skips it and logs a warning in the browser console.
 

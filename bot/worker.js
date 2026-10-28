@@ -38,7 +38,12 @@ Then tap ✅ <b>Add to site</b>. /cancel drops the draft.
 <b>Remove things from the site</b>
 <code>/delete https://www.instagram.com/reel/ABC123/</code> — the reel, plus its products that aren't in any other reel
 <code>/delete Green Saree</code> (or its id, e.g. <code>/delete 48</code>) — the product; a reel left with no products goes too
-I'll show exactly what goes before anything is removed.`;
+I'll show exactly what goes before anything is removed.
+
+<b>⭐ Featured tile on the home page</b>
+<code>/feature Hulk Comforter</code> (or its id) — add it to the featured tile
+<code>/unfeature Hulk Comforter</code> — take it off · <code>/unfeature all</code> — clear it
+<code>/featured</code> — what's featured now`;
 
 export default {
   async fetch(req, env) {
@@ -85,6 +90,8 @@ export async function handleUpdate(update, env) {
   if (cmd === "/cancel") { await env.DRAFTS.delete(String(chat)); return say(env, chat, "🗑 Draft dropped."); }
   if (cmd === "/cats") return say(env, chat, await catsHelp(env));
   if (cmd === "/delete" || cmd === "/remove") return onDelete(text.replace(/^\/\S+\s*/, "").trim(), env, chat);
+  if (cmd === "/featured") return showFeatured(env, chat);
+  if (cmd === "/feature" || cmd === "/unfeature") return onFeature(cmd === "/feature" ? "add" : "remove", text.replace(/^\/\S+\s*/, "").trim(), env, chat);
   // any other /command is never treated as a product name
   if (cmd.startsWith("/")) return say(env, chat, `I don't know <code>${esc(cmd)}</code> — see /help.`);
   if (cmd === "/preview") { const d = await loadDraft(env, chat); return d ? sendPreview(env, chat, d) : say(env, chat, "No draft right now — send me a reel link + products."); }
@@ -512,6 +519,7 @@ async function onButton(q, env) {
   if (!allowed(env, chat)) return tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Private bot" });
   const [action, id] = String(q.data || "").split(":");
   if (action === "delok" || action === "delno") return onDeleteButton(q, env, action, id);
+  if (action === "featok" || action === "featno") return onFeatureButton(q, env, action, id);
   const d = await loadDraft(env, chat);
   if (!d || d.id !== id) return tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "That preview is old — use the latest one.", show_alert: true });
   const done = label => tg(env, "editMessageReplyMarkup", { chat_id: chat, message_id: q.message.message_id, reply_markup: { inline_keyboard: [[{ text: label, callback_data: "noop:0" }]] } }).catch(() => {});
@@ -709,4 +717,62 @@ async function onDeleteButton(q, env, action, id) {
   await commitFiles(env, `Remove ${what} (via Telegram bot)`, files);
   await done("🗑 Removed");
   return say(env, chat, `🗑 <b>Removed</b> ${esc(what)}. Gone from the site in about a minute.\n\n💻 Run <code>git pull</code> on your laptop before editing.`);
+}
+
+// ---------------------------------------------------------------- ⭐ featured tile (data/site.json → site.featured)
+const featKey = chat => "feat:" + chat;
+const featuredIds = site => [].concat(site.site?.featured || []);
+export function applyFeature(ids, op, productId) {
+  if (op === "clear") return [];
+  if (op === "add") return ids.includes(productId) ? ids : [...ids, productId];
+  return ids.filter(x => x !== productId);
+}
+const featuredLine = (ids, products) => ids.length
+  ? ids.map(id => `• ${esc((products.find(p => p.id === id) || { name: `#${id} (no longer exists)` }).name)}`).join("\n")
+  : "<i>nothing</i>";
+
+async function showFeatured(env, chat) {
+  const S = await loadSite(env);
+  return say(env, chat, `⭐ <b>Featured now:</b>\n${featuredLine(featuredIds(S.site), S.products)}\n\n<code>/feature name</code> to add · <code>/unfeature name</code> to remove`);
+}
+
+async function onFeature(op, arg, env, chat) {
+  if (!arg) return say(env, chat, op === "add" ? "Which product? e.g. <code>/feature Hulk Comforter</code> or <code>/feature 35</code>" : "Which product? e.g. <code>/unfeature Hulk Comforter</code> or <code>/unfeature all</code>");
+  const S = await loadSite(env);
+  const now = featuredIds(S.site);
+  let productId = null;
+  if (op === "remove" && /^all$/i.test(arg)) op = "clear";
+  else {
+    const found = findProduct(arg, S.products);
+    if (!found.length) return say(env, chat, `I couldn't find a product matching “${esc(arg)}”.`);
+    if (found.length > 1) return say(env, chat, `Which one? Send <code>/${op === "add" ? "feature" : "unfeature"}</code> with the id:\n` + found.slice(0, 15).map(p => `• <code>${p.id}</code> ${esc(p.name)}`).join("\n"));
+    productId = found[0].id;
+    if (op === "add" && now.includes(productId)) return say(env, chat, `⭐ ${esc(found[0].name)} is already featured.`);
+    if (op === "remove" && !now.includes(productId)) return say(env, chat, `${esc(found[0].name)} isn't featured.`);
+  }
+  const next = applyFeature(now, op, productId);
+  const id = Date.now().toString(36);
+  await env.DRAFTS.put(featKey(chat), JSON.stringify({ id, op, productId }), { expirationTtl: 24 * 3600 });
+  return say(env, chat, `⭐ <b>Featured tile will show:</b>\n${featuredLine(next, S.products)}\n\nOK?`, {
+    reply_markup: { inline_keyboard: [[{ text: "✅ Update home page", callback_data: "featok:" + id }, { text: "Cancel", callback_data: "featno:" + id }]] }
+  });
+}
+
+async function onFeatureButton(q, env, action, id) {
+  const chat = q.message.chat.id;
+  const raw = await env.DRAFTS.get(featKey(chat));
+  const pending = raw ? JSON.parse(raw) : null;
+  const done = label => tg(env, "editMessageReplyMarkup", { chat_id: chat, message_id: q.message.message_id, reply_markup: { inline_keyboard: [[{ text: label, callback_data: "noop:0" }]] } }).catch(() => {});
+  if (!pending || pending.id !== id) return tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "That's an old request — send it again.", show_alert: true });
+  await env.DRAFTS.delete(featKey(chat));
+  if (action === "featno") { await tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Cancelled" }); return done("Cancelled"); }
+  await tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Updating…" });
+  const S = await loadSite(env);                       // latest site.json, in case it changed
+  const next = applyFeature(featuredIds(S.site), pending.op, pending.productId);
+  const site = { ...S.site, site: { ...S.site.site, featured: next } };
+  if (!next.length) delete site.site.featured;
+  await commitFiles(env, `Featured: ${pending.op === "clear" ? "cleared" : (pending.op === "add" ? "+" : "−") + " product " + pending.productId} (via Telegram bot)`,
+    [{ path: "data/site.json", text: pretty(site, "featured") }]);
+  await done("✅ Updated");
+  return say(env, chat, `⭐ Done — the home page updates in about a minute.\n\n💻 Run <code>git pull</code> on your laptop before editing.`);
 }
