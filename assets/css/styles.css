@@ -334,13 +334,8 @@ footer { border-top: 1px solid var(--line); text-align: center; color: var(--mut
   .rp-products .card .name { font-size: 14px; }
   .rp-products .card .buy, .rp-products .card .soon { width: 100%; padding: 8px 6px; font-size: 12px; }
 }
-.look-title a, .see-all { color: inherit; text-decoration: none; }
+.look-title a { color: inherit; text-decoration: none; }
 .look-title a:hover { color: var(--pink); }
-.see-all {
-  display: flex; align-items: center; justify-content: center; padding: 9px; border-radius: 10px;
-  border: 1px solid var(--line); font-size: 13px; font-weight: 700;
-}
-.see-all:hover { border-color: var(--pink); color: var(--pink); }
 body.on-reel-page .hero, body.on-reel-page .toolbar, body.on-reel-page #chips,
 body.on-reel-page #view-products, body.on-reel-page #view-reels, body.on-reel-page #empty,
 body.on-reel-page #sentinel { display: none !important; }

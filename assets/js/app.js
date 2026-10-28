@@ -234,7 +234,6 @@
       <div class="look-body">
         <p class="look-title">${code ? `<a href="?reel=${esc(code)}" data-reel="${esc(code)}">${esc(cleanTitle(r.title))}</a>` : esc(cleanTitle(r.title))}</p>
         <ul class="items">${items}</ul>
-        ${code ? `<a class="see-all" href="?reel=${esc(code)}" data-reel="${esc(code)}">See all ${r.products.length} product${r.products.length === 1 ? "" : "s"} →</a>` : ""}
         ${url ? `<a class="watch" href="${esc(url)}" target="_blank" rel="noopener">▶ Watch on Instagram</a>` : ""}
       </div>
     </article>`;
@@ -614,7 +613,7 @@
   document.addEventListener("scroll", e => { if (e.target.classList?.contains("car-track")) carState(e.target.closest(".carousel")); }, true);
   addEventListener("resize", () => document.querySelectorAll(".carousel").forEach(carState));
 
-  // Clicks on a reel's cover / title / "See all" open its page inside the site
+  // Clicks on a reel's cover / title open its page inside the site
   document.addEventListener("click", e => {
     const pr = e.target.closest("[data-product]");
     if (pr && !e.target.closest("a.badge, .buy, .vbtn, .soon") && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
