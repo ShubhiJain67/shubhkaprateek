@@ -13,17 +13,17 @@
   const $ = id => document.getElementById(id);
 
   // ---- load data/ (each file has one job) ----
-  // 1) Show the copy built into index.html right away (no download → instant, and works even if downloads stall).
+  // 1) Show the copy in /assets/js/data.js right away (no download → instant, and works even if downloads stall).
   // 2) The live data/ files are checked in the background (started in index.html); if they're newer — e.g. the
   //    bot just added a reel — remember them for this visit and reload once to show them.
   // 3) No built-in copy (older cached page)? Wait for the live files, with a timeout + one retry.
   const FILES = ["site", "categories", "products", "reels"];
-  const fetchAll = () => Promise.all(FILES.map(f => fetch(`data/${f}.json`, { cache: "no-cache" })
+  const fetchAll = () => Promise.all(FILES.map(f => fetch(`/data/${f}.json`, { cache: "no-cache" })
     .then(r => { if (!r.ok) throw new Error(f + " " + r.status); return r.json(); }).then(d => [f, d]))).then(Object.fromEntries);
   const timeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("timed out")), ms))]);
   const readJSON = get => { try { return JSON.parse(get() || "null"); } catch { return null; } };
   const fresh = window.SKP_FRESH || fetchAll();
-  let raw = readJSON(() => sessionStorage.getItem("skp-fresh")) || readJSON(() => $("skp-data")?.textContent);
+  let raw = readJSON(() => sessionStorage.getItem("skp-fresh")) || (window.SKP_SNAPSHOT || null);
   if (raw) {
     fresh.then(d => {
       if (JSON.stringify(d) === JSON.stringify(raw)) return;
@@ -159,7 +159,7 @@
     : fallback;
 
   // ---------- Analytics (Umami — free, no cookies): turned on by "umamiWebsiteId" in data/site.json ----------
-  // Page views (incl. which ?reel= / ?product= page) are counted automatically; the events below add what matters
+  // Page views (incl. which /reel/… or /product/… page) are counted automatically; the events below add what matters
   // for affiliate income: Buy clicks per product + store, searches, and "Can't find something?" use.
   // events that happen before Umami has finished loading wait in a queue
   const pending = [];
@@ -241,7 +241,7 @@
       <div class="feat-info">
         <span class="feat-label">⭐ Featured</span>
         <span class="cat">${catsOf(p).map(c => esc(catOf(c).name)).join(" · ")}</span>
-        <h3 class="feat-name"><a href="?product=${id}" data-product="${id}">${esc(p.name)}</a></h3>
+        <h3 class="feat-name"><a href="/product/${id}" data-product="${id}">${esc(p.name)}</a></h3>
         ${variantPills(p)}
         <div class="feat-actions"><span class="vbuy">${buyBtn(v)}</span>
           ${latest ? `<a class="feat-reel" href="${esc(latest)}" target="_blank" rel="noopener">▶ Watch reel</a>` : ""}</div>
@@ -253,7 +253,7 @@
   function featuredTicker(excludeId) {
     const list = [].concat(site.featured || []).map(id => pmap.get(String(id))).filter(p => p && String(p.id) !== String(excludeId));
     if (!list.length) return "";
-    const one = `<span class="tk-item">⭐ Our pick: ${list.map(p => `<a href="?product=${esc(p.id)}" data-product="${esc(p.id)}">${esc(p.name)}</a>`).join(" · ")} — take a look →</span>`;
+    const one = `<span class="tk-item">⭐ Our pick: ${list.map(p => `<a href="/product/${esc(p.id)}" data-product="${esc(p.id)}">${esc(p.name)}</a>`).join(" · ")} — take a look →</span>`;
     return `<div class="feat-ticker" aria-label="Featured"><div class="tk-track">${one}<span aria-hidden="true">${one}</span><span aria-hidden="true">${one}</span></div></div>`;
   }
   function renderFeatured() {
@@ -282,7 +282,7 @@
       </div>
       <div class="body">
         <span class="cat">${pcs.map(x => esc(x.name)).join(" · ")}</span>
-        <p class="name">${pid ? `<a href="?product=${pid}" data-product="${pid}">${esc(p.name)}</a>` : esc(p.name)}</p>
+        <p class="name">${pid ? `<a href="/product/${pid}" data-product="${pid}">${esc(p.name)}</a>` : esc(p.name)}</p>
         ${variantPills(p)}
         <div class="foot"><span class="vbuy">${buyBtn(v)}</span></div>
       </div>
@@ -296,13 +296,13 @@
     const code = url ? url.split("/")[4] : "";
     // Lazy: nothing is fetched until this card scrolls near the screen (see mediaObserver)
     const media = url
-      ? `<div class="lazy-media" data-url="${esc(url)}" data-code="${esc(code)}" data-cover="${esc(r.cover || `assets/covers/${code}.jpg`)}" data-alt="${esc(r.title || "Reel")}"></div>` : "";
+      ? `<div class="lazy-media" data-url="${esc(url)}" data-code="${esc(code)}" data-cover="${esc(r.cover || `/assets/covers/${code}.jpg`)}" data-alt="${esc(r.title || "Reel")}"></div>` : "";
     const items = r.products.map(p0 => {
       const p = pmap.get(keyOf(p0)) || p0, v = variantOf(p, 0);
       return `<li class="item" data-key="${esc(keyOf(p))}" data-short="1">
         <span class="thumb vimg">${imgOr(v, esc(catOf(catsOf(p)[0]).emoji), 120)}</span>
         <div class="item-info">
-          <p class="item-name">${p.id != null ? `<a href="?product=${esc(p.id)}" data-product="${esc(p.id)}">${esc(p.name)}</a>` : esc(p.name)}</p>
+          <p class="item-name">${p.id != null ? `<a href="/product/${esc(p.id)}" data-product="${esc(p.id)}">${esc(p.name)}</a>` : esc(p.name)}</p>
           ${variantPills(p)}
         </div>
         <span class="vbuy">${shortBuy(v)}</span>
@@ -311,7 +311,7 @@
     return `<article class="look">
       <div class="look-media">${media}</div>
       <div class="look-body">
-        <p class="look-title">${code ? `<a href="?reel=${esc(code)}" data-reel="${esc(code)}">${esc(cleanTitle(r.title))}</a>` : esc(cleanTitle(r.title))}</p>
+        <p class="look-title">${code ? `<a href="/reel/${esc(code)}" data-reel="${esc(code)}">${esc(cleanTitle(r.title))}</a>` : esc(cleanTitle(r.title))}</p>
         <ul class="items">${items}</ul>
         ${url ? `<a class="watch" href="${esc(url)}" target="_blank" rel="noopener">▶ Watch on Instagram</a>` : ""}
       </div>
@@ -341,7 +341,7 @@
   const loadMedia = el => {
     if (el.tagName === "IMG") { el.src = el.dataset.src; el.removeAttribute("data-src"); return; }
     const url = el.dataset.url, code = el.dataset.code;
-    el.outerHTML = `<a class="cover" href="?reel=${code}" data-reel="${code}" data-embed="${url}embed/">
+    el.outerHTML = `<a class="cover" href="/reel/${code}" data-reel="${code}" data-embed="${url}embed/">
         <img src="${el.dataset.cover}" alt="${el.dataset.alt}" onerror="toEmbed(this)"></a>`;
   };
   const mediaObserver = "IntersectionObserver" in window
@@ -454,7 +454,7 @@
     if (view !== "products") u.set("view", view);
     if (active !== "all") u.set("c", active);
     if (raw) u.set("q", raw);
-    history.replaceState(null, "", u.toString() ? "?" + u : location.pathname);
+    history.replaceState(null, "", "/" + (u.toString() ? "?" + u : ""));
   }
 
   function setView(v) {
@@ -590,7 +590,15 @@
     document.querySelector(".toolbar").scrollIntoView({ behavior: "smooth" });
   });
 
-  // ---------- Reel page: ?reel=<code> shows one reel with all its products ----------
+  // Which page is open: shubhkaprateek.com/reel/<code> or /product/<id>.
+  // Old links (/?reel=<code>, /?product=<id>) still work — they open the page and the address switches to the new one.
+  function pageOf() {
+    const m = location.pathname.match(/^\/(reel|product)\/([^/]+?)(?:\.html)?\/?$/), q = new URLSearchParams(location.search);
+    const part = k => m && m[1] === k ? decodeURIComponent(m[2]) : q.get(k);
+    return { code: part("reel"), prod: part("product") };
+  }
+
+  // ---------- Reel page: /reel/<code> shows one reel with all its products ----------
   function reelByCode(code) { return reels.find(r => codeOf(r) === String(code || "").toLowerCase()); }
   function openReel(code, push = true) {
     const r = reelByCode(code);
@@ -598,8 +606,8 @@
     $("view-product").hidden = true; $("view-product").innerHTML = "";
     document.body.classList.add("on-reel-page");
     sec.hidden = false;
-    if (push) history.pushState({ reel: code }, "", "?reel=" + encodeURIComponent(code));
-    else history.replaceState({ reel: code }, "", "?reel=" + encodeURIComponent(code));
+    const path = "/reel/" + encodeURIComponent(code);
+    if (push) history.pushState({ reel: code }, "", path); else history.replaceState({ reel: code }, "", path);
     if (!r) {
       sec.innerHTML = `<button class="rp-back" data-back>← All reels</button><p class="empty">We couldn't find that reel 👀 — <a href="#ask">ask us</a> and we'll send you the links.</p>`;
       document.title = (site.title || "ShubhKaPrateek") + " — Reel not found";
@@ -612,7 +620,7 @@
       <div class="rp-grid">
         <div class="rp-media">
           <div class="rp-cover rp-player">
-            <img src="${esc(r.cover || `assets/covers/${c}.jpg`)}" alt="${esc(cleanTitle(r.title))}" onerror="this.remove()">
+            <img src="${esc(r.cover || `/assets/covers/${c}.jpg`)}" alt="${esc(cleanTitle(r.title))}" onerror="this.remove()">
             <div class="reel-frame"><iframe src="${esc(url)}embed/" title="${esc(cleanTitle(r.title))}" scrolling="no" allowtransparency="true"
               allow="autoplay; encrypted-media; clipboard-write; picture-in-picture" onload="this.parentNode.classList.add('ready')"></iframe></div>
           </div>
@@ -638,7 +646,7 @@
     $("view-product").hidden = true; $("view-product").innerHTML = "";
     document.title = (site.title || "ShubhKaPrateek") + " — Shop our reels";
   }
-  // ---------- Product page: ?product=<id> — photo, options, every reel it's in, similar products ----------
+  // ---------- Product page: /product/<id> — photo, options, every reel it's in, similar products ----------
   const productById = id => [...pmap.values()].find(p => String(p.id) === String(id));
   // "More in …" rails on a product page, in this order (each one only if it has something to show):
   //   1) same character — names listed in data/site.json → "characters" (e.g. "More in Hulk")
@@ -667,8 +675,8 @@
   function reelTile(r) {
     const url = permalink(r.reel); if (!url) return "";
     const c = url.split("/")[4];
-    return `<a class="pd-reel" href="?reel=${esc(c)}" data-reel="${esc(c)}">
-      <span class="pd-reel-cover"><img loading="lazy" src="${esc(r.cover || `assets/covers/${c}.jpg`)}" alt="" onerror="this.remove()"></span>
+    return `<a class="pd-reel" href="/reel/${esc(c)}" data-reel="${esc(c)}">
+      <span class="pd-reel-cover"><img loading="lazy" src="${esc(r.cover || `/assets/covers/${c}.jpg`)}" alt="" onerror="this.remove()"></span>
       <span class="pd-reel-title">${esc(cleanTitle(r.title))}</span></a>`;
   }
   function openProduct(id, push = true) {
@@ -676,8 +684,8 @@
     $("view-reel").hidden = true; $("view-reel").innerHTML = "";
     document.body.classList.add("on-reel-page");
     sec.hidden = false;
-    const qs = "?product=" + encodeURIComponent(id);
-    if (push) history.pushState({ product: id }, "", qs); else history.replaceState({ product: id }, "", qs);
+    const path = "/product/" + encodeURIComponent(id);
+    if (push) history.pushState({ product: id }, "", path); else history.replaceState({ product: id }, "", path);
     if (!p) {
       sec.innerHTML = `<button class="rp-back" data-back>← Back</button><p class="empty">We couldn't find that product 👀 — <a href="#ask">ask us</a>.</p>`;
       document.title = (site.title || "ShubhKaPrateek") + " — Product not found"; return;
@@ -754,7 +762,7 @@
   });
   // Browser back/forward
   addEventListener("popstate", () => {
-    const q = new URLSearchParams(location.search), code = q.get("reel"), prod = q.get("product");
+    const { code, prod } = pageOf();
     if (code) openReel(code, false);
     else if (prod) openProduct(prod, false);
     else { closeReel(); const v = new URLSearchParams(location.search).get("view"); setView(v === "reels" ? "reels" : view); }
@@ -768,7 +776,7 @@
   const fromName = (params.get("from") || "").trim().slice(0, 60);
   // each name is its own event, so the Events box on the Umami dashboard lists "from: queaky — 12", "from: autodm — 5"…
   if (fromName) track(("from: " + fromName).slice(0, 50), { from: fromName });
-  const startReel = params.get("reel"), startProduct = params.get("product");
+  const { code: startReel, prod: startProduct } = pageOf();
   if (startReel) { setView(view); openReel(startReel, false); }
   else if (startProduct) { setView(view); openProduct(startProduct, false); }
   else setView(view);

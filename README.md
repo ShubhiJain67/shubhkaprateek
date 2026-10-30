@@ -14,8 +14,10 @@ Every reel from @shubhkaprateek, playing on the page, with its products listed u
 ├── assets/
 │   ├── css/styles.css      Look & feel (colours at the top, dark mode right below)
 │   ├── js/app.js           Site logic (loads data/, rendering, search, filters, lazy loading, menu, form)
+│   ├── js/data.js          ⚙️ Built from data/ — don't edit
 │   └── covers/             Reel cover images, one per reel: <reel code>.jpg
-├── tools/snapshot.mjs      Builds data/ into index.html so products show instantly (make ship runs it)
+├── 404.html                "Page not found" — also opens /reel/<code> and /product/<id> links in the one page
+├── tools/build.mjs         Builds assets/js/data.js from data/ (make ship runs it; the bot uses tools/data.mjs too)
 ├── bot/                    Telegram bot (Cloudflare Worker) — add reels from your phone, see bot/README.md
 ├── CNAME                   Custom domain (shubhkaprateek.com) — don't delete
 ├── _config.yml             GitHub Pages: keeps bot/, Makefile and README off the public website — don't delete
@@ -45,8 +47,8 @@ Each product is listed **once**, with a unique number `id` (use the highest id +
 - **Categories:** use the most specific one — a sub-category id like `"mugs"` (it shows under *Home* automatically), plus a theme like `"marvel"` if it fits. An id/name that isn't in `categories.json` yet becomes a new top-level tab automatically.
 - **Variations:** one variant = no option buttons. Add more (and rename "Default", e.g. "Maroon" / "Black") and option buttons appear; each switches the photo and Buy link. A variant with no `link` shows "Link coming soon". The Buy button names the shop from the link.
 - A product that isn't in any reel still shows under *All products*.
-- Each reel also gets its own page listing all its products: `shubhkaprateek.com/?reel=<reel code>` (handy for captions / link in bio).
-- Each product gets its own page too: `shubhkaprateek.com/?product=<id>` — photo, options, Buy button, every reel it's in, and "More in …" rails: same character ("More in Hulk" — names come from `characters` in `data/site.json`), same sub-category ("More in Comforters & Blankets"), then same theme ("More in Marvel"). Empty rails are hidden; each product appears in only one rail.
+- Each reel also gets its own page listing all its products: `shubhkaprateek.com/reel/<reel code>` (handy for captions / link in bio).
+- Each product gets its own page too: `shubhkaprateek.com/product/<id>` — photo, options, Buy button, every reel it's in, and "More in …" rails: same character ("More in Hulk" — names come from `characters` in `data/site.json`), same sub-category ("More in Comforters & Blankets"), then same theme ("More in Marvel"). Empty rails are hidden; each product appears in only one rail.
 
 ## Add a reel — `data/reels.json`
 

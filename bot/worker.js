@@ -12,6 +12,7 @@
 
 import { plannerCommand, plannerButton, plannerHttp } from "./planner.js";
 import PLANNER_PAGE from "./planner.html";   // the private planner page (see planner.js)
+import { DATA_FILES, dataJs } from "../tools/data.mjs"; // builds assets/js/data.js — same code `make ship` uses
 
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
 const MAX_PRODUCTS = 10;
@@ -330,7 +331,8 @@ export function guessCategories(text, cats) {
 }
 
 // Reel CTA tracking link: opens the home page and tells analytics which reel the visitor came from
-const ctaLink = (env, code) => `${env.SITE_URL || "https://shubhkaprateek.com"}/?from=${code}`;
+const siteUrl = env => env.SITE_URL || "https://shubhkaprateek.com";
+const ctaLink = (env, code) => `${siteUrl(env)}/?from=${code}`;
 
 // ---------------------------------------------------------------- GitHub
 async function gh(env, path, opts = {}) {
@@ -355,27 +357,20 @@ function bytesToB64(buf) {
 export const pretty = (data, key) => JSON.stringify(data, null, 2)
   .replace(new RegExp(`"${key}": \\[([^\\]\\[{]*?)\\]`, "g"), (_, inner) => `"${key}": [${inner.split(",").map(s => s.trim()).filter(Boolean).join(", ")}]`) + "\n";
 
-// Same as tools/snapshot.mjs: build the data into index.html so the site shows products instantly.
-export function buildSnapshot(html, data) {
-  const re = /<!-- data-snapshot:start -->[\s\S]*?<!-- data-snapshot:end -->/;
-  if (!re.test(html)) return null;
-  const json = JSON.stringify(data).replace(/</g, "\\u003c");
-  return html.replace(re, () => `<!-- data-snapshot:start -->\n<script id="skp-data" type="application/json">${json}</script>\n<!-- data-snapshot:end -->`);
-}
-async function withSnapshot(env, files) {
-  if (!files.some(f => /^data\/\w+\.json$/.test(f.path) && f.text != null)) return files;
+// Whenever data/ changes, rebuild assets/js/data.js too (exactly like `make ship` does)
+async function withDataJs(env, files) {
+  const changed = files.filter(f => /^data\/\w+\.json$/.test(f.path) && f.text != null);
+  if (!changed.length) return files;
   const data = {};
-  for (const n of ["site", "categories", "products", "reels"]) {
-    const f = files.find(x => x.path === `data/${n}.json` && x.text != null);
+  for (const n of DATA_FILES) {
+    const f = changed.find(x => x.path === `data/${n}.json`);
     data[n] = f ? JSON.parse(f.text) : await readJson(env, `data/${n}.json`);
   }
-  const page = await gh(env, `/contents/index.html?ref=${env.GITHUB_BRANCH || "main"}`);
-  const html = buildSnapshot(b64ToUtf8(page.content), data);
-  return html ? [...files, { path: "index.html", text: html }] : files;
+  return [...files, { path: "assets/js/data.js", text: dataJs(data) }];
 }
 
 async function commitFiles(env, message, files) {
-  files = await withSnapshot(env, files);            // keep the copy built into index.html up to date
+  files = await withDataJs(env, files);              // keep assets/js/data.js up to date
   const branch = env.GITHUB_BRANCH || "main";
   const ref = await gh(env, `/git/ref/heads/${branch}`);
   const head = await gh(env, `/git/commits/${ref.object.sha}`);
@@ -641,6 +636,7 @@ export async function publish(d, env) {
   await commitFiles(env, `Add ${what || "products"} (via Telegram bot)`, files);
   return [
     `✅ <b>Added!</b> Live in about a minute.`,
+    d.reel ? `🔗 Reel page: ${esc(siteUrl(env))}/reel/${esc(d.reel.code)}` : "",
     reelLine ? `🎬 Tracking link for this reel's CTA (opens the home page, counts visits from this reel):\n${esc(reelLine)}` : "",
     added.length ? `🆕 ${esc(added.join(", "))}` : "",
     notes.length ? `ℹ️ ${esc(notes.join("; "))}` : "",

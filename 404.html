@@ -7,19 +7,20 @@
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="noindex">
 <script>
-  // Links that look like ours but in a different shape → send them to the right page
-  //   /reel/CODE  /reels/CODE  /p/CODE  → /?reel=CODE      /product/35 → /?product=35
+  // Links that look like ours but have no page (yet) → open them in the app, which shows the reel/product if it
+  // exists (e.g. the bot added it a minute ago) and fixes the address to /reel/CODE or /product/ID
+  //   /reel/CODE  /reels/CODE  /p/CODE  /tv/CODE → /?reel=CODE        /product/35  /products/35 → /?product=35
   (function () {
     var p = location.pathname, m;
-    if ((m = p.match(/^\/(?:reels?|p|tv)\/([A-Za-z0-9_-]{5,})\/?$/))) location.replace("/?reel=" + m[1]);
-    else if ((m = p.match(/^\/products?\/(\d+)\/?$/))) location.replace("/?product=" + m[1]);
+    if ((m = p.match(/^\/(?:reels?|p|tv)\/([A-Za-z0-9_-]{5,})(?:\.html)?\/?$/))) location.replace("/?reel=" + m[1] + location.search.replace(/^\?/, "&"));
+    else if ((m = p.match(/^\/products?\/(\d+)(?:\.html)?\/?$/))) location.replace("/?product=" + m[1] + location.search.replace(/^\?/, "&"));
   })();
 </script>
 <!-- 404.html can be shown at any address, so every link here starts with "/" -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/styles.css?v=1793360184">
+<link rel="stylesheet" href="/assets/css/styles.css?v=1793362423">
 <style>
   .nf { min-height: calc(100vh - 64px - 80px); display: grid; place-items: center; text-align: center; padding: 48px 16px; }
   .nf-emoji { font-size: 64px; line-height: 1; }
