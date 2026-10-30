@@ -52,6 +52,20 @@ button { font: inherit; color: inherit; }
 /* ---------- Hero ---------- */
 .hero { margin: 0; padding: 30px 0 6px; text-align: center; }
 @media (min-width: 768px) { .hero { padding: 40px 44px; } }
+/* phones: smaller header area so products start higher on the screen */
+@media (max-width: 639px) {
+  .hero { padding: 14px 0 0; }
+  .hero h1 { font-size: 23px; margin-bottom: 2px; }
+  .hero p { font-size: 13.5px; }
+  .featured { margin-top: 12px; }
+  .feat-tile { grid-template-columns: 96px 1fr; gap: 12px; padding: 10px; }
+  .feat-name { font-size: 17px; }
+  .feat-info .cat { display: none; }                 /* the category line isn't needed in the small tile */
+  .feat-actions { margin-top: 4px; }
+  .feat-actions .buy { padding: 8px 12px; font-size: 13px; }
+  .toolbar { margin: 14px 0 8px; }
+  .toolbar .count { display: none; }                 /* "All 47" on the first chip already says it */
+}
 .hero h1 { margin: 0 0 6px; font-family: Fraunces, Georgia, serif; font-size: clamp(28px, 5vw, 44px); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
 .hero p { margin: 0 auto; color: var(--muted); max-width: 520px; }
 

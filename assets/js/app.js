@@ -148,11 +148,14 @@
     const v = variantOf(p, +b.dataset.i);
     box.querySelectorAll(".vbtn").forEach(x => x.setAttribute("aria-pressed", x === b));
     const slot = box.querySelector(".vimg");
-    slot.innerHTML = imgOr(v, esc(catOf(catsOf(p)[0]).emoji)); watchMedia(slot);
+    slot.innerHTML = imgOr(v, esc(catOf(catsOf(p)[0]).emoji), slot.classList.contains("thumb") ? 120 : slot.closest(".pd-media") ? 600 : 400); watchMedia(slot);
     box.querySelector(".vbuy").innerHTML = box.dataset.short ? shortBuy(v) : buyBtn(v);
   });
-  const imgOr = (p, fallback) => p.image
-    ? `${fallback}<img class="lazy-img" data-src="${esc(p.image)}" alt="" referrerpolicy="no-referrer" onload="this.classList.add('loaded')" onerror="this.remove()">`
+  // Ask the store for a photo about the size it's shown at (phones: cards ~170px wide → 400px is plenty; little
+  // reel-list thumbnails → 120px). Amazon "._SL600_." and Shopify "width=600" links can be resized like this.
+  const sized = (url, px) => String(url).replace(/\._SL\d+_\./, `._SL${px}_.`).replace(/([?&]width=)\d+/, `$1${px}`);
+  const imgOr = (p, fallback, px = 400) => p.image
+    ? `${fallback}<img class="lazy-img" data-src="${esc(sized(p.image, px))}" alt="" decoding="async" referrerpolicy="no-referrer" onload="this.classList.add('loaded')" onerror="this.remove()">`
     : fallback;
 
   // ---- state (in the URL so links can be shared) ----
@@ -265,7 +268,7 @@
     const items = r.products.map(p0 => {
       const p = pmap.get(keyOf(p0)) || p0, v = variantOf(p, 0);
       return `<li class="item" data-key="${esc(keyOf(p))}" data-short="1">
-        <span class="thumb vimg">${imgOr(v, esc(catOf(catsOf(p)[0]).emoji))}</span>
+        <span class="thumb vimg">${imgOr(v, esc(catOf(catsOf(p)[0]).emoji), 120)}</span>
         <div class="item-info">
           <p class="item-name">${p.id != null ? `<a href="?product=${esc(p.id)}" data-product="${esc(p.id)}">${esc(p.name)}</a>` : esc(p.name)}</p>
           ${variantPills(p)}
@@ -628,7 +631,7 @@
     sec.innerHTML = `${featuredTicker(p.id)}
       <button class="rp-back" data-back>← Back</button>
       <div class="pd-grid" data-key="${esc(keyOf(p))}">
-        <div class="media pd-media"><span class="vimg">${imgOr(v, esc((pcs[0] || catOf("")).emoji))}</span></div>
+        <div class="media pd-media"><span class="vimg">${imgOr(v, esc((pcs[0] || catOf("")).emoji), 600)}</span></div>
         <div class="pd-info">
           ${[].concat(site.featured || []).map(String).includes(String(p.id)) ? `<span class="feat-label pd-feat">⭐ Our pick</span>` : ""}
           <span class="cat">${pcs.map(x => esc(x.name)).join(" · ")}</span>
