@@ -12,17 +12,30 @@
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   const $ = id => document.getElementById(id);
 
-  // ---- load data/ (each file has one job) — the downloads were already started in index.html ----
-  const raw = {};
-  // (if index.html didn't start them — e.g. the browser still has an older cached index.html — start them here)
-  const downloads = window.SKP_DATA || ["site", "categories", "products", "reels"].map(f =>
-    fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => r.json()).then(data => ({ f, data }), error => ({ f, error })));
-  for (const { f, data, error } of await Promise.all(downloads)) {
-    if (error) {
-      $("grid").innerHTML = `<p class="empty">Couldn't load data/${f}.json — check it for a JSON typo (missing comma or quote).</p>`;
-      console.error(f, error); return;
+  // ---- load data/ (each file has one job) ----
+  // 1) Show the copy built into index.html right away (no download → instant, and works even if downloads stall).
+  // 2) The live data/ files are checked in the background (started in index.html); if they're newer — e.g. the
+  //    bot just added a reel — remember them for this visit and reload once to show them.
+  // 3) No built-in copy (older cached page)? Wait for the live files, with a timeout + one retry.
+  const FILES = ["site", "categories", "products", "reels"];
+  const fetchAll = () => Promise.all(FILES.map(f => fetch(`data/${f}.json`, { cache: "no-cache" })
+    .then(r => { if (!r.ok) throw new Error(f + " " + r.status); return r.json(); }).then(d => [f, d]))).then(Object.fromEntries);
+  const timeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("timed out")), ms))]);
+  const readJSON = get => { try { return JSON.parse(get() || "null"); } catch { return null; } };
+  const fresh = window.SKP_FRESH || fetchAll();
+  let raw = readJSON(() => sessionStorage.getItem("skp-fresh")) || readJSON(() => $("skp-data")?.textContent);
+  if (raw) {
+    fresh.then(d => {
+      if (JSON.stringify(d) === JSON.stringify(raw)) return;
+      try { sessionStorage.setItem("skp-fresh", JSON.stringify(d)); } catch { return; }   // can't remember → don't loop
+      location.reload();
+    }).catch(() => {});
+  } else {
+    try { raw = await timeout(fresh, 8000).catch(() => timeout(fetchAll(), 8000)); }
+    catch (e) {
+      $("grid").innerHTML = `<p class="empty">Couldn't load the products right now — <a href="">tap to try again</a>.</p>`;
+      console.error(e); return;
     }
-    raw[f] = data;
   }
   // Join reels → products by id, so the rest of the app sees full product objects
   const catalogue = new Map((raw.products || []).map(p => [p.id, p]));

@@ -15,6 +15,7 @@ Every reel from @shubhkaprateek, playing on the page, with its products listed u
 │   ├── css/styles.css      Look & feel (colours at the top, dark mode right below)
 │   ├── js/app.js           Site logic (loads data/, rendering, search, filters, lazy loading, menu, form)
 │   └── covers/             Reel cover images, one per reel: <reel code>.jpg
+├── tools/snapshot.mjs      Builds data/ into index.html so products show instantly (make ship runs it)
 ├── bot/                    Telegram bot (Cloudflare Worker) — add reels from your phone, see bot/README.md
 ├── CNAME                   Custom domain (shubhkaprateek.com) — don't delete
 ├── _config.yml             GitHub Pages: keeps bot/, Makefile and README off the public website — don't delete

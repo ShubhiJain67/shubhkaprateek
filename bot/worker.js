@@ -343,7 +343,27 @@ function bytesToB64(buf) {
 export const pretty = (data, key) => JSON.stringify(data, null, 2)
   .replace(new RegExp(`"${key}": \\[([^\\]\\[{]*?)\\]`, "g"), (_, inner) => `"${key}": [${inner.split(",").map(s => s.trim()).filter(Boolean).join(", ")}]`) + "\n";
 
+// Same as tools/snapshot.mjs: build the data into index.html so the site shows products instantly.
+export function buildSnapshot(html, data) {
+  const re = /<!-- data-snapshot:start -->[\s\S]*?<!-- data-snapshot:end -->/;
+  if (!re.test(html)) return null;
+  const json = JSON.stringify(data).replace(/</g, "\\u003c");
+  return html.replace(re, () => `<!-- data-snapshot:start -->\n<script id="skp-data" type="application/json">${json}</script>\n<!-- data-snapshot:end -->`);
+}
+async function withSnapshot(env, files) {
+  if (!files.some(f => /^data\/\w+\.json$/.test(f.path) && f.text != null)) return files;
+  const data = {};
+  for (const n of ["site", "categories", "products", "reels"]) {
+    const f = files.find(x => x.path === `data/${n}.json` && x.text != null);
+    data[n] = f ? JSON.parse(f.text) : await readJson(env, `data/${n}.json`);
+  }
+  const page = await gh(env, `/contents/index.html?ref=${env.GITHUB_BRANCH || "main"}`);
+  const html = buildSnapshot(b64ToUtf8(page.content), data);
+  return html ? [...files, { path: "index.html", text: html }] : files;
+}
+
 async function commitFiles(env, message, files) {
+  files = await withSnapshot(env, files);            // keep the copy built into index.html up to date
   const branch = env.GITHUB_BRANCH || "main";
   const ref = await gh(env, `/git/ref/heads/${branch}`);
   const head = await gh(env, `/git/commits/${ref.object.sha}`);

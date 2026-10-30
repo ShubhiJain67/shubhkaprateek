@@ -4,6 +4,7 @@
 #   Makefile, README.md, .venv
 exclude:
   - bot
+  - tools
   - Makefile
   - README.md
   - .venv
