@@ -43,6 +43,7 @@ Then tap ✅ <b>Add to site</b>. /cancel drops the draft.
 <b>Remove things from the site</b>
 <code>/delete https://www.instagram.com/reel/ABC123/</code> — the reel, plus its products that aren't in any other reel
 <code>/delete Green Saree</code> (or its id, e.g. <code>/delete 48</code>) — the product; a reel left with no products goes too
+<code>/delete 12 14 15</code> or <code>/delete Queaky, Dice, Markers</code> — several products at once
 I'll show exactly what goes before anything is removed.
 
 <b>⭐ Featured tile on the home page</b>
@@ -675,10 +676,11 @@ export function planDelete(target, products, reels) {
       (elsewhere ? plan.kept : plan.products).push(p);
     }
   } else {
-    const p = target.product;
-    plan.products.push(p);
-    for (const r of reels.filter(r => r.products.includes(p.id))) {
-      (r.products.every(id => id === p.id) ? plan.reels : plan.trimmed).push(r);
+    const ps = target.products || [target.product];          // one product or several at once
+    const gone = new Set(ps.map(p => p.id));
+    plan.products.push(...ps);
+    for (const r of reels.filter(r => r.products.some(id => gone.has(id)))) {
+      (r.products.every(id => gone.has(id)) ? plan.reels : plan.trimmed).push(r);
     }
   }
   return plan;
@@ -708,15 +710,22 @@ async function onDelete(arg, env, chat) {
   let target;
   if (reelCode) target = { reel: reelCode };
   else {
-    const found = findProduct(arg, S.products);
-    if (!found.length) return say(env, chat, `I couldn't find a product matching “${esc(arg)}”.`);
-    if (found.length > 1) return say(env, chat, "Which one? Send <code>/delete</code> with the id:\n" + found.slice(0, 15).map(p => `• <code>${p.id}</code> ${esc(p.name)}`).join("\n"));
-    target = { product: found[0] };
+    // several at once: "/delete 12 14 15", or names separated by commas / new lines
+    const items = /^[\d\s,]+$/.test(arg) ? arg.split(/[\s,]+/).filter(Boolean) : arg.split(/\s*[,\n]\s*/).filter(Boolean);
+    const picked = [], problems = [];
+    for (const it of items) {
+      const found = findProduct(it, S.products);
+      if (!found.length) problems.push(`• “${esc(it)}” — not found`);
+      else if (found.length > 1) problems.push(`• “${esc(it)}” matches several — use the id:\n` + found.slice(0, 10).map(p => `   <code>${p.id}</code> ${esc(p.name)}`).join("\n"));
+      else if (!picked.includes(found[0])) picked.push(found[0]);
+    }
+    if (problems.length) return say(env, chat, "I need you to fix these first, then send it again:\n" + problems.join("\n"));
+    target = { products: picked };
   }
   const plan = planDelete(target, S.products, S.reels);
   if (!plan) return say(env, chat, "That reel isn't on the site.");
   const id = Date.now().toString(36);
-  await env.DRAFTS.put(delKey(chat), JSON.stringify({ id, target: target.reel ? { reel: target.reel } : { productId: target.product.id } }), { expirationTtl: 24 * 3600 });
+  await env.DRAFTS.put(delKey(chat), JSON.stringify({ id, target: target.reel ? { reel: target.reel } : { productIds: target.products.map(p => p.id) } }), { expirationTtl: 24 * 3600 });
   return say(env, chat, describePlan(plan), { reply_markup: { inline_keyboard: [[{ text: "🗑 Yes, remove", callback_data: "delok:" + id }, { text: "Keep it", callback_data: "delno:" + id }]] } });
 }
 
@@ -733,10 +742,10 @@ async function onDeleteButton(q, env, action, id) {
   // work it out again on the latest files, in case something changed since you asked
   const S = await loadSite(env);
   let target = pending.target;
-  if (target.productId != null) {
-    const p = S.products.find(p => p.id === target.productId);
-    if (!p) { await done("Already gone"); return say(env, chat, "That product is already gone."); }
-    target = { product: p };
+  if (target.productIds || target.productId != null) {
+    const ps = (target.productIds || [target.productId]).map(id => S.products.find(p => p.id === id)).filter(Boolean);
+    if (!ps.length) { await done("Already gone"); return say(env, chat, "Those products are already gone."); }
+    target = { products: ps };
   }
   const plan = planDelete(target, S.products, S.reels);
   if (!plan) { await done("Already gone"); return say(env, chat, "That reel is already gone."); }
