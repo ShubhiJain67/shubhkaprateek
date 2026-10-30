@@ -177,7 +177,7 @@
     if (buy) {
       const box = buy.closest("[data-key]"), p = box && pmap.get(box.dataset.key);
       const where = buy.closest(".feat-tile") ? "featured" : buy.closest(".pd-grid") ? "product page" : buy.closest(".item") ? "reel list" : buy.closest("#view-reel") ? "reel page" : "products";
-      track("buy", { product: p ? p.name : "?", store: storeOf(buy.href), where });
+      track("buy", { product: p ? p.name : "?", id: p && p.id != null ? p.id : "?", store: storeOf(buy.href), where });
       return;
     }
     if (e.target.closest("#ask-dm")) track("ask-instagram");
