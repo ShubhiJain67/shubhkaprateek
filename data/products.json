@@ -144,18 +144,6 @@
     ]
   },
   {
-    "id": 13,
-    "name": "Balloon Inflater",
-    "category": ["party-decor", "electronics"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B08fDT6er",
-        "image": "https://m.media-amazon.com/images/I/61T1B0HtEeL._SL600_.jpg"
-      }
-    ]
-  },
-  {
     "id": 15,
     "name": "Packing Paper",
     "category": ["gift-wrap"],
