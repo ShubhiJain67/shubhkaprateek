@@ -48,15 +48,20 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .day.today { border-color: var(--accent); }
 .day h3 { margin: 0 0 6px; font-size: 13px; display: flex; justify-content: space-between; }
 .day.free { min-height: 0; padding: 8px 10px; } .day.free h3 { margin: 0; font-weight: 500; color: var(--muted); }
-@media (min-width: 760px) {   /* narrow day columns: status button goes under the text */
-  .day .item { grid-template-columns: auto minmax(0, 1fr); }
-  .day .item .st { grid-column: 2; justify-self: start; }
-}
-.item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 8px; border-radius: 10px; background: var(--field); margin-top: 6px; cursor: pointer; }
+
+.item { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px; border-radius: 10px; background: var(--field); margin-top: 6px; cursor: pointer; }
 .item .t { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .item .meta { font-size: 12px; color: var(--muted); }
-.st { border: 0; border-radius: 8px; padding: 3px 7px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; background: var(--surface); }
-.st[data-s="planned"] { color: var(--muted); } .st[data-s="shot"] { color: var(--warn); } .st[data-s="edited"] { color: var(--accent); } .st[data-s="uploaded"] { color: var(--ok); }
+/* status stepper: tap any step to set it (also to go back) */
+.steps { display: inline-flex; background: var(--surface); border-radius: 9px; padding: 2px; gap: 1px; }
+.steps button { border: 0; background: none; border-radius: 7px; padding: 4px 6px; font-size: 14px; line-height: 1; cursor: pointer; opacity: .45; filter: grayscale(.6); }
+.steps button.on { opacity: 1; filter: none; background: var(--field); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.steps button.done { opacity: .85; filter: none; }
+.item-foot { grid-column: 2 / -1; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.item-foot .lbl { font-size: 12px; font-weight: 700; color: var(--muted); }
+.del { border: 0; background: none; cursor: pointer; font-size: 15px; padding: 4px 6px; border-radius: 8px; margin-left: auto; opacity: .6; }
+.del:hover { opacity: 1; background: var(--surface); }
+.del.sure { opacity: 1; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; padding: 5px 9px; }
 .filters { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
 .filters button { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 12px; font-size: 13px; cursor: pointer; white-space: nowrap; }
 .filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
@@ -174,7 +179,6 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
     const f = x => x.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }); return f(t) + " – " + f(e); };
   const cat = id => P.categories.find(c => c.id === id);
   const catName = id => cat(id) ? cat(id).emoji + " " + cat(id).name : "❓ No category";
-  const nextStatus = s => P.statuses[Math.min(P.statuses.indexOf(s) + 1, P.statuses.length - 1)];
   const todayKey = () => { const d = new Date(Date.now() + 330 * 60000); return P.days[(d.getUTCDay() + 6) % 7]; };
 
   function mix() {
@@ -186,11 +190,14 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
     }) };
   }
 
+  const stepper = i => `<span class="steps" role="group" aria-label="Status">${P.statuses.map((s, n) =>
+    `<button type="button" data-set="${i.id}" data-status="${s}" class="${s === i.status ? "on" : n < P.statuses.indexOf(i.status) ? "done" : ""}" title="${LABEL[s]}" aria-pressed="${s === i.status}">${ICON[s]}</button>`).join("")}</span>`;
+  const delBtn = i => `<button type="button" class="del" data-del="${i.id}" title="Delete idea" aria-label="Delete idea #${i.id}">🗑</button>`;
   function itemHtml(i) {
     return `<div class="item" data-edit="${i.id}">
       <span>${cat(i.cat) ? cat(i.cat).emoji : "❓"}</span>
       <div><div class="t">${esc(i.text)}</div><div class="meta">#${i.id}${i.tags.length ? " · " + i.tags.map(t => "#" + esc(t)).join(" ") : ""}</div></div>
-      <button class="st" data-s="${i.status}" data-advance="${i.id}" title="Tap to move to the next step">${ICON[i.status]} ${LABEL[i.status]}</button>
+      <div class="item-foot">${stepper(i)}<span class="lbl">${LABEL[i.status]}</span>${delBtn(i)}</div>
     </div>`;
   }
 
@@ -210,9 +217,8 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
       `<span class="pill">${ICON[s]} ${m.items.filter(i => i.status === s).length} ${LABEL[s].toLowerCase()}</span>`).join("");
     // days
     const today = week === P.thisWeek ? todayKey() : null;
-    const order = s => P.statuses.indexOf(s);
     $("days").innerHTML = [...P.days, null].map(d => {
-      const list = m.items.filter(i => (i.day || null) === d).sort((a, b) => order(a.status) - order(b.status));
+      const list = m.items.filter(i => (i.day || null) === d).sort((a, b) => a.id - b.id);   // stable order, so cards don't jump when you change a status
       if (!d && !list.length) return "";
       return `<div class="day${d === today ? " today" : ""}${list.length ? "" : " free"}"><h3><span>${d ? DAYNAME[d] : "Any day"}</span><span class="muted">${list.length || "free"}</span></h3>
         ${list.map(itemHtml).join("")}</div>`;
@@ -227,7 +233,7 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
         <div class="t" data-edit="${i.id}">${esc(i.text)}</div>
         <div class="row"><span class="pill">${esc(catName(i.cat))}</span>${i.tags.map(t => `<span class="muted" style="font-size:12.5px">#${esc(t)}</span>`).join(" ")}<span class="muted" style="font-size:12px;margin-left:auto">#${i.id}</span></div>
         <div class="row"><button class="btn sm" data-plan="${i.id}" data-week="${esc(week)}">📅 Add to ${week === P.thisWeek ? "this week" : fmt(week)}</button>
-          ${week === P.thisWeek ? `<button class="btn sm" data-plan="${i.id}" data-week="${addWeeks(P.thisWeek, 1)}">Next week</button>` : ""}</div>
+          ${week === P.thisWeek ? `<button class="btn sm" data-plan="${i.id}" data-week="${addWeeks(P.thisWeek, 1)}">Next week</button>` : ""}${delBtn(i)}</div>
       </div>`).join("") || `<div class="empty">No ideas here yet — add one above or send /idea … to the bot.</div>`;
     // category selects
     const opts = sel => [`<option value="">❓ No category</option>`, ...P.categories.map(c => `<option value="${esc(c.id)}"${sel === c.id ? " selected" : ""}>${esc(c.emoji + " " + c.name)}</option>`)].join("");
@@ -243,9 +249,14 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
   $("prev").onclick = () => { week = addWeeks(week, -1); render(); };
   $("next").onclick = () => { week = addWeeks(week, 1); render(); };
   document.addEventListener("click", async e => {
-    const adv = e.target.closest("[data-advance]");
-    if (adv) { e.stopPropagation(); const i = P.ideas.find(x => x.id === +adv.dataset.advance); const s = nextStatus(i.status);
-      if (s === i.status) return toast("Already uploaded ✅"); await api({ op: "status", id: i.id, status: s }); return toast(ICON[s] + " " + LABEL[s]); }
+    const st = e.target.closest("[data-set]");
+    if (st) { e.stopPropagation(); const s = st.dataset.status; await api({ op: "status", id: +st.dataset.set, status: s }); return toast(ICON[s] + " " + LABEL[s]); }
+    const del = e.target.closest("[data-del]");
+    if (del) {               // first tap → "Delete?", second tap within 3 s → deleted
+      e.stopPropagation();
+      if (!del.classList.contains("sure")) { del.classList.add("sure"); del.textContent = "Delete?"; setTimeout(() => { del.classList.remove("sure"); del.textContent = "🗑"; }, 3000); return; }
+      await api({ op: "drop", id: +del.dataset.del }); return toast("🗑 Deleted");
+    }
     const pl = e.target.closest("[data-plan]");
     if (pl) { await api({ op: "plan", id: +pl.dataset.plan, week: pl.dataset.week }); return toast("📅 Planned"); }
     const f = e.target.closest("[data-filter]");
@@ -276,7 +287,12 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
     if (s !== now.status) await api({ op: "status", id: i.id, status: s });
     $("edit").close(); toast("Saved");
   };
-  $("e-drop").onclick = async () => { if (!confirm(`Delete idea #${editing.id}?`)) return; await api({ op: "drop", id: editing.id }); $("edit").close(); toast("🗑 Deleted"); };
+  $("e-drop").onclick = async () => {
+    const b = $("e-drop");
+    if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "Tap again to delete"; setTimeout(() => { b.dataset.sure = ""; b.textContent = "Delete"; }, 3000); return; }
+    b.dataset.sure = ""; b.textContent = "Delete";
+    await api({ op: "drop", id: editing.id }); $("edit").close(); toast("🗑 Deleted");
+  };
 
   // ---- settings: categories + targets ----
   const catRow = c => `<div class="catrow">

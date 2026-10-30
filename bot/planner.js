@@ -159,6 +159,7 @@ async function tg(env, method, body) {
 }
 const say = (env, chat, html, extra = {}) => tg(env, "sendMessage", { chat_id: chat, text: html, parse_mode: "HTML", disable_web_page_preview: true, ...extra });
 const STATUS_ICON = { idea: "💡", planned: "📅", shot: "🎥", edited: "✂️", uploaded: "✅" };
+const STATUS_NAME = { idea: "Idea", planned: "To shoot", shot: "Shot", edited: "Edited", uploaded: "Uploaded" };
 const catLabel = (P, id) => { const c = P.categories.find(c => c.id === id); return c ? `${c.emoji} ${c.name}` : "❓ no category"; };
 const line = (P, i) => `${STATUS_ICON[i.status]} <b>#${i.id}</b> ${esc(i.text)}${i.day ? ` · ${i.day}` : ""}${i.tags.length ? " " + i.tags.map(t => "#" + esc(t)).join(" ") : ""}`;
 
@@ -167,6 +168,7 @@ export const PLANNER_HELP = `<b>📒 Content planner</b> (private)
 <code>/ideas</code> — your idea list · <code>/ideas games</code> — one category
 <code>/plan 12 14 15</code> — shoot these this week · <code>/plan 12 sat</code> — on a day · <code>/plan 12 next</code> — next week
 <code>/shot 12</code> · <code>/edited 12</code> · <code>/uploaded 12</code> — move it along (several ids ok)
+<code>/idea 12</code> — open idea #12 to fix it: tap any status (also to go back), category, 📅, or 🗑 Delete
 <code>/unplan 12</code> — back to ideas · <code>/drop 12</code> — delete it
 <code>/week</code> — this week + category mix vs your targets
 <code>/planner</code> — link to your private planner page`;
@@ -176,13 +178,22 @@ async function plannerKey(env) {   // secret for the page link, derived from the
   return [...new Uint8Array(d)].slice(0, 16).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-function catButtons(P, idea) {
+// The idea card: tap a category, tap ANY status to set it directly (also to go back a step), plan, or delete.
+function cardButtons(P, idea, confirmDelete = false) {
   const rows = []; let row = [];
   P.categories.forEach(c => { row.push({ text: (idea.cat === c.id ? "✓ " : "") + c.emoji + " " + c.name, callback_data: `pc:${idea.id}:${c.id}` }); if (row.length === 2) { rows.push(row); row = []; } });
   if (row.length) rows.push(row);
-  rows.push([{ text: "📅 Shoot this week", callback_data: `pw:${idea.id}` }]);
+  rows.push(STATUSES.map(st => ({ text: (idea.status === st ? "✓" : "") + STATUS_ICON[st], callback_data: `ps:${idea.id}:${st}` })));
+  rows.push(confirmDelete
+    ? [{ text: "🗑 Yes, delete it", callback_data: `pdy:${idea.id}` }, { text: "Keep it", callback_data: `pk:${idea.id}` }]
+    : [idea.week === weekOf() ? { text: "↩️ Remove from this week", callback_data: `pu:${idea.id}` } : { text: "📅 Shoot this week", callback_data: `pw:${idea.id}` },
+       { text: "🗑 Delete", callback_data: `pd:${idea.id}` }]);
   return { inline_keyboard: rows };
 }
+const cardText = (P, i) => `${STATUS_ICON[i.status]} <b>#${i.id}</b> ${esc(i.text)}
+Category: ${catLabel(P, i.cat)}
+Status: ${STATUS_ICON[i.status]} ${STATUS_NAME[i.status]}${i.week ? ` · ${i.week === weekOf() ? "this week" : "week of " + weekLabel(i.week)}${i.day ? " · " + i.day : ""}` : ""}${i.tags.length ? "\nTags: " + i.tags.map(t => "#" + esc(t)).join(" ") : ""}
+<i>Status: 💡 idea · 📅 to shoot · 🎥 shot · ✂️ edited · ✅ uploaded</i>`;
 
 function weekText(P, week) {
   const m = mix(P, week), items = P.ideas.filter(i => i.week === week);
@@ -214,8 +225,12 @@ export async function plannerCommand(cmd, text, env, chat) {
     }
     if (cmd === "/idea") {
       if (!arg) { await say(env, chat, PLANNER_HELP); return true; }
+      if (/^#?\d+$/.test(arg)) {                       // /idea 12 → open that idea's card to fix it
+        const i = find(P, arg.replace("#", ""));
+        await say(env, chat, cardText(P, i), { reply_markup: cardButtons(P, i) }); return true;
+      }
       const i = addIdea(P, arg); await save(env, P);
-      await say(env, chat, `💡 Saved <b>#${i.id}</b> ${esc(i.text)}\nCategory: ${catLabel(P, i.cat)}${i.tags.length ? "\nTags: " + i.tags.map(t => "#" + esc(t)).join(" ") : ""}`, { reply_markup: catButtons(P, i) });
+      await say(env, chat, "💡 Saved!\n" + cardText(P, i), { reply_markup: cardButtons(P, i) });
       return true;
     }
     if (cmd === "/ideas") {
@@ -229,7 +244,7 @@ export async function plannerCommand(cmd, text, env, chat) {
         if (g.length) L.push("", `<b>${esc(label)}</b>`, ...g.map(i => line(P, i)));
       }
       if (!backlog.length) L.push("<i>None yet — /idea …</i>");
-      L.push("", "Pick for this week: <code>/plan 12 14</code>");
+      L.push("", "Pick for this week: <code>/plan 12 14</code> · fix or delete one: <code>/idea 12</code>");
       await say(env, chat, L.join("\n")); return true;
     }
     if (cmd === "/week") { await say(env, chat, weekText(P, /next/i.test(arg) ? addWeeks(weekOf(), 1) : weekOf())); return true; }
@@ -251,15 +266,24 @@ export async function plannerCommand(cmd, text, env, chat) {
 }
 
 export async function plannerButton(q, env) {
-  const [kind, id, cat] = String(q.data || "").split(":");
-  if (kind !== "pc" && kind !== "pw") return false;
+  const [kind, id, val] = String(q.data || "").split(":");
+  if (!["pc", "pw", "pu", "ps", "pd", "pdy", "pk"].includes(kind)) return false;
   const P = await load(env);
+  const show = (i, confirmDelete = false) => tg(env, "editMessageText", { chat_id: q.message.chat.id, message_id: q.message.message_id, parse_mode: "HTML",
+    text: cardText(P, i), reply_markup: cardButtons(P, i, confirmDelete) }).catch(() => {});
+  const answer = text => tg(env, "answerCallbackQuery", { callback_query_id: q.id, text });
   try {
-    const i = kind === "pc" ? edit(P, id, { cat }) : plan(P, id, weekOf());
+    if (kind === "pd") { await answer("Sure?"); return await show(find(P, id), true) ?? true; }        // ask first
+    if (kind === "pk") { await answer("Kept"); return await show(find(P, id)) ?? true; }
+    if (kind === "pdy") {
+      const i = drop(P, id); await save(env, P); await answer("Deleted");
+      await tg(env, "editMessageText", { chat_id: q.message.chat.id, message_id: q.message.message_id, parse_mode: "HTML", text: `🗑 Deleted <s>#${i.id} ${esc(i.text)}</s>` }).catch(() => {});
+      return true;
+    }
+    const i = kind === "pc" ? edit(P, id, { cat: val }) : kind === "pw" ? plan(P, id, weekOf()) : kind === "pu" ? unplan(P, id) : setStatus(P, id, val);
     await save(env, P);
-    await tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: kind === "pc" ? "Category: " + catLabel(P, i.cat) : "Added to this week" });
-    await tg(env, "editMessageText", { chat_id: q.message.chat.id, message_id: q.message.message_id, parse_mode: "HTML",
-      text: `💡 <b>#${i.id}</b> ${esc(i.text)}\nCategory: ${catLabel(P, i.cat)}${i.week ? "\n📅 This week" : ""}`, reply_markup: catButtons(P, i) }).catch(() => {});
+    await answer(kind === "pc" ? "Category: " + catLabel(P, i.cat) : kind === "pw" ? "Added to this week" : kind === "pu" ? "Back to ideas" : `${STATUS_ICON[i.status]} ${STATUS_NAME[i.status]}`);
+    await show(i);
   } catch (e) { await tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: e.message, show_alert: true }); }
   return true;
 }
