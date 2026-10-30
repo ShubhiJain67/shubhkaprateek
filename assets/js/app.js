@@ -213,6 +213,14 @@
       </div>
     </div>`;
   }
+  // A slim moving strip at the top of reel/product pages that points to the featured product(s) — just the name
+  // and a link, no photo or Buy button, so it never competes with the reel/product whose page it is.
+  function featuredTicker(excludeId) {
+    const list = [].concat(site.featured || []).map(id => pmap.get(String(id))).filter(p => p && String(p.id) !== String(excludeId));
+    if (!list.length) return "";
+    const one = `<span class="tk-item">⭐ Our pick: ${list.map(p => `<a href="?product=${esc(p.id)}" data-product="${esc(p.id)}">${esc(p.name)}</a>`).join(" · ")} — take a look →</span>`;
+    return `<div class="feat-ticker" aria-label="Featured"><div class="tk-track">${one}<span aria-hidden="true">${one}</span><span aria-hidden="true">${one}</span></div></div>`;
+  }
   function renderFeatured() {
     const list = [].concat(site.featured || []).map(id => pmap.get(String(id))).filter(Boolean);
     const box = $("featured");
@@ -542,7 +550,7 @@
     }
     const url = permalink(r.reel), c = url.split("/")[4]; // keep the code's original case (cover file names are case-sensitive)
     const prods = r.products.map(p0 => pmap.get(keyOf(p0)) || p0);
-    sec.innerHTML = `
+    sec.innerHTML = `${featuredTicker()}
       <button class="rp-back" data-back>← All reels</button>
       <div class="rp-grid">
         <div class="rp-media">
@@ -617,11 +625,12 @@
     const pcs = catsOf(p).map(catOf), v = variantOf(p, 0);
     const inReels = reels.filter(r => p.reels.includes(r.id));
     const rails = railsFor(p);
-    sec.innerHTML = `
+    sec.innerHTML = `${featuredTicker(p.id)}
       <button class="rp-back" data-back>← Back</button>
       <div class="pd-grid" data-key="${esc(keyOf(p))}">
         <div class="media pd-media"><span class="vimg">${imgOr(v, esc((pcs[0] || catOf("")).emoji))}</span></div>
         <div class="pd-info">
+          ${[].concat(site.featured || []).map(String).includes(String(p.id)) ? `<span class="feat-label pd-feat">⭐ Our pick</span>` : ""}
           <span class="cat">${pcs.map(x => esc(x.name)).join(" · ")}</span>
           <h2 class="rp-title">${esc(p.name)}</h2>
           ${variantPills(p)}
