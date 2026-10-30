@@ -764,9 +764,10 @@
   // Reel CTA links: shubhkaprateek.com/?from=<reel code> opens that reel's page and records which reel sent the
   // visitor (Umami → Events → "from-reel"). The bot sends this link after you add a reel; /link gets it any time.
   // Tracking links: shubhkaprateek.com/?from=<any name you like> (e.g. ?from=queaky in an auto-DM).
-  // The visitor lands on the home page as normal; Umami records the name under Events → "from-reel".
+  // The visitor lands on whatever page the link is for; Umami's Events box shows one row per name ("from: queaky").
   const fromName = (params.get("from") || "").trim().slice(0, 60);
-  if (fromName) track("from-reel", { reel: fromName });
+  // each name is its own event, so the Events box on the Umami dashboard lists "from: queaky — 12", "from: autodm — 5"…
+  if (fromName) track(("from: " + fromName).slice(0, 50), { from: fromName });
   const startReel = params.get("reel"), startProduct = params.get("product");
   if (startReel) { setView(view); openReel(startReel, false); }
   else if (startProduct) { setView(view); openProduct(startProduct, false); }
