@@ -317,8 +317,29 @@
         if (e.isIntersecting) { mediaObserver.unobserve(e.target); loadMedia(e.target); }
       }), { rootMargin: "400px 0px" })
     : null;
-  const watchMedia = root => root.querySelectorAll(".lazy-media, img[data-src]")
-    .forEach(el => mediaObserver ? mediaObserver.observe(el) : loadMedia(el));
+  // Reel covers (the heaviest part of Shop by reel) load in a fixed rhythm: the first 3 when the tab opens,
+  // then one more each time you scroll onto the next reel — always 2 ready ahead of the one you're looking at.
+  const COVERS_AHEAD = 2;
+  const loadCoversUpTo = n => [...$("reels").querySelectorAll(".look")].slice(0, n + 1)
+    .forEach(look => { const m = look.querySelector(".lazy-media"); if (m) loadMedia(m); });
+  const reelObserver = "IntersectionObserver" in window
+    ? new IntersectionObserver(entries => entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        reelObserver.unobserve(e.target);
+        loadCoversUpTo([...$("reels").children].indexOf(e.target) + COVERS_AHEAD);
+      }), { threshold: 0.25 })
+    : null;
+  const watchMedia = root => {
+    root.querySelectorAll("img[data-src]").forEach(el => mediaObserver ? mediaObserver.observe(el) : loadMedia(el));
+    // covers inside the Shop by reel list follow the rhythm above; covers anywhere else load as they come on screen
+    root.querySelectorAll(".lazy-media").forEach(el => {
+      const look = el.closest("#reels > .look");
+      if (look && reelObserver) reelObserver.observe(look); else if (mediaObserver) mediaObserver.observe(el); else loadMedia(el);
+    });
+    if (root === $("reels") || root.closest?.("#reels")) {
+      if (!$("reels").querySelector(".look .cover")) loadCoversUpTo(COVERS_AHEAD);   // tab just opened → first 3
+    }
+  };
 
   // b) More cards are added automatically as you scroll down
   const listEl = () => view === "reels" ? $("reels") : $("grid");
