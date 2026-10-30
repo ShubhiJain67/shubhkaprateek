@@ -144,18 +144,6 @@
     ]
   },
   {
-    "id": 16,
-    "name": "Golden Bows",
-    "category": ["gift-wrap"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B018Dgep1",
-        "image": "https://m.media-amazon.com/images/I/51TrjPequcL._SL600_.jpg"
-      }
-    ]
-  },
-  {
     "id": 17,
     "name": "Marvel Hoodie",
     "category": ["topwear", "marvel"],
