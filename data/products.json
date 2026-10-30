@@ -48,18 +48,6 @@
     ]
   },
   {
-    "id": 12,
-    "name": "Spider man web",
-    "category": ["party-decor", "marvel"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B01kMLyWc",
-        "image": "https://m.media-amazon.com/images/I/51Oo93lGDsL._SL600_.jpg"
-      }
-    ]
-  },
-  {
     "id": 17,
     "name": "Marvel Hoodie",
     "category": ["topwear", "marvel"],
