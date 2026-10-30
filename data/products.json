@@ -146,7 +146,7 @@
   {
     "id": 13,
     "name": "Balloon Inflater",
-    "category": ["party-decor"],
+    "category": ["party-decor", "electronics"],
     "variants": [
       {
         "name": "Default",
@@ -449,7 +449,7 @@
   {
     "id": 37,
     "name": "Light-up spinning sword",
-    "category": ["role-play"],
+    "category": ["role-play", "electronics"],
     "variants": [
       {
         "name": "Default",
@@ -473,7 +473,7 @@
   {
     "id": 39,
     "name": "Spark & smoke Sword",
-    "category": ["role-play"],
+    "category": ["role-play", "electronics"],
     "variants": [
       {
         "name": "Default",
@@ -509,7 +509,7 @@
   {
     "id": 42,
     "name": "Play Retro — Blast Box",
-    "category": ["game-gadgets"],
+    "category": ["game-gadgets", "electronics"],
     "variants": [
       {
         "name": "Default",
@@ -557,7 +557,7 @@
   {
     "id": 46,
     "name": "Astronaut Light",
-    "category": ["lighting"],
+    "category": ["lighting", "electronics"],
     "variants": [
       {
         "name": "Default",
@@ -569,7 +569,7 @@
   {
     "id": 47,
     "name": "Automatic card dealer + shuffler",
-    "category": ["game-gadgets"],
+    "category": ["game-gadgets", "electronics"],
     "variants": [
       {
         "name": "Default",

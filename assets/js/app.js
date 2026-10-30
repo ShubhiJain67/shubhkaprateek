@@ -158,6 +158,35 @@
     ? `${fallback}<img class="lazy-img" data-src="${esc(sized(p.image, px))}" alt="" decoding="async" referrerpolicy="no-referrer" onload="this.classList.add('loaded')" onerror="this.remove()">`
     : fallback;
 
+  // ---------- Analytics (Umami — free, no cookies): turned on by "umamiWebsiteId" in data/site.json ----------
+  // Page views (incl. which ?reel= / ?product= page) are counted automatically; the events below add what matters
+  // for affiliate income: Buy clicks per product + store, searches, and "Can't find something?" use.
+  const track = (name, data) => { try { window.umami && window.umami.track(name, data); } catch {} };
+  if (site.umamiWebsiteId) {
+    const s = document.createElement("script");
+    s.defer = true; s.src = "https://cloud.umami.is/script.js";
+    s.dataset.websiteId = site.umamiWebsiteId;
+    s.dataset.domains = "shubhkaprateek.com,www.shubhkaprateek.com";     // local previews aren't counted
+    document.head.appendChild(s);
+  }
+  document.addEventListener("click", e => {
+    const buy = e.target.closest("a.buy");
+    if (buy) {
+      const box = buy.closest("[data-key]"), p = box && pmap.get(box.dataset.key);
+      const where = buy.closest(".feat-tile") ? "featured" : buy.closest(".pd-grid") ? "product page" : buy.closest(".item") ? "reel list" : buy.closest("#view-reel") ? "reel page" : "products";
+      track("buy", { product: p ? p.name : "?", store: storeOf(buy.href), where });
+      return;
+    }
+    if (e.target.closest("#ask-dm")) track("ask-instagram");
+    if (e.target.closest("a.watch, a.rp-watch, a.badge, a.feat-reel")) track("watch-reel");
+  }, true);
+  let searchTimer;
+  document.addEventListener("input", e => {
+    if (e.target.id !== "q") return;
+    clearTimeout(searchTimer);   // count a search once the person stops typing
+    searchTimer = setTimeout(() => { const q = e.target.value.trim(); if (q.length > 1) track("search", { q: q.slice(0, 60) }); }, 1500);
+  });
+
   // ---- state (in the URL so links can be shared) ----
   const params = new URLSearchParams(location.search);
   let view = params.get("view") === "reels" ? "reels" : "products";
@@ -288,21 +317,21 @@
 
   // No cover image saved for this reel → fall back to Instagram's embed (cropped to the video)
   window.toEmbed = img => {
-    const a = img.closest(".cover, .rp-cover"); if (!a) return;
-    if (a.classList.contains("rp-cover")) {       // reel page: keep the 9:16 box, put the embed inside it
-      const f = document.createElement("div"); f.className = "frame";
-      f.innerHTML = `<iframe src="${a.dataset.embed}" loading="lazy" scrolling="no" allowtransparency="true" allow="encrypted-media; autoplay; clipboard-write"></iframe>`;
-      a.replaceChildren(f); fitFrames(); return;
-    }
+    const a = img.closest(".cover"); if (!a) return;
     const f = document.createElement("div"); f.className = "frame";
     f.innerHTML = `<iframe src="${a.dataset.embed}" loading="lazy" scrolling="no" allowtransparency="true" allow="encrypted-media; autoplay; clipboard-write"></iframe>`;
     a.replaceWith(f); fitFrames();
   };
   const EMBED_W = 326;
+  // Instagram's player shows the reel inside a 4:5 box with black bars at the sides; the video itself is
+  // 9/16 of that box's height wide. The reel page scales the player so exactly the video fills its 9:16 frame.
+  const EMBED_VIDEO_W = EMBED_W * 1.25 * 9 / 16;      // ≈ 229px of the 326px-wide player
   function fitFrames() {
     document.querySelectorAll(".frame").forEach(f => f.style.setProperty("--s", f.clientWidth / EMBED_W));
+    document.querySelectorAll(".reel-frame").forEach(f => f.style.setProperty("--s", f.clientWidth / EMBED_VIDEO_W));
   }
   new ResizeObserver(fitFrames).observe($("reels"));
+  addEventListener("resize", fitFrames);
 
   // ---------- Lazy loading (both sections) ----------
   // a) Reel previews and product photos load only when they're about to come on screen
@@ -494,7 +523,8 @@
         const j = await r.json();
         if (!j.success) throw new Error(j.message);
         window.__lastSend = Date.now();
-        status("Sent ✓ We'll reply on " + REPLY[replyType].label + " soon!", true); $("ask-form").reset();
+        track("ask-email");
+      status("Sent ✓ We'll reply on " + REPLY[replyType].label + " soon!", true); $("ask-form").reset();
       } catch (err) { status("Couldn't send right now — try the Instagram tab instead.", false); console.error(err); }
       $("ask-send").disabled = false;
     } else {
@@ -578,9 +608,11 @@
       <button class="rp-back" data-back>← All reels</button>
       <div class="rp-grid">
         <div class="rp-media">
-          <a class="rp-cover" href="${esc(url)}" target="_blank" rel="noopener" data-embed="${esc(url)}embed/">
-            <img src="${esc(r.cover || `assets/covers/${c}.jpg`)}" alt="${esc(cleanTitle(r.title))}" onerror="toEmbed(this)">
-          </a>
+          <div class="rp-cover rp-player">
+            <img src="${esc(r.cover || `assets/covers/${c}.jpg`)}" alt="${esc(cleanTitle(r.title))}" onerror="this.remove()">
+            <div class="reel-frame"><iframe src="${esc(url)}embed/" title="${esc(cleanTitle(r.title))}" scrolling="no" allowtransparency="true"
+              allow="autoplay; encrypted-media; clipboard-write; picture-in-picture" onload="this.parentNode.classList.add('ready')"></iframe></div>
+          </div>
           <div class="rp-actions">
             <a class="rp-watch" href="${esc(url)}" target="_blank" rel="noopener">▶ Watch reel</a>
             <button class="rp-share" type="button" data-share>🔗 Copy link</button>
@@ -593,6 +625,7 @@
         </div>
       </div>`;
     watchMedia(sec);
+    fitFrames();
     document.title = cleanTitle(r.title) + " — " + (site.title || "ShubhKaPrateek");
     window.scrollTo({ top: 0 });
   }

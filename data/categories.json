@@ -17,6 +17,8 @@
     { "id": "game-gadgets", "name": "Game gadgets", "keywords": ["shuffler", "card dealer", "dealer", "console", "retro", "arcade", "controller", "blast box"] },
     { "id": "game-night", "name": "Game-night supplies", "keywords": ["dice", "marker", "markers", "whiteboard", "gems", "sticky notes", "timer", "buzzer", "scoreboard"] }
   ] },
+  { "id": "electronics", "name": "Electronics", "emoji": "🔌", "theme": true,
+    "keywords": ["electronic", "electric", "rechargeable", "battery", "usb", "led", "light-up", "projector", "console", "shuffler", "dealer", "inflator", "inflater", "gadget", "speaker", "earbuds", "headphones", "charger", "smart", "remote control", "rc", "circuit", "buzzer"] },
   { "id": "home", "name": "Home", "emoji": "🏠", "sub": [
     { "id": "bedding", "name": "Comforters & Blankets", "keywords": ["comforter", "blanket", "quilt", "bedsheet", "bed sheet", "duvet", "pillow", "cushion", "throw"] },
     { "id": "mugs", "name": "Mugs & Drinkware", "keywords": ["mug", "mugs", "cup", "bottle", "sipper", "straw", "straws", "glass", "tumbler", "coaster"] },
