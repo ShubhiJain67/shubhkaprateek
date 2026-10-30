@@ -577,5 +577,17 @@
         "image": "https://tipsytap.co/cdn/shop/files/hf_20260820_125505_6a3ce9fd-b336-4335-8865-f4b199291d9b_1_1.png?v=1792780519&width=600"
       }
     ]
+  },
+  {
+    "id": 48,
+    "name": "Queaky",
+    "category": ["game-gadgets", "electronics"],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://blix.in/products/bear-queaky-rechargeable",
+        "image": "https://cdn.shopify.com/s/files/1/0847/6232/9362/files/Queaky_Jungle_Bear_1.png?v=1786447701"
+      }
+    ]
   }
 ]
