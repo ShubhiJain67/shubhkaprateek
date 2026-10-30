@@ -12,30 +12,6 @@
     ]
   },
   {
-    "id": 4,
-    "name": "Phase 10 card game",
-    "category": ["board-games"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B08pF57GL",
-        "image": "https://m.media-amazon.com/images/I/61PsNwfM-PL._SL600_.jpg"
-      }
-    ]
-  },
-  {
-    "id": 8,
-    "name": "Magnet Game",
-    "category": ["board-games"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B0bkcqllU",
-        "image": "https://m.media-amazon.com/images/I/61zL%2B7pykCL._SL600_.jpg"
-      }
-    ]
-  },
-  {
     "id": 9,
     "name": "Minion Comforter",
     "category": ["bedding"],
