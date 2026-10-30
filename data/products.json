@@ -36,18 +36,6 @@
     ]
   },
   {
-    "id": 5,
-    "name": "Whiteboard",
-    "category": ["game-night"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B0dLBJohP",
-        "image": "https://m.media-amazon.com/images/I/517AleMJ1FL._SL600_.jpg"
-      }
-    ]
-  },
-  {
     "id": 8,
     "name": "Magnet Game",
     "category": ["board-games"],
