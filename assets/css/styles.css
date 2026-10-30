@@ -58,7 +58,8 @@ button { font: inherit; color: inherit; }
   .hero h1 { font-size: 23px; margin-bottom: 2px; }
   .hero p { font-size: 13.5px; }
   .featured { margin-top: 12px; }
-  .feat-tile { grid-template-columns: 96px 1fr; gap: 12px; padding: 10px; }
+  .featured .feat-box { padding: 10px; }
+  .featured .feat-tile { grid-template-columns: 96px 1fr; gap: 12px; }   /* compact on phones (.featured makes it win over the rules below) */
   .feat-name { font-size: 17px; }
   .feat-info .cat { display: none; }                 /* the category line isn't needed in the small tile */
   .feat-actions { margin-top: 4px; }
@@ -149,11 +150,12 @@ button { font: inherit; color: inherit; }
 
 /* ---------- Featured tile (landing page) ---------- */
 .featured { margin: 22px 0 4px; }
-.feat-tile {
-  display: grid; grid-template-columns: 132px 1fr; gap: 14px; align-items: center; padding: 12px;
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+.feat-box {
+  padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
 }
-@media (min-width: 640px) { .feat-tile { grid-template-columns: 240px 1fr; gap: 26px; padding: 16px; } }
+.feat-box > .feat-label { display: inline-block; margin-bottom: 10px; }
+.feat-tile { display: grid; grid-template-columns: 132px 1fr; gap: 14px; align-items: center; }
+@media (min-width: 640px) { .feat-box { padding: 16px; } .feat-tile { grid-template-columns: 240px 1fr; gap: 26px; } }
 .feat-media { border-radius: 12px; cursor: pointer; }
 .feat-info { min-width: 0; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
 .feat-label {
@@ -166,8 +168,13 @@ button { font: inherit; color: inherit; }
 .feat-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 8px; }
 .feat-reel { font-size: 13px; font-weight: 700; color: var(--muted); text-decoration: none; }
 .feat-reel:hover { color: var(--pink); }
-.car-track.feat-track { grid-auto-columns: 100%; }
-@media (min-width: 900px) { .car-track.feat-track { grid-auto-columns: calc(50% - 8px); } }
+.feat-grid { display: grid; gap: 12px; }
+.feat-grid.two .feat-tile + .feat-tile { padding-top: 12px; border-top: 1px solid var(--line); }   /* thin line between the 2 */
+@media (min-width: 900px) {
+  .feat-grid.two { grid-template-columns: 1fr 1fr; gap: 24px; }
+  .feat-grid.two .feat-tile { grid-template-columns: 160px 1fr; gap: 18px; }
+  .feat-grid.two .feat-tile + .feat-tile { padding-top: 0; border-top: 0; padding-left: 24px; border-left: 1px solid var(--line); }
+}
 .badge {
   text-decoration: none;
   position: absolute; left: 10px; top: 10px; z-index: 1; border: 0; cursor: pointer;

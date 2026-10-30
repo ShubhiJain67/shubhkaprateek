@@ -48,7 +48,7 @@ Then tap ✅ <b>Add to site</b>. /cancel drops the draft.
 I'll show exactly what goes before anything is removed.
 
 <b>⭐ Featured tile on the home page</b>
-<code>/feature Hulk Comforter</code> (or its id) — add it to the featured tile
+<code>/feature Hulk Comforter</code> (or its id) — add it to the featured tile (up to 2)
 <code>/unfeature Hulk Comforter</code> — take it off · <code>/unfeature all</code> — clear it
 <code>/featured</code> — what's featured now
 
@@ -768,6 +768,7 @@ async function onDeleteButton(q, env, action, id) {
 // ---------------------------------------------------------------- ⭐ featured tile (data/site.json → site.featured)
 const featKey = chat => "feat:" + chat;
 const featuredIds = site => [].concat(site.site?.featured || []);
+const MAX_FEATURED = 2;   // the home page shows at most 2 (assets/js/app.js → MAX_FEATURED)
 export function applyFeature(ids, op, productId) {
   if (op === "clear") return [];
   if (op === "add") return ids.includes(productId) ? ids : [...ids, productId];
@@ -794,6 +795,7 @@ async function onFeature(op, arg, env, chat) {
     if (found.length > 1) return say(env, chat, `Which one? Send <code>/${op === "add" ? "feature" : "unfeature"}</code> with the id:\n` + found.slice(0, 15).map(p => `• <code>${p.id}</code> ${esc(p.name)}`).join("\n"));
     productId = found[0].id;
     if (op === "add" && now.includes(productId)) return say(env, chat, `⭐ ${esc(found[0].name)} is already featured.`);
+    if (op === "add" && now.length >= MAX_FEATURED) return say(env, chat, `⭐ The home page shows ${MAX_FEATURED} featured products at most, and it already has:\n${featuredLine(now, S.products)}\n\nTake one off first: <code>/unfeature name</code>`);
     if (op === "remove" && !now.includes(productId)) return say(env, chat, `${esc(found[0].name)} isn't featured.`);
   }
   const next = applyFeature(now, op, productId);

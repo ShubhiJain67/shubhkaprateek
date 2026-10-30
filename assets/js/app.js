@@ -233,13 +233,15 @@
   }
 
   // ---------- Featured tile(s) on the landing page — ids in data/site.json → "featured" (set from Telegram: /feature) ----------
+  // Up to 2 products: both shown at once (stacked on phones, side by side on big screens).
+  const MAX_FEATURED = 2;
+  const featuredList = () => [].concat(site.featured || []).map(id => pmap.get(String(id))).filter(Boolean).slice(0, MAX_FEATURED);
   function featuredTile(p) {
     const v = variantOf(p, 0), id = esc(p.id);
     const latest = p.reels.length ? permalink((reels.find(r => r.id === Math.max(...p.reels)) || {}).reel) : null;
     return `<div class="feat-tile" data-key="${esc(keyOf(p))}">
       <div class="media feat-media" data-product="${id}" role="link" tabindex="0" aria-label="${esc(p.name)}"><span class="vimg">${imgOr(v, esc(catOf(catsOf(p)[0]).emoji))}</span></div>
       <div class="feat-info">
-        <span class="feat-label">⭐ Featured</span>
         <span class="cat">${catsOf(p).map(c => esc(catOf(c).name)).join(" · ")}</span>
         <h3 class="feat-name"><a href="/product/${id}" data-product="${id}">${esc(p.name)}</a></h3>
         ${variantPills(p)}
@@ -251,23 +253,20 @@
   // A slim moving strip at the top of reel/product pages that points to the featured product(s) — just the name
   // and a link, no photo or Buy button, so it never competes with the reel/product whose page it is.
   function featuredTicker(excludeId) {
-    const list = [].concat(site.featured || []).map(id => pmap.get(String(id))).filter(p => p && String(p.id) !== String(excludeId));
+    const list = featuredList().filter(p => String(p.id) !== String(excludeId));
     if (!list.length) return "";
     const one = `<span class="tk-item">⭐ Our pick: ${list.map(p => `<a href="/product/${esc(p.id)}" data-product="${esc(p.id)}">${esc(p.name)}</a>`).join(" · ")} — take a look →</span>`;
     return `<div class="feat-ticker" aria-label="Featured"><div class="tk-track">${one}<span aria-hidden="true">${one}</span><span aria-hidden="true">${one}</span></div></div>`;
   }
   function renderFeatured() {
-    const list = [].concat(site.featured || []).map(id => pmap.get(String(id))).filter(Boolean);
+    const list = featuredList();
     const box = $("featured");
     if (!list.length) return;
-    box.innerHTML = list.length === 1 ? featuredTile(list[0]) : `<div class="carousel">
-        <button class="car-btn prev" type="button" aria-label="Previous" data-car="-1">‹</button>
-        <div class="car-track feat-track">${list.map(featuredTile).join("")}</div>
-        <button class="car-btn next" type="button" aria-label="Next" data-car="1">›</button>
-      </div>`;
+    // one section, one "Featured" label, the product(s) inside it
+    box.innerHTML = `<div class="feat-box"><span class="feat-label">⭐ Featured product${list.length > 1 ? "s" : ""}</span>
+      <div class="feat-grid${list.length > 1 ? " two" : ""}">${list.map(featuredTile).join("")}</div></div>`;
     box.dataset.ready = "1";
     watchMedia(box);
-    box.querySelectorAll(".carousel").forEach(c => requestAnimationFrame(() => carState(c)));
   }
 
   function productCard(p) {
@@ -698,7 +697,7 @@
       <div class="pd-grid" data-key="${esc(keyOf(p))}">
         <div class="media pd-media"><span class="vimg">${imgOr(v, esc((pcs[0] || catOf("")).emoji), 600)}</span></div>
         <div class="pd-info">
-          ${[].concat(site.featured || []).map(String).includes(String(p.id)) ? `<span class="feat-label pd-feat">⭐ Our pick</span>` : ""}
+          ${featuredList().some(f => String(f.id) === String(p.id)) ? `<span class="feat-label pd-feat">⭐ Our pick</span>` : ""}
           <span class="cat">${pcs.map(x => esc(x.name)).join(" · ")}</span>
           <h2 class="rp-title">${esc(p.name)}</h2>
           ${variantPills(p)}
