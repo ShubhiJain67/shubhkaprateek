@@ -10,6 +10,9 @@
 // Settings in wrangler.toml [vars]: GITHUB_REPO, GITHUB_BRANCH, SITE_URL
 // Drafts waiting for your ✅ live in the KV namespace DRAFTS (auto-deleted after 7 days).
 
+import { plannerCommand, plannerButton, plannerHttp } from "./planner.js";
+import PLANNER_PAGE from "./planner.html";   // the private planner page (see planner.js)
+
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
 const MAX_PRODUCTS = 10;
 const HELP = `<b>Send me a reel + its products</b>, e.g.
@@ -35,6 +38,8 @@ I'll send a preview. Fix anything by replying:
 Send a <b>photo</b> with caption <code>cover</code> (reel cover) or <code>2</code> (product 2's photo).
 Then tap ✅ <b>Add to site</b>. /cancel drops the draft.
 
+📒 <b>Content planner</b> (private): <code>/idea …</code> · <code>/ideas</code> · <code>/week</code> · <code>/planner</code> — send /planner for all its commands
+
 <b>Remove things from the site</b>
 <code>/delete https://www.instagram.com/reel/ABC123/</code> — the reel, plus its products that aren't in any other reel
 <code>/delete Green Saree</code> (or its id, e.g. <code>/delete 48</code>) — the product; a reel left with no products goes too
@@ -48,6 +53,9 @@ I'll show exactly what goes before anything is removed.
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
+    env.WORKER_URL = url.origin;                                  // used for the planner link
+    const planner = await plannerHttp(req, env, url, PLANNER_PAGE);
+    if (planner) return planner;
     if (req.method !== "POST" || url.pathname !== "/telegram") return new Response("ShubhKaPrateek bot is running.");
     if (req.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.WEBHOOK_SECRET) return new Response("nope", { status: 401 });
     let update;
@@ -89,6 +97,7 @@ export async function handleUpdate(update, env) {
   if (cmd === "/start" || cmd === "/help") return say(env, chat, HELP);
   if (cmd === "/cancel") { await env.DRAFTS.delete(String(chat)); return say(env, chat, "🗑 Draft dropped."); }
   if (cmd === "/cats") return say(env, chat, await catsHelp(env));
+  if (await plannerCommand(cmd, text, env, chat)) return;          // /idea /ideas /plan /shot /edited /uploaded /week /planner …
   if (cmd === "/delete" || cmd === "/remove") return onDelete(text.replace(/^\/\S+\s*/, "").trim(), env, chat);
   if (cmd === "/featured") return showFeatured(env, chat);
   if (cmd === "/feature" || cmd === "/unfeature") return onFeature(cmd === "/feature" ? "add" : "remove", text.replace(/^\/\S+\s*/, "").trim(), env, chat);
@@ -517,6 +526,7 @@ async function onPhoto(msg, env) {
 async function onButton(q, env) {
   const chat = q.message.chat.id;
   if (!allowed(env, chat)) return tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Private bot" });
+  if (await plannerButton(q, env)) return;                         // planner category / "this week" buttons
   const [action, id] = String(q.data || "").split(":");
   if (action === "delok" || action === "delno") return onDeleteButton(q, env, action, id);
   if (action === "featok" || action === "featno") return onFeatureButton(q, env, action, id);

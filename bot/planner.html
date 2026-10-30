@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Content Planner</title>
+<style>
+:root {
+  --bg: #fbf6f1; --surface: #fff; --ink: #2b1f1a; --muted: #7a6a62; --line: #eadfd6; --field: #f3e8df;
+  --accent: #d9534f; --ok: #2f8f5b; --warn: #c27c0e; --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #1a1513; --surface: #241d1a; --ink: #f5ece6; --muted: #b3a39a; --line: #3a2f2a; --field: #2f2622; --accent: #ef7a6f; --ok: #5fc48c; --warn: #e3a64a; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 Inter, system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px 60px; }
+header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+header .wrap { display: flex; align-items: center; gap: 10px; height: 58px; padding-bottom: 0; }
+h1 { margin: 0; font: 700 20px Georgia, serif; flex: 1; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 26px 0 10px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-weight: 600; font-size: 14px; }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn.danger { color: var(--accent); }
+.btn.sm { padding: 4px 9px; font-size: 12.5px; border-radius: 8px; }
+.icon { width: 38px; height: 38px; padding: 0; display: grid; place-items: center; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+.add { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.add input { flex: 1 1 220px; min-width: 0; height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.add select { height: 44px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 0 10px; max-width: 46%; }
+.weeknav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 18px; }
+.weeknav b { font-size: 16px; }
+.mix { display: grid; gap: 9px; margin-top: 12px; }
+.mixrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; font-size: 13.5px; }
+.bar { grid-column: 1 / -1; position: relative; height: 8px; border-radius: 99px; background: var(--field); overflow: hidden; }
+.bar i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 99px; }
+.bar s { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink); opacity: .55; }
+.muted { color: var(--muted); }
+.next { margin-top: 12px; font-size: 14px; }
+.counts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.pill { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 99px; background: var(--field); white-space: nowrap; }
+.days { display: grid; gap: 10px; }
+@media (min-width: 760px) { .days { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.day { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; min-height: 64px; }
+.day.today { border-color: var(--accent); }
+.day h3 { margin: 0 0 6px; font-size: 13px; display: flex; justify-content: space-between; }
+.day.free { min-height: 0; padding: 8px 10px; } .day.free h3 { margin: 0; font-weight: 500; color: var(--muted); }
+@media (min-width: 760px) {   /* narrow day columns: status button goes under the text */
+  .day .item { grid-template-columns: auto minmax(0, 1fr); }
+  .day .item .st { grid-column: 2; justify-self: start; }
+}
+.item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 8px; border-radius: 10px; background: var(--field); margin-top: 6px; cursor: pointer; }
+.item .t { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.item .meta { font-size: 12px; color: var(--muted); }
+.st { border: 0; border-radius: 8px; padding: 3px 7px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; background: var(--surface); }
+.st[data-s="planned"] { color: var(--muted); } .st[data-s="shot"] { color: var(--warn); } .st[data-s="edited"] { color: var(--accent); } .st[data-s="uploaded"] { color: var(--ok); }
+.filters { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.filters button { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 12px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.backlog { display: grid; gap: 8px; margin-top: 10px; }
+@media (min-width: 760px) { .backlog { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bl { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 6px; }
+.bl .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.bl .t { font-weight: 600; cursor: pointer; overflow-wrap: anywhere; }
+.empty { color: var(--muted); font-size: 13.5px; padding: 6px 2px; }
+dialog { border: 0; border-radius: 18px; padding: 0; width: min(520px, calc(100vw - 24px)); background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+dialog::backdrop { background: rgba(0,0,0,.45); }
+.dlg { padding: 18px; display: grid; gap: 12px; }
+.dlg h3 { margin: 0; font-size: 17px; }
+.dlg label { display: grid; gap: 4px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.dlg input, .dlg select, .dlg textarea { border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; background: var(--bg); font-size: 15px; font-weight: 400; color: var(--ink); }
+.dlg textarea { min-height: 70px; resize: vertical; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; }
+.cats { display: grid; gap: 10px; max-height: 55vh; overflow: auto; }
+.catrow { display: grid; grid-template-columns: 52px 1fr 70px 34px; gap: 6px; align-items: center; }
+.catrow input { padding: 7px 8px; }
+.catrow .kw { grid-column: 1 / -1; font-size: 13px; }
+.total { font-size: 13px; font-weight: 700; }
+.total.bad { color: var(--accent); }
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 99px; font-size: 14px; font-weight: 600; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>📒 Content Planner</h1>
+  <button class="btn icon" id="settings-btn" aria-label="Categories and targets">⚙️</button>
+</div></header>
+
+<main class="wrap">
+  <form class="add" id="add">
+    <input id="add-text" placeholder="New idea… add #tags" autocomplete="off" required>
+    <select id="add-cat" aria-label="Category"></select>
+    <button class="btn primary">Add</button>
+  </form>
+
+  <div class="weeknav">
+    <button class="btn sm" id="prev" aria-label="Previous week">‹ Prev</button>
+    <div style="text-align:center"><b id="wk-label"></b><div class="muted" id="wk-sub" style="font-size:12.5px"></div></div>
+    <button class="btn sm" id="next" aria-label="Next week">Next ›</button>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline"><b>Category mix</b><span class="muted" style="font-size:12.5px">bar = this week · line = target</span></div>
+    <div class="mix" id="mix"></div>
+    <div class="next" id="next-up"></div>
+    <div class="counts" id="counts"></div>
+  </div>
+
+  <h2>This week by day</h2>
+  <div class="days" id="days"></div>
+
+  <h2>Ideas</h2>
+  <div class="filters" id="filters"></div>
+  <div class="backlog" id="backlog"></div>
+</main>
+
+<dialog id="edit"><form class="dlg" method="dialog" id="edit-form">
+  <h3 id="edit-title"></h3>
+  <label>Idea<textarea id="e-text"></textarea></label>
+  <div class="two">
+    <label>Category<select id="e-cat"></select></label>
+    <label>Status<select id="e-status"></select></label>
+  </div>
+  <div class="two">
+    <label>Week<select id="e-week"></select></label>
+    <label>Day<select id="e-day"></select></label>
+  </div>
+  <label>Tags (space separated)<input id="e-tags" placeholder="trending props outdoor"></label>
+  <div class="actions">
+    <button class="btn danger" type="button" id="e-drop">Delete</button>
+    <span style="display:flex;gap:8px"><button class="btn" value="cancel" formnovalidate>Cancel</button><button class="btn primary" type="button" id="e-save">Save</button></span>
+  </div>
+</form></dialog>
+
+<dialog id="settings"><form class="dlg" method="dialog">
+  <h3>Categories & weekly mix</h3>
+  <div class="muted" style="font-size:13px">Targets are % of a week's reels. Keywords help the bot guess the category of a new idea.</div>
+  <div class="cats" id="cats"></div>
+  <div class="actions"><button class="btn sm" type="button" id="cat-add">+ Category</button><span class="total" id="cat-total"></span></div>
+  <div class="actions"><span></span><span style="display:flex;gap:8px"><button class="btn" value="cancel">Cancel</button><button class="btn primary" type="button" id="cat-save">Save</button></span></div>
+</form></dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const KEY = new URLSearchParams(location.search).get("key");
+  const API = "/planner/api?key=" + encodeURIComponent(KEY);
+  const ICON = { idea: "💡", planned: "📅", shot: "🎥", edited: "✂️", uploaded: "✅" };
+  const LABEL = { idea: "Idea", planned: "To shoot", shot: "Shot", edited: "Edited", uploaded: "Uploaded" };
+  const DAYNAME = { mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday", fri: "Friday", sat: "Saturday", sun: "Sunday" };
+  let P = null, week = null, filter = "all", editing = null;
+
+  const toast = msg => { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 1600); };
+  async function api(body) {
+    const r = await fetch(API, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
+    const j = await r.json();
+    if (!r.ok) { toast("⚠️ " + (j.error || "Something went wrong")); throw new Error(j.error); }
+    P = j; if (!week) week = P.thisWeek; render(); return j;
+  }
+  const addWeeks = (w, n) => { const t = new Date(w + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + 7 * n); return t.toISOString().slice(0, 10); };
+  const fmt = w => { const t = new Date(w + "T00:00:00Z"), e = new Date(t); e.setUTCDate(t.getUTCDate() + 6);
+    const f = x => x.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }); return f(t) + " – " + f(e); };
+  const cat = id => P.categories.find(c => c.id === id);
+  const catName = id => cat(id) ? cat(id).emoji + " " + cat(id).name : "❓ No category";
+  const nextStatus = s => P.statuses[Math.min(P.statuses.indexOf(s) + 1, P.statuses.length - 1)];
+  const todayKey = () => { const d = new Date(Date.now() + 330 * 60000); return P.days[(d.getUTCDay() + 6) % 7]; };
+
+  function mix() {
+    const items = P.ideas.filter(i => i.week === week), total = items.length;
+    const sum = P.categories.reduce((a, c) => a + c.target, 0) || 1;
+    return { items, total, rows: P.categories.map(c => {
+      const n = items.filter(i => i.cat === c.id).length, want = c.target / sum;
+      return { c, n, pct: total ? Math.round(100 * n / total) : 0, target: Math.round(100 * want), gap: want * Math.max(total, 7) - n };
+    }) };
+  }
+
+  function itemHtml(i) {
+    return `<div class="item" data-edit="${i.id}">
+      <span>${cat(i.cat) ? cat(i.cat).emoji : "❓"}</span>
+      <div><div class="t">${esc(i.text)}</div><div class="meta">#${i.id}${i.tags.length ? " · " + i.tags.map(t => "#" + esc(t)).join(" ") : ""}</div></div>
+      <button class="st" data-s="${i.status}" data-advance="${i.id}" title="Tap to move to the next step">${ICON[i.status]} ${LABEL[i.status]}</button>
+    </div>`;
+  }
+
+  function render() {
+    $("wk-label").textContent = (week === P.thisWeek ? "This week" : week === addWeeks(P.thisWeek, 1) ? "Next week" : week < P.thisWeek ? "Past week" : "Later") ;
+    $("wk-sub").textContent = fmt(week);
+    // category mix
+    const m = mix();
+    $("mix").innerHTML = m.rows.map(r => `<div class="mixrow"><span>${esc(r.c.emoji)} ${esc(r.c.name)}</span>
+      <span class="muted">${r.n} · ${r.pct}% <span style="opacity:.7">/ ${r.target}%</span></span>
+      <div class="bar"><i style="width:${Math.min(100, r.pct)}%"></i><s style="left:calc(${r.target}% - 1px)"></s></div></div>`).join("");
+    const none = m.items.filter(i => !cat(i.cat)).length;
+    const next = m.rows.filter(r => r.gap >= 0.5).sort((a, b) => b.gap - a.gap).slice(0, 2);
+    $("next-up").innerHTML = (next.length ? "👉 Add next: <b>" + next.map(r => esc(r.c.emoji + " " + r.c.name)).join("</b>, <b>") + "</b>" : "✨ Mix is on target")
+      + (none ? ` <span class="muted">· ${none} without a category</span>` : "");
+    $("counts").innerHTML = `<span class="pill">${m.total} this week</span>` + ["planned", "shot", "edited", "uploaded"].map(s =>
+      `<span class="pill">${ICON[s]} ${m.items.filter(i => i.status === s).length} ${LABEL[s].toLowerCase()}</span>`).join("");
+    // days
+    const today = week === P.thisWeek ? todayKey() : null;
+    const order = s => P.statuses.indexOf(s);
+    $("days").innerHTML = [...P.days, null].map(d => {
+      const list = m.items.filter(i => (i.day || null) === d).sort((a, b) => order(a.status) - order(b.status));
+      if (!d && !list.length) return "";
+      return `<div class="day${d === today ? " today" : ""}${list.length ? "" : " free"}"><h3><span>${d ? DAYNAME[d] : "Any day"}</span><span class="muted">${list.length || "free"}</span></h3>
+        ${list.map(itemHtml).join("")}</div>`;
+    }).join("");
+    // backlog
+    const counts = {}; P.ideas.filter(i => i.status === "idea").forEach(i => counts[i.cat || "none"] = (counts[i.cat || "none"] || 0) + 1);
+    const total = P.ideas.filter(i => i.status === "idea").length;
+    $("filters").innerHTML = [["all", "All " + total], ...P.categories.map(c => [c.id, `${c.emoji} ${c.name} ${counts[c.id] || 0}`]), ...(counts.none ? [["none", "❓ " + counts.none]] : [])]
+      .map(([id, l]) => `<button type="button" data-filter="${esc(id)}" aria-pressed="${filter === id}">${esc(l)}</button>`).join("");
+    const back = P.ideas.filter(i => i.status === "idea" && (filter === "all" || (filter === "none" ? !cat(i.cat) : i.cat === filter))).sort((a, b) => b.id - a.id);
+    $("backlog").innerHTML = back.map(i => `<div class="bl">
+        <div class="t" data-edit="${i.id}">${esc(i.text)}</div>
+        <div class="row"><span class="pill">${esc(catName(i.cat))}</span>${i.tags.map(t => `<span class="muted" style="font-size:12.5px">#${esc(t)}</span>`).join(" ")}<span class="muted" style="font-size:12px;margin-left:auto">#${i.id}</span></div>
+        <div class="row"><button class="btn sm" data-plan="${i.id}" data-week="${esc(week)}">📅 Add to ${week === P.thisWeek ? "this week" : fmt(week)}</button>
+          ${week === P.thisWeek ? `<button class="btn sm" data-plan="${i.id}" data-week="${addWeeks(P.thisWeek, 1)}">Next week</button>` : ""}</div>
+      </div>`).join("") || `<div class="empty">No ideas here yet — add one above or send /idea … to the bot.</div>`;
+    // category selects
+    const opts = sel => [`<option value="">❓ No category</option>`, ...P.categories.map(c => `<option value="${esc(c.id)}"${sel === c.id ? " selected" : ""}>${esc(c.emoji + " " + c.name)}</option>`)].join("");
+    const keep = $("add-cat").value; $("add-cat").innerHTML = `<option value="">Auto category</option>` + P.categories.map(c => `<option value="${esc(c.id)}">${esc(c.emoji + " " + c.name)}</option>`).join(""); $("add-cat").value = keep;
+    render.opts = opts;
+  }
+
+  // ---- interactions ----
+  $("add").addEventListener("submit", async e => {
+    e.preventDefault(); const text = $("add-text").value.trim(); if (!text) return;
+    await api({ op: "add", text, cat: $("add-cat").value || undefined }); $("add-text").value = ""; toast("💡 Idea saved");
+  });
+  $("prev").onclick = () => { week = addWeeks(week, -1); render(); };
+  $("next").onclick = () => { week = addWeeks(week, 1); render(); };
+  document.addEventListener("click", async e => {
+    const adv = e.target.closest("[data-advance]");
+    if (adv) { e.stopPropagation(); const i = P.ideas.find(x => x.id === +adv.dataset.advance); const s = nextStatus(i.status);
+      if (s === i.status) return toast("Already uploaded ✅"); await api({ op: "status", id: i.id, status: s }); return toast(ICON[s] + " " + LABEL[s]); }
+    const pl = e.target.closest("[data-plan]");
+    if (pl) { await api({ op: "plan", id: +pl.dataset.plan, week: pl.dataset.week }); return toast("📅 Planned"); }
+    const f = e.target.closest("[data-filter]");
+    if (f) { filter = f.dataset.filter; return render(); }
+    const ed = e.target.closest("[data-edit]");
+    if (ed) openEdit(+ed.dataset.edit);
+  });
+
+  function openEdit(id) {
+    const i = P.ideas.find(x => x.id === id); editing = i;
+    $("edit-title").textContent = `Idea #${i.id}`;
+    $("e-text").value = i.text;
+    $("e-cat").innerHTML = render.opts(i.cat);
+    $("e-status").innerHTML = P.statuses.map(s => `<option value="${s}"${s === i.status ? " selected" : ""}>${ICON[s]} ${LABEL[s]}</option>`).join("");
+    const weeks = [-1, 0, 1, 2, 3].map(n => addWeeks(P.thisWeek, n));
+    if (i.week && !weeks.includes(i.week)) weeks.unshift(i.week);
+    $("e-week").innerHTML = `<option value="">Not planned</option>` + weeks.map(w => `<option value="${w}"${w === i.week ? " selected" : ""}>${w === P.thisWeek ? "This week" : w === addWeeks(P.thisWeek, 1) ? "Next week" : fmt(w)}</option>`).join("");
+    $("e-day").innerHTML = `<option value="">Any day</option>` + P.days.map(d => `<option value="${d}"${d === i.day ? " selected" : ""}>${DAYNAME[d]}</option>`).join("");
+    $("e-tags").value = i.tags.join(" ");
+    $("edit").showModal();
+  }
+  $("e-save").onclick = async () => {
+    const i = editing, w = $("e-week").value, s = $("e-status").value;
+    await api({ op: "edit", id: i.id, text: $("e-text").value, cat: $("e-cat").value || null, tags: $("e-tags").value.split(/[\s,]+/), day: $("e-day").value || null });
+    if (!w && i.week) await api({ op: "unplan", id: i.id });
+    if (w && w !== i.week) await api({ op: "plan", id: i.id, week: w, day: $("e-day").value || null });
+    const now = P.ideas.find(x => x.id === i.id);
+    if (s !== now.status) await api({ op: "status", id: i.id, status: s });
+    $("edit").close(); toast("Saved");
+  };
+  $("e-drop").onclick = async () => { if (!confirm(`Delete idea #${editing.id}?`)) return; await api({ op: "drop", id: editing.id }); $("edit").close(); toast("🗑 Deleted"); };
+
+  // ---- settings: categories + targets ----
+  const catRow = c => `<div class="catrow">
+      <input value="${esc(c.emoji)}" data-k="emoji" aria-label="Emoji">
+      <input value="${esc(c.name)}" data-k="name" aria-label="Name">
+      <input value="${c.target}" data-k="target" type="number" min="0" max="100" inputmode="numeric" aria-label="Target %">
+      <button class="btn sm" type="button" data-rm aria-label="Remove">✕</button>
+      <input class="kw" value="${esc((c.keywords || []).join(", "))}" data-k="keywords" placeholder="keywords, comma separated">
+      <input type="hidden" data-k="id" value="${esc(c.id || "")}">
+    </div>`;
+  const readCats = () => [...$("cats").querySelectorAll(".catrow")].map(r => {
+    const g = k => r.querySelector(`[data-k="${k}"]`).value;
+    return { id: g("id") || g("name"), name: g("name"), emoji: g("emoji"), target: +g("target") || 0, keywords: g("keywords").split(",").map(s => s.trim()).filter(Boolean) };
+  });
+  const total = () => { const t = readCats().reduce((a, c) => a + c.target, 0); $("cat-total").textContent = `Total ${t}%`; $("cat-total").classList.toggle("bad", t !== 100); };
+  $("settings-btn").onclick = () => { $("cats").innerHTML = P.categories.map(catRow).join(""); total(); $("settings").showModal(); };
+  $("cats").addEventListener("input", total);
+  $("cats").addEventListener("click", e => { if (e.target.closest("[data-rm]")) { e.target.closest(".catrow").remove(); total(); } });
+  $("cat-add").onclick = () => { $("cats").insertAdjacentHTML("beforeend", catRow({ emoji: "✨", name: "", target: 0, keywords: [] })); total(); };
+  $("cat-save").onclick = async () => { await api({ op: "categories", categories: readCats() }); $("settings").close(); toast("Categories saved"); };
+
+  api().catch(() => { document.querySelector("main").innerHTML = '<p class="empty" style="padding:30px 0">Couldn\'t load your planner. Send /planner to the bot for a fresh link.</p>'; });
+})();
+</script>
+</body>
+</html>

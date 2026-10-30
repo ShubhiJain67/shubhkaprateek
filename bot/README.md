@@ -85,3 +85,24 @@ Bot-uploaded covers/photos of removed items are deleted too. A name that matches
 - **Run `git pull` on your laptop before editing site files** — the bot commits to GitHub directly.
 - Only the Telegram accounts that sent `/start` during setup can use it. To add someone later, run `bash bot/setup.sh` again.
 - If you ever leak a token: revoke it (BotFather `/revoke`, or delete it on GitHub) and run `bash bot/setup.sh` again.
+
+## 📒 Content planner (private)
+
+Ideas for @shubhkaprateek, planned by week, tracked from idea → shot → edited → uploaded, with a weekly category mix.
+**Private:** stored in the bot's Cloudflare storage, *not* in this repo (the repo is public). The page is only reachable with your secret link.
+
+| Send | Does |
+|---|---|
+| `/idea Couple quiz with buzzer #trending #props` | saves an idea; category is guessed from keywords — tap a button to change it, or 📅 to put it in this week |
+| `/ideas` · `/ideas games` | your idea list (by category) |
+| `/plan 12 14 15` · `/plan 12 sat` · `/plan 12 next` | shoot these this week · on a day · next week |
+| `/shot 12` · `/edited 12` · `/uploaded 12` | move along the pipeline (several ids at once ok) |
+| `/unplan 12` · `/drop 12` | back to ideas · delete |
+| `/week` | this week's list + category mix vs your targets + what to add next |
+| `/planner` | your private page link |
+
+**The page** (`/planner` sends the link): add ideas, the week's category mix (bar = this week, line = target), a day-by-day board
+(tap the status pill to move it along, tap an idea to edit category / tags / week / day), and the idea list with "Add to this week".
+⚙️ edits categories, weekly target % and the keywords used for guessing.
+
+Don't share the link. If it ever leaks, run `bash bot/setup.sh` again — a new webhook secret makes a new planner link.
