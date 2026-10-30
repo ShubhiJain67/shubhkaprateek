@@ -42,13 +42,34 @@ const weekLabel = w => { const t = new Date(w + "T00:00:00Z"), e = new Date(t); 
 
 // ---------------------------------------------------------------- pure logic (also used by the page API)
 const norm = v => " " + String(v || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() + " ";
-export function guessCategory(text, categories) {
-  const n = norm(text); let best = null;
-  for (const c of categories) {
-    const hits = (c.keywords || []).filter(k => n.includes(norm(k))).length;
-    if (hits && (!best || hits > best.hits)) best = { id: c.id, hits };
+// Category guess = keywords (⚙️ on the page) + learning from your own ideas:
+// every idea you've put in a category teaches it its words, so "maggi date" → Dates after you've filed a few like it.
+const STOP = new Set(("a an the and or of to in on for with at by from is are be it this that our we us me my you your " +
+  "ka ki ke ko se me mein hai hain aur ya bhi na nahi kya ek wala wali vs").split(" "));
+// crude stemming so "gifts / gifting / gifted" all match "gift"
+const stem = w => w.length > 4 ? w.replace(/(ing|ings|ed|es|er|ers|s)$/, "") : w;
+const words = text => [...new Set(norm(text).trim().split(" ").filter(w => w.length > 1 && !STOP.has(w)).map(stem))];
+export function guessCategory(text, P, excludeId = null) {
+  const cats = P.categories || [], mine = words(text);
+  if (!mine.length) return null;
+  const score = Object.fromEntries(cats.map(c => [c.id, 0]));
+  // 1) keywords: strong signal
+  for (const c of cats) for (const k of c.keywords || []) {
+    const kw = words(k); if (kw.length && kw.every(w => mine.includes(w))) score[c.id] += 3;
   }
-  return best ? best.id : null;
+  // 2) learned: how often each word appeared in ideas you filed under each category
+  const seen = {};                                  // word → { catId: count }
+  for (const i of P.ideas || []) {
+    if (!i.cat || i.id === excludeId || !(i.cat in score)) continue;
+    for (const w of words(i.text + " " + (i.tags || []).join(" "))) (seen[w] ||= {})[i.cat] = (seen[w][i.cat] || 0) + 1;
+  }
+  for (const w of mine) {
+    const by = seen[w]; if (!by) continue;
+    const total = Object.values(by).reduce((a, b) => a + b, 0);
+    for (const id in by) score[id] += 2 * by[id] / total;   // a word used only in one category counts fully
+  }
+  const [bestId, best] = Object.entries(score).sort((a, b) => b[1] - a[1])[0] || [];
+  return best >= 1 ? bestId : null;                 // not enough signal → leave it for you to pick
 }
 export function parseIdea(text) {
   const tags = [...new Set((text.match(/#[\p{L}\p{N}_-]+/gu) || []).map(t => t.slice(1).toLowerCase()))];
@@ -58,7 +79,7 @@ export function parseIdea(text) {
 export function addIdea(P, text, opts = {}) {
   const { text: t, tags } = parseIdea(text);
   if (!t) throw new Error("Write the idea after /idea, e.g. /idea Couple quiz with buzzer #trending");
-  const idea = { id: P.nextId++, text: t, cat: opts.cat || guessCategory(t + " " + tags.join(" "), P.categories), tags,
+  const idea = { id: P.nextId++, text: t, cat: opts.cat || guessCategory(t + " " + tags.join(" "), P), tags,
     status: "idea", week: null, day: null, created: nowIso(), updated: nowIso(), log: {} };
   P.ideas.push(idea); return idea;
 }
