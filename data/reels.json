@@ -12,12 +12,6 @@
     "products": [1]
   },
   {
-    "id": 3,
-    "reel": "https://www.instagram.com/reel/DYJHUQLygjz/",
-    "title": "Date night got intense real fast",
-    "products": [2]
-  },
-  {
     "id": 4,
     "reel": "https://www.instagram.com/reel/DYQ3KeASE35/",
     "title": "Game Night Wars — 1 to 5 in the centre",
@@ -39,13 +33,7 @@
     "id": 10,
     "reel": "https://www.instagram.com/reel/DY88XiIh01g/",
     "title": "Game Night Wars — roll 1 to 6 for the remote",
-    "products": [4, 2]
-  },
-  {
-    "id": 13,
-    "reel": "https://www.instagram.com/reel/DZP4qriSzla/",
-    "title": "Game Night Wars — closest to 100",
-    "products": [2]
+    "products": [4]
   },
   {
     "id": 14,
