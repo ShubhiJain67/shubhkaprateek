@@ -10,20 +10,33 @@ const KEY = "planner";
 const STATUSES = ["idea", "planned", "shot", "edited", "uploaded"];
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
-// Starting categories + weekly mix (%). Change them on the planner page (⚙️) — these are only the first-run defaults.
+// Categories + weekly mix (% of a week's reels; 7 a week → 3 / 2 / 1 / 1). Change them on the planner page (⚙️).
+// "Others" has a 0% target: anything that doesn't fit goes there without skewing the mix.
 export const DEFAULT_CATEGORIES = [
-  { id: "games", name: "Game Night", emoji: "🎲", target: 30, keywords: ["game", "games", "challenge", "wars", "vs", "versus", "quiz", "score", "compete", "competition", "dice", "cards", "ludo", "uno", "carrom", "battle", "jenga", "puzzle"] },
-  { id: "gifting", name: "Gifting & Surprises", emoji: "🎁", target: 20, keywords: ["gift", "gifts", "surprise", "birthday", "countdown", "unboxing", "present", "anniversary"] },
-  { id: "fun", name: "Couple Fun & Relatable", emoji: "😂", target: 25, keywords: ["prank", "relatable", "pov", "husband", "wife", "fight", "trend", "trending", "funny", "comedy", "meme", "dance"] },
-  { id: "festive", name: "Festive & Fashion", emoji: "🪔", target: 15, keywords: ["diwali", "holi", "christmas", "festival", "festive", "outfit", "saree", "kurta", "lehenga", "transition", "makeover", "ootd", "fashion", "karwa", "rakhi", "eid"] },
-  { id: "dates", name: "Dates & Vlogs", emoji: "📍", target: 10, keywords: ["date", "vlog", "trip", "travel", "dinner", "cafe", "day in", "weekend", "movie", "outing", "restaurant"] }
+  { id: "relatable", name: "Relatable couple", emoji: "😂", target: 43, keywords: ["relatable", "pov", "husband", "wife", "married", "marriage", "parents", "fight", "funny", "comedy", "meme", "prank", "when", "every couple", "after marriage", "shutdown", "moods"] },
+  { id: "gifting", name: "Gifting & shopping", emoji: "🛍️", target: 29, keywords: ["gift", "gifting", "surprise", "unboxing", "present", "countdown", "shopping", "haul", "budget", "buy", "bought", "amazon", "myntra", "under"] },
+  { id: "life", name: "Our life & festivals", emoji: "🏠", target: 14, keywords: ["diwali", "holi", "karwa", "chauth", "rakhi", "festival", "festive", "day in", "vlog", "date", "trip", "travel", "weekend", "cooking", "home", "routine", "morning", "night", "dinner"] },
+  { id: "about", name: "About us / trend", emoji: "💑", target: 14, keywords: ["story", "how we met", "years together", "childhood", "wedding", "sagai", "mehndi", "haldi", "q&a", "questions", "facts", "trend", "trending", "audio", "challenge", "game", "quiz", "dance"] },
+  { id: "others", name: "Others", emoji: "✨", target: 0, keywords: [] }
 ];
+const VERSION = 2;
+// old (v1) category → new one, so existing ideas keep a sensible category
+const V1_MAP = { games: "about", gifting: "gifting", fun: "relatable", festive: "life", dates: "life" };
 
 // ---------------------------------------------------------------- storage
-export const emptyPlanner = () => ({ nextId: 1, categories: DEFAULT_CATEGORIES.map(c => ({ ...c })), ideas: [] });
+export const emptyPlanner = () => ({ version: VERSION, nextId: 1, categories: DEFAULT_CATEGORIES.map(c => ({ ...c })), ideas: [] });
+export function migrate(P) {
+  if ((P.version || 1) < 2) {                       // switch to the 4 categories + Others
+    const ids = new Set(DEFAULT_CATEGORIES.map(c => c.id));
+    P.ideas.forEach(i => { if (i.cat) i.cat = V1_MAP[i.cat] || (ids.has(i.cat) ? i.cat : "others"); });
+    P.categories = DEFAULT_CATEGORIES.map(c => ({ ...c }));
+    P.version = 2;
+  }
+  return P;
+}
 export async function load(env) {
   const s = await env.DRAFTS.get(KEY);
-  return s ? JSON.parse(s) : emptyPlanner();
+  return s ? migrate(JSON.parse(s)) : emptyPlanner();
 }
 const save = (env, P) => env.DRAFTS.put(KEY, JSON.stringify(P));
 
