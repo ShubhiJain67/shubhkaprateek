@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page not found — ShubhKaPrateek</title>
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+<script>
+  // Links that look like ours but in a different shape → send them to the right page
+  //   /reel/CODE  /reels/CODE  /p/CODE  → /?reel=CODE      /product/35 → /?product=35
+  (function () {
+    var p = location.pathname, m;
+    if ((m = p.match(/^\/(?:reels?|p|tv)\/([A-Za-z0-9_-]{5,})\/?$/))) location.replace("/?reel=" + m[1]);
+    else if ((m = p.match(/^\/products?\/(\d+)\/?$/))) location.replace("/?product=" + m[1]);
+  })();
+</script>
+<!-- 404.html can be shown at any address, so every link here starts with "/" -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/styles.css">
+<style>
+  .nf { min-height: calc(100vh - 64px - 80px); display: grid; place-items: center; text-align: center; padding: 48px 16px; }
+  .nf-emoji { font-size: 64px; line-height: 1; }
+  .nf h1 { margin: 16px 0 8px; font-family: Fraunces, Georgia, serif; font-size: clamp(28px, 6vw, 42px); letter-spacing: -.02em; }
+  .nf p { margin: 0 auto; max-width: 440px; color: var(--muted); }
+  .nf-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 24px; }
+  .nf-btn { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 18px; border-radius: 12px; font-weight: 700; font-size: 14px; text-decoration: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+  .nf-btn.main { background: var(--pink); color: var(--on-accent); border-color: transparent; }
+  .nf-btn:hover { border-color: var(--pink); }
+  .nf-search { display: flex; gap: 8px; max-width: 420px; margin: 26px auto 0; }
+  .nf-search .search { max-width: none; }
+</style>
+</head>
+<body>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="/"><span class="brand-name">ShubhKaPrateek</span></a>
+    </div>
+  </header>
+
+  <main class="wrap nf">
+    <div>
+      <div class="nf-emoji">🙈</div>
+      <h1>This page doesn't exist</h1>
+      <p>The link might be old or have a typo. Everything from our reels is on the shop page — or search for it below.</p>
+      <form class="nf-search" action="/" method="get" role="search">
+        <input class="search" type="search" name="q" placeholder="Search products or paste a reel link" aria-label="Search">
+      </form>
+      <div class="nf-actions">
+        <a class="nf-btn main" href="/">🛍️ Shop all products</a>
+        <a class="nf-btn" href="/?view=reels">🎬 Shop by reel</a>
+        <a class="nf-btn" href="/#ask">💬 Ask us for a link</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>Some links may be affiliate links — we may earn a small commission at no extra cost to you.</footer>
+</body>
+</html>
