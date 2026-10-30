@@ -12,30 +12,6 @@
     ]
   },
   {
-    "id": 2,
-    "name": "Dice",
-    "category": ["game-night"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B00rNwB1K",
-        "image": "https://m.media-amazon.com/images/I/61-wPApDsdL._SL600_.jpg"
-      }
-    ]
-  },
-  {
-    "id": 3,
-    "name": "Markers",
-    "category": ["game-night"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B08EiB3lv",
-        "image": "https://m.media-amazon.com/images/I/61DJiLOO2xL._SL600_.jpg"
-      }
-    ]
-  },
-  {
     "id": 4,
     "name": "Phase 10 card game",
     "category": ["board-games"],
@@ -44,42 +20,6 @@
         "name": "Default",
         "link": "https://link.amazon/B08pF57GL",
         "image": "https://m.media-amazon.com/images/I/61PsNwfM-PL._SL600_.jpg"
-      }
-    ]
-  },
-  {
-    "id": 5,
-    "name": "Whiteboard",
-    "category": ["game-night"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B0dLBJohP",
-        "image": "https://m.media-amazon.com/images/I/517AleMJ1FL._SL600_.jpg"
-      }
-    ]
-  },
-  {
-    "id": 6,
-    "name": "Gems",
-    "category": ["game-night"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B023ENGOP",
-        "image": "https://m.media-amazon.com/images/I/71r81SkovML._SL600_.jpg"
-      }
-    ]
-  },
-  {
-    "id": 7,
-    "name": "Sticky notes",
-    "category": ["game-night"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B039yPFs6",
-        "image": "https://m.media-amazon.com/images/I/81RFwqD8s2L._SL600_.jpg"
       }
     ]
   },
@@ -140,69 +80,6 @@
         "name": "Default",
         "link": "https://link.amazon/B01kMLyWc",
         "image": "https://m.media-amazon.com/images/I/51Oo93lGDsL._SL600_.jpg"
-      }
-    ]
-  },
-  {
-    "id": 13,
-    "name": "Balloon Inflater",
-    "category": ["party-decor", "electronics"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B08fDT6er",
-        "image": "https://m.media-amazon.com/images/I/61T1B0HtEeL._SL600_.jpg"
-      }
-    ]
-  },
-  {
-    "id": 14,
-    "name": "Balloons",
-    "category": ["party-decor"],
-    "variants": [
-      {
-        "name": "Golden",
-        "link": "https://link.amazon/B0g94DDLs",
-        "image": "https://m.media-amazon.com/images/I/7148jxWYJzL._SL600_.jpg"
-      },
-      {
-        "name": "Blue",
-        "link": "https://link.amazon/B0iaRYtch",
-        "image": "https://m.media-amazon.com/images/I/71zPkYx8kvL._SL600_.jpg"
-      },
-      {
-        "name": "Silver",
-        "link": "https://link.amazon/B01Zus38L",
-        "image": "https://m.media-amazon.com/images/I/61x8bJJNTTL._SL600_.jpg"
-      },
-      {
-        "name": "Red",
-        "link": "https://link.amazon/B0ag1F5kg",
-        "image": "https://m.media-amazon.com/images/I/71IbXmTr0hL._SL600_.jpg"
-      }
-    ]
-  },
-  {
-    "id": 15,
-    "name": "Packing Paper",
-    "category": ["gift-wrap"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B0aw2FppU",
-        "image": "https://m.media-amazon.com/images/I/61ofkCoLA4L._SL600_.jpg"
-      }
-    ]
-  },
-  {
-    "id": 16,
-    "name": "Golden Bows",
-    "category": ["gift-wrap"],
-    "variants": [
-      {
-        "name": "Default",
-        "link": "https://link.amazon/B018Dgep1",
-        "image": "https://m.media-amazon.com/images/I/51TrjPequcL._SL600_.jpg"
       }
     ]
   },

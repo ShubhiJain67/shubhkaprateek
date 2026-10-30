@@ -12,12 +12,6 @@
     "products": [1]
   },
   {
-    "id": 3,
-    "reel": "https://www.instagram.com/reel/DYJHUQLygjz/",
-    "title": "Date night got intense real fast",
-    "products": [2, 3]
-  },
-  {
     "id": 4,
     "reel": "https://www.instagram.com/reel/DYQ3KeASE35/",
     "title": "Game Night Wars — 1 to 5 in the centre",
@@ -36,34 +30,10 @@
     "products": [4]
   },
   {
-    "id": 8,
-    "reel": "https://www.instagram.com/reel/DY7NYc_SJji/",
-    "title": "Game Night Wars — boxes & chips",
-    "products": [5]
-  },
-  {
     "id": 10,
     "reel": "https://www.instagram.com/reel/DY88XiIh01g/",
     "title": "Game Night Wars — roll 1 to 6 for the remote",
-    "products": [4, 2]
-  },
-  {
-    "id": 11,
-    "reel": "https://www.instagram.com/reel/DZAXLdbSs0D/",
-    "title": "Game Night Wars — colour sequence",
-    "products": [5, 6]
-  },
-  {
-    "id": 12,
-    "reel": "https://www.instagram.com/reel/DZKrJ4dyfMC/",
-    "title": "Game Night Wars — mark all your numbers",
-    "products": [5]
-  },
-  {
-    "id": 13,
-    "reel": "https://www.instagram.com/reel/DZP4qriSzla/",
-    "title": "Game Night Wars — closest to 100",
-    "products": [2, 7]
+    "products": [4]
   },
   {
     "id": 14,
@@ -93,7 +63,7 @@
     "id": 18,
     "reel": "https://www.instagram.com/reel/DdlnYLpyrF1/",
     "title": "29 gifts, 29 days — the Marvel birthday month begins",
-    "products": [12, 13, 14, 15, 16]
+    "products": [12]
   },
   {
     "id": 19,
@@ -267,13 +237,13 @@
     "id": 47,
     "reel": "https://www.instagram.com/reel/De15_tiSMcS/",
     "title": "The final showdown",
-    "products": [35, 42, 13, 14, 46]
+    "products": [35, 42, 46]
   },
   {
     "id": 49,
     "reel": "https://www.instagram.com/reel/De4VkzLS1tE/",
     "title": "Day 29/29 — Marvel movie date night",
-    "products": [35, 42, 13, 14, 46]
+    "products": [35, 42, 46]
   },
   {
     "id": 50,
@@ -291,7 +261,7 @@
     "id": 52,
     "reel": "https://www.instagram.com/reel/DezXjJvzdYg/",
     "title": "Our 11:11 wish finally came true ♥️",
-    "products": [36, 14, 35]
+    "products": [36, 35]
   },
   {
     "id": 53,
