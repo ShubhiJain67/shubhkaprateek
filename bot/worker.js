@@ -48,7 +48,9 @@ I'll show exactly what goes before anything is removed.
 <b>⭐ Featured tile on the home page</b>
 <code>/feature Hulk Comforter</code> (or its id) — add it to the featured tile
 <code>/unfeature Hulk Comforter</code> — take it off · <code>/unfeature all</code> — clear it
-<code>/featured</code> — what's featured now`;
+<code>/featured</code> — what's featured now
+
+🔗 <code>/link https://www.instagram.com/reel/ABC123/</code> — the reel's CTA link (opens its page + shows in analytics which reel sent the visitor)`;
 
 export default {
   async fetch(req, env) {
@@ -100,6 +102,12 @@ export async function handleUpdate(update, env) {
   if (await plannerCommand(cmd, text, env, chat)) return;          // /idea /ideas /plan /shot /edited /uploaded /week /planner …
   if (cmd === "/delete" || cmd === "/remove") return onDelete(text.replace(/^\/\S+\s*/, "").trim(), env, chat);
   if (cmd === "/featured") return showFeatured(env, chat);
+  if (cmd === "/link") {                                   // /link <reel link or code> → that reel's CTA link
+    const arg = text.replace(/^\/\S+\s*/, "").trim();
+    const code = (arg.match(REEL_RE) || [])[1] || (/^[\w-]{5,}$/.test(arg) ? arg : "");
+    return say(env, chat, code ? `🔗 CTA link for this reel — opens its page and counts visits from it:\n${esc(ctaLink(env, code))}`
+      : "Send it like: <code>/link https://www.instagram.com/reel/ABC123/</code>");
+  }
   if (cmd === "/feature" || cmd === "/unfeature") return onFeature(cmd === "/feature" ? "add" : "remove", text.replace(/^\/\S+\s*/, "").trim(), env, chat);
   // any other /command is never treated as a product name
   if (cmd.startsWith("/")) return say(env, chat, `I don't know <code>${esc(cmd)}</code> — see /help.`);
@@ -319,6 +327,9 @@ export function guessCategories(text, cats) {
   for (const c of cats) if (c.theme && (c.keywords || []).some(k => n.includes(norm(k)))) out.push(c.id);
   return out;
 }
+
+// Reel CTA link: opens that reel's page on the site and tells analytics which reel the visitor came from
+const ctaLink = (env, code) => `${env.SITE_URL || "https://shubhkaprateek.com"}/?from=${code}`;
 
 // ---------------------------------------------------------------- GitHub
 async function gh(env, path, opts = {}) {
@@ -621,7 +632,7 @@ export async function publish(d, env) {
         else notes.push("no cover — the site will show the Instagram preview instead");
       } catch { notes.push("couldn't download the cover — the site will show the Instagram preview instead (send a screenshot next time)"); }
     }
-    reelLine = `${env.SITE_URL || "https://shubhkaprateek.com"}/?reel=${code}`;
+    reelLine = ctaLink(env, code);
   }
   files.push({ path: "data/products.json", text: pretty(S.products, "category") });
   files.push({ path: "data/reels.json", text: pretty(S.reels, "products") });
@@ -629,7 +640,7 @@ export async function publish(d, env) {
   await commitFiles(env, `Add ${what || "products"} (via Telegram bot)`, files);
   return [
     `✅ <b>Added!</b> Live in about a minute.`,
-    reelLine ? `🎬 ${esc(reelLine)}` : "",
+    reelLine ? `🎬 Link for this reel's CTA (counts visits from it):\n${esc(reelLine)}` : "",
     added.length ? `🆕 ${esc(added.join(", "))}` : "",
     notes.length ? `ℹ️ ${esc(notes.join("; "))}` : "",
     `\n💻 On your laptop, run <code>git pull</code> before editing the site files.`

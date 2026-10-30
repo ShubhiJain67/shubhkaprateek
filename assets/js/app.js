@@ -161,12 +161,15 @@
   // ---------- Analytics (Umami — free, no cookies): turned on by "umamiWebsiteId" in data/site.json ----------
   // Page views (incl. which ?reel= / ?product= page) are counted automatically; the events below add what matters
   // for affiliate income: Buy clicks per product + store, searches, and "Can't find something?" use.
-  const track = (name, data) => { try { window.umami && window.umami.track(name, data); } catch {} };
+  // events that happen before Umami has finished loading wait in a queue
+  const pending = [];
+  const track = (name, data) => { try { window.umami ? window.umami.track(name, data) : pending.push([name, data]); } catch {} };
   if (site.umamiWebsiteId) {
     const s = document.createElement("script");
     s.defer = true; s.src = "https://cloud.umami.is/script.js";
     s.dataset.websiteId = site.umamiWebsiteId;
     s.dataset.domains = "shubhkaprateek.com,www.shubhkaprateek.com";     // local previews aren't counted
+    s.onload = () => { while (pending.length) track(...pending.shift()); };
     document.head.appendChild(s);
   }
   document.addEventListener("click", e => {
@@ -758,8 +761,12 @@
   });
 
   renderFeatured();
-  const startReel = params.get("reel"), startProduct = params.get("product");
-  if (startReel) { setView(view); openReel(startReel, false); }
+  // Reel CTA links: shubhkaprateek.com/?from=<reel code> opens that reel's page and records which reel sent the
+  // visitor (Umami → Events → "from-reel"). The bot sends this link after you add a reel; /link gets it any time.
+  const fromCode = params.get("from"), fromReel = fromCode && reelByCode(fromCode);
+  if (fromCode) track("from-reel", fromReel ? { reel: cleanTitle(fromReel.title), code: permalink(fromReel.reel).split("/")[4] } : { reel: fromCode, code: fromCode });
+  const startReel = params.get("reel") || (fromReel ? codeOf(fromReel) : null), startProduct = params.get("product");
+  if (startReel) { setView(view); openReel(fromReel ? permalink(fromReel.reel).split("/")[4] : startReel, false); }
   else if (startProduct) { setView(view); openProduct(startProduct, false); }
   else setView(view);
 })();
