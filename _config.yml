@@ -1,0 +1,10 @@
+# GitHub Pages settings for shubhkaprateek.com
+# Everything in this repo is served as-is EXCEPT the files below, which are for you, not visitors:
+#   bot/       the Telegram bot + private planner (runs on Cloudflare, not on this website)
+#   Makefile, README.md, .venv
+exclude:
+  - bot
+  - Makefile
+  - README.md
+  - .venv
+  - node_modules

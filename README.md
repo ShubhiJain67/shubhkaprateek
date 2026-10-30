@@ -17,7 +17,7 @@ Every reel from @shubhkaprateek, playing on the page, with its products listed u
 │   └── covers/             Reel cover images, one per reel: <reel code>.jpg
 ├── bot/                    Telegram bot (Cloudflare Worker) — add reels from your phone, see bot/README.md
 ├── CNAME                   Custom domain (shubhkaprateek.com) — don't delete
-├── .nojekyll               Tells GitHub Pages to serve files as-is — don't delete
+├── _config.yml             GitHub Pages: keeps bot/, Makefile and README off the public website — don't delete
 └── .gitignore              Keeps local junk (.venv, .DS_Store) out of git
 ```
 
