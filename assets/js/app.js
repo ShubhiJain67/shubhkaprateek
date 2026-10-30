@@ -763,10 +763,12 @@
   renderFeatured();
   // Reel CTA links: shubhkaprateek.com/?from=<reel code> opens that reel's page and records which reel sent the
   // visitor (Umami → Events → "from-reel"). The bot sends this link after you add a reel; /link gets it any time.
-  const fromCode = params.get("from"), fromReel = fromCode && reelByCode(fromCode);
-  if (fromCode) track("from-reel", fromReel ? { reel: cleanTitle(fromReel.title), code: permalink(fromReel.reel).split("/")[4] } : { reel: fromCode, code: fromCode });
-  const startReel = params.get("reel") || (fromReel ? codeOf(fromReel) : null), startProduct = params.get("product");
-  if (startReel) { setView(view); openReel(fromReel ? permalink(fromReel.reel).split("/")[4] : startReel, false); }
+  // Tracking links: shubhkaprateek.com/?from=<any name you like> (e.g. ?from=queaky in an auto-DM).
+  // The visitor lands on the home page as normal; Umami records the name under Events → "from-reel".
+  const fromName = (params.get("from") || "").trim().slice(0, 60);
+  if (fromName) track("from-reel", { reel: fromName });
+  const startReel = params.get("reel"), startProduct = params.get("product");
+  if (startReel) { setView(view); openReel(startReel, false); }
   else if (startProduct) { setView(view); openProduct(startProduct, false); }
   else setView(view);
 })();

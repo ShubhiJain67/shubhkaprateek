@@ -50,7 +50,7 @@ I'll show exactly what goes before anything is removed.
 <code>/unfeature Hulk Comforter</code> — take it off · <code>/unfeature all</code> — clear it
 <code>/featured</code> — what's featured now
 
-🔗 <code>/link https://www.instagram.com/reel/ABC123/</code> — the reel's CTA link (opens its page + shows in analytics which reel sent the visitor)`;
+🔗 <code>/link https://www.instagram.com/reel/ABC123/</code> — a tracking link for the reel's CTA (any name works too: <code>?from=queaky</code>)`;
 
 export default {
   async fetch(req, env) {
@@ -105,7 +105,7 @@ export async function handleUpdate(update, env) {
   if (cmd === "/link") {                                   // /link <reel link or code> → that reel's CTA link
     const arg = text.replace(/^\/\S+\s*/, "").trim();
     const code = (arg.match(REEL_RE) || [])[1] || (/^[\w-]{5,}$/.test(arg) ? arg : "");
-    return say(env, chat, code ? `🔗 CTA link for this reel — opens its page and counts visits from it:\n${esc(ctaLink(env, code))}`
+    return say(env, chat, code ? `🔗 Tracking link for this reel — opens the home page and counts visits under its code:\n${esc(ctaLink(env, code))}\n\nYou can also use any name you like: <code>shubhkaprateek.com/?from=queaky</code>`
       : "Send it like: <code>/link https://www.instagram.com/reel/ABC123/</code>");
   }
   if (cmd === "/feature" || cmd === "/unfeature") return onFeature(cmd === "/feature" ? "add" : "remove", text.replace(/^\/\S+\s*/, "").trim(), env, chat);
@@ -328,7 +328,7 @@ export function guessCategories(text, cats) {
   return out;
 }
 
-// Reel CTA link: opens that reel's page on the site and tells analytics which reel the visitor came from
+// Reel CTA tracking link: opens the home page and tells analytics which reel the visitor came from
 const ctaLink = (env, code) => `${env.SITE_URL || "https://shubhkaprateek.com"}/?from=${code}`;
 
 // ---------------------------------------------------------------- GitHub
@@ -640,7 +640,7 @@ export async function publish(d, env) {
   await commitFiles(env, `Add ${what || "products"} (via Telegram bot)`, files);
   return [
     `✅ <b>Added!</b> Live in about a minute.`,
-    reelLine ? `🎬 Link for this reel's CTA (counts visits from it):\n${esc(reelLine)}` : "",
+    reelLine ? `🎬 Tracking link for this reel's CTA (opens the home page, counts visits from this reel):\n${esc(reelLine)}` : "",
     added.length ? `🆕 ${esc(added.join(", "))}` : "",
     notes.length ? `ℹ️ ${esc(notes.join("; "))}` : "",
     `\n💻 On your laptop, run <code>git pull</code> before editing the site files.`
