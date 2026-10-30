@@ -14,7 +14,10 @@
 
   // ---- load data/ (each file has one job) — the downloads were already started in index.html ----
   const raw = {};
-  for (const { f, data, error } of await Promise.all(window.SKP_DATA)) {
+  // (if index.html didn't start them — e.g. the browser still has an older cached index.html — start them here)
+  const downloads = window.SKP_DATA || ["site", "categories", "products", "reels"].map(f =>
+    fetch(`data/${f}.json`, { cache: "no-cache" }).then(r => r.json()).then(data => ({ f, data }), error => ({ f, error })));
+  for (const { f, data, error } of await Promise.all(downloads)) {
     if (error) {
       $("grid").innerHTML = `<p class="empty">Couldn't load data/${f}.json — check it for a JSON typo (missing comma or quote).</p>`;
       console.error(f, error); return;

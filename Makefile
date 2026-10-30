@@ -8,6 +8,7 @@
 ship:
 	@test -n "$(m)" || { echo "Add a message:  make ship m=\"What you changed\""; exit 1; }
 	cd ~/Desktop/shubhkaprateek && \
+	perl -pi -e 's/\?v=\d+/?v='"$$(date +%s)"'/g' index.html 404.html && \
 	git add -A && \
 	{ git diff --cached --quiet && echo "Nothing new to commit — just syncing." || git commit -m "$(m)"; } && \
 	git pull --no-rebase --no-edit && \
