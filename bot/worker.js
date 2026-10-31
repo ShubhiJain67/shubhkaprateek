@@ -37,6 +37,7 @@ I'll send a preview. Fix anything by replying:
 <code>img 2 https://…photo.jpg</code>
 <code>remove 2</code>
 Send a <b>photo</b> with caption <code>cover</code> (reel cover) or <code>2</code> (product 2's photo).
+📷 Product already on the site? Send its photo with its id or name as the caption (e.g. <code>49</code>), or <code>img 49 https://…jpg</code>.
 Then tap ✅ <b>Add to site</b>. /cancel drops the draft.
 
 📒 <b>Content planner</b> (private): <code>/idea …</code> · <code>/ideas</code> · <code>/week</code> · <code>/planner</code> — send /planner for all its commands
@@ -117,6 +118,10 @@ export async function handleUpdate(update, env) {
 
   const draft = await loadDraft(env, chat);
   const hasLink = /https?:\/\//i.test(text);
+  // photo link for a product that's already on the site: img 49 https://…jpg  (or img Flower Bubble Machine https://…)
+  const imgCmd = text.match(/^(?:img|image|photo)\s+(.+?)\s+(https?:\/\/\S+)\s*$/i);
+  if (imgCmd && !(draft && /^\d+$/.test(imgCmd[1]) && draft.products[+imgCmd[1] - 1]?.existingId == null && draft.products[+imgCmd[1] - 1]))
+    return setSitePhoto(env, chat, imgCmd[1], { link: imgCmd[2] });
   if (draft && /^(title|name|cat|cats|category|link|img|image|photo|remove|delete)\b/i.test(text) && !/instagram\.com\//i.test(text)) return onEdit(draft, text, env, chat);
   if (!hasLink) return say(env, chat, draft
     ? "I didn't get that 🤔 Reply with a fix like <code>cat 2 mugs</code> or <code>title …</code>, tap ✅ on the preview, or /help."
@@ -534,13 +539,15 @@ async function onEdit(d, text, env, chat) {
 async function onPhoto(msg, env) {
   const chat = msg.chat.id;
   const d = await loadDraft(env, chat);
-  if (!d) return say(env, chat, "Send the reel + products first, then the photo.");
   const fileId = msg.photo ? msg.photo[msg.photo.length - 1].file_id : msg.document.file_id;   // biggest size
-  const cap = (msg.caption || "cover").trim().toLowerCase();
-  if (/^\d+$/.test(cap)) {
-    const p = d.products[+cap - 1];
-    if (!p || p.existingId != null) return say(env, chat, `There's no new product ${cap} in the preview.`);
-    p.variants.forEach(v => { v.photoFile = fileId; });
+  const rawCap = (msg.caption || "").trim().replace(/^(?:img|image|photo)\s+/i, "");
+  const cap = (rawCap || "cover").toLowerCase();
+  const draftProduct = d && /^\d+$/.test(cap) ? d.products[+cap - 1] : null;
+  // not a new product in the preview → a product already on the site (caption = its id or name)
+  if (!(draftProduct && draftProduct.existingId == null) && cap !== "cover") return setSitePhoto(env, chat, rawCap, { fileId });
+  if (!d) return say(env, chat, "Send the photo with the product's id or name as the caption, e.g. <code>49</code> or <code>Flower Bubble Machine</code>.");
+  if (draftProduct) {
+    draftProduct.variants.forEach(v => { v.photoFile = fileId; });
   } else {
     if (!d.reel || d.reel.existingId != null) return say(env, chat, "This draft has no new reel to put a cover on. For a product photo, add its number as the caption (e.g. 2).");
     d.reel.coverFile = fileId;
@@ -588,6 +595,24 @@ async function fetchBytes(url) {
 async function telegramFile(env, fileId) {
   const f = await tg(env, "getFile", { file_id: fileId });
   return fetchBytes(`https://api.telegram.org/file/bot${env.TELEGRAM_TOKEN}/${f.file_path}`);
+}
+// Change the photo of a product that's already on the site (photo with caption "49", or "img 49 https://…")
+async function setSitePhoto(env, chat, query, { fileId, link }) {
+  if (!query) return say(env, chat, "Add the product's id or name as the caption, e.g. <code>49</code>.");
+  const S = await loadSite(env);
+  const found = findProduct(query, S.products);
+  if (!found.length) return say(env, chat, `I couldn't find a product matching “${esc(query)}”. Use its id (see the site: shubhkaprateek.com/product/<b>49</b>).`);
+  if (found.length > 1) return say(env, chat, "Which one? Send it again with the id as the caption:\n" + found.slice(0, 15).map(p => `• <code>${p.id}</code> ${esc(p.name)}`).join("\n"));
+  const p = found[0], files = [];
+  let image = link;
+  if (fileId) {
+    image = `assets/products/${p.id}-${slug(p.name)}.jpg`;
+    files.push({ path: image, base64: await telegramFile(env, fileId) });
+  }
+  p.variants = (p.variants && p.variants.length ? p.variants : [{ name: "Default", link: "" }]).map(v => ({ ...v, image }));
+  files.push({ path: "data/products.json", text: pretty(S.products, "category") });
+  await commitFiles(env, `Photo for product ${p.id} ${p.name} (via Telegram bot)`, files);
+  return say(env, chat, `📷 Photo updated for <b>${esc(p.name)}</b> — live in about a minute.`);
 }
 const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "product";
 

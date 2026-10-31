@@ -153,7 +153,7 @@
   });
   // Ask the store for a photo about the size it's shown at (phones: cards ~170px wide → 400px is plenty; little
   // reel-list thumbnails → 120px). Amazon "._SL600_." and Shopify "width=600" links can be resized like this.
-  const sized = (url, px) => String(url).replace(/\._SL\d+_\./, `._SL${px}_.`).replace(/([?&]width=)\d+/, `$1${px}`);
+  const sized = (url, px) => String(url).replace(/^(?![a-z]+:|\/)/i, "/").replace(/\._SL\d+_\./, `._SL${px}_.`).replace(/([?&]width=)\d+/, `$1${px}`);
   const imgOr = (p, fallback, px = 400) => p.image
     ? `${fallback}<img class="lazy-img" data-src="${esc(sized(p.image, px))}" alt="" decoding="async" referrerpolicy="no-referrer" onload="this.classList.add('loaded')" onerror="this.remove()">`
     : fallback;
