@@ -430,5 +430,17 @@
         "image": "https://cdn.shopify.com/s/files/1/0847/6232/9362/files/Queaky_Jungle_Bear_1.png?v=1786447701"
       }
     ]
+  },
+  {
+    "id": 49,
+    "name": "Flower Bubble Machine",
+    "category": [],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B02xvB2B3",
+        "image": ""
+      }
+    ]
   }
 ]
