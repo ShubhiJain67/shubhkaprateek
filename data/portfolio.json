@@ -1,48 +1,130 @@
 {
   "_help": "Media kit at shubhkaprateek.com/portfolio (not linked anywhere on the site). Anything left empty (\"\") is hidden on the page.",
   "updated": "November 2026",
+  "tagline": "20M+ Reach | Couple Content | Gifting & Surprises",
   "intro": "We're Shubhi & Prateek — a married couple posting a reel every day about our life, games, and gifting each other everything from Marvel merch to the weirdest gadgets on the internet.",
   "stats": [
-    { "label": "Views on one reel", "value": "6.1M", "note": "in under 24 hours" },
-    { "label": "Instagram followers", "value": "", "note": "" },
-    { "label": "Average views per reel", "value": "", "note": "" },
-    { "label": "Accounts reached (last 30 days)", "value": "", "note": "" },
-    { "label": "New reel", "value": "Every day", "note": "for months, without a break" },
-    { "label": "Audience", "value": "", "note": "e.g. 70% India · 65% aged 18–34" }
+    {
+      "label": "Reach",
+      "value": "20M+",
+      "note": ""
+    },
+    {
+      "label": "Views on one reel",
+      "value": "6.1M",
+      "note": "in under 24 hours"
+    },
+    {
+      "label": "Audience",
+      "value": "50 / 50",
+      "note": "men and women"
+    },
+    {
+      "label": "Instagram followers",
+      "value": "",
+      "note": ""
+    },
+    {
+      "label": "Average views per reel",
+      "value": "",
+      "note": ""
+    },
+    {
+      "label": "New reel",
+      "value": "Every day",
+      "note": "for months, without a break"
+    }
   ],
   "bestReels": [
-    { "code": "DfHN_zDSN5X", "views": "" },
-    { "code": "DfOmcXdST8W", "views": "" },
-    { "code": "Ddg3vjWSoEZ", "views": "" },
-    { "code": "DezXjJvzdYg", "views": "" }
+    {
+      "code": "DfHN_zDSN5X",
+      "views": ""
+    },
+    {
+      "code": "DfOmcXdST8W",
+      "views": ""
+    },
+    {
+      "code": "Ddg3vjWSoEZ",
+      "views": ""
+    },
+    {
+      "code": "DezXjJvzdYg",
+      "views": ""
+    },
+    {
+      "code": "DfJSWTLSvaV",
+      "views": ""
+    },
+    {
+      "code": "De6a84ayKwv",
+      "views": ""
+    },
+    {
+      "code": "DcskcLbyyHw",
+      "views": ""
+    },
+    {
+      "code": "De4VkzLS1tE",
+      "views": ""
+    }
   ],
   "why": {
     "collab": {
-      "title": "Collab — on our page",
+      "title": "Reel collaboration — on our page",
       "points": [
         "Your product in a real couple moment: a surprise gift, a game night or a reaction — not an ad",
-        "Posted on @shubhkaprateek with you tagged, plus the reel on our YouTube Shorts",
-        "A permanent product page on shubhkaprateek.com with your buy link — we can share click numbers",
-        "Our viewers already shop from our reels through this page — your product is one tap away"
+        "A collaborative reel on @shubhkaprateek, so it shows on your profile too",
+        "Featured option: your brand on shubhkaprateek.com, where our viewers already shop from our reels",
+        "Raw footage + 3-month advertising usage rights included"
       ]
     },
     "ugc": {
-      "title": "UGC — for your page / ads",
+      "title": "UGC — for your ads",
       "points": [
-        "We shoot it, you own it: raw video + edited reel for your page and ads",
+        "Raw footage shared via Google Drive — use it on your page and in ads for 3 months",
         "Relatable Hinglish couple content that feels native on Instagram",
         "Unboxing, demo, reaction or gifting formats",
-        "Quick turnaround — we post daily, so shooting is routine for us"
+        "We post daily, so shooting is routine for us — quick turnaround"
       ]
     }
   },
   "packages": [
-    { "name": "Gifting reel", "price": "", "items": ["1 dedicated reel on @shubhkaprateek", "Brand tagged + in caption", "Product listed on shubhkaprateek.com", "Repost rights"] },
-    { "name": "Reel + Stories", "price": "", "items": ["1 dedicated reel", "3 story frames with your link", "Product listed on shubhkaprateek.com", "Repost rights"] },
-    { "name": "UGC only", "price": "", "items": ["1 edited reel + raw footage", "Full rights for your page and ads", "Not posted on our page"] }
+    {
+      "name": "Option 1 — Reel Collaboration",
+      "price": "₹2,500",
+      "items": [
+        "1 Instagram Collaborative Reel",
+        "Brand mention in the reel",
+        "1 Instagram Story with brand mention",
+        "Raw footage shared via Google Drive (brand to provide the Drive link)",
+        "3-month advertising usage rights"
+      ]
+    },
+    {
+      "name": "Option 2 — Featured Brand Collaboration",
+      "price": "₹3,500",
+      "items": [
+        "1 Instagram Collaborative Reel",
+        "Brand mention in the reel",
+        "2 Instagram Stories with brand mention",
+        "Brand addition on our website",
+        "Featured section on our website for 2 weeks",
+        "Raw footage shared via Google Drive (brand to provide the Drive link)",
+        "3-month advertising usage rights"
+      ]
+    }
+  ],
+  "guidelines": [
+    "All content will be subtle, organic, and naturally integrated into our couple-content format.",
+    "No loud or overly promotional messaging.",
+    "Content will focus on authentic couple moments, gifting, and surprises.",
+    "Product gifting is separate from the collaboration fee.",
+    "Advertising usage rights are valid for 3 months from the date of content delivery.",
+    "Any additional deliverables or extended usage rights can be discussed separately."
   ],
   "contact": {
-    "email": "",
+    "email": "shubhkaprateek412@gmail.com",
     "instagram": "shubhkaprateek",
     "note": "Tell us about your product — we reply within a day."
   }
