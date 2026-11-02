@@ -442,5 +442,17 @@
         "image": "https://m.media-amazon.com/images/I/71kZtE5Cm7L._SL1500_.jpg"
       }
     ]
+  },
+  {
+    "id": 50,
+    "name": "Clay IceCream Maker",
+    "category": [],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0htFGTKP",
+        "image": "https://m.media-amazon.com/images/I/8198E9l2i9L._SX679_.jpg"
+      }
+    ]
   }
 ]
