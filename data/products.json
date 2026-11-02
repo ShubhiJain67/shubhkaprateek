@@ -26,7 +26,7 @@
   {
     "id": 10,
     "name": "Coloring blanket",
-    "category": ["bedding"],
+    "category": ["bedding", "diy"],
     "variants": [
       {
         "name": "Default",
@@ -434,7 +434,7 @@
   {
     "id": 49,
     "name": "Flower Bubble Machine",
-    "category": [],
+    "category": ["toys", "electronics"],
     "variants": [
       {
         "name": "Default",
@@ -446,7 +446,7 @@
   {
     "id": 50,
     "name": "Clay IceCream Maker",
-    "category": [],
+    "category": ["diy"],
     "variants": [
       {
         "name": "Default",
