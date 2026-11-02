@@ -1,0 +1,49 @@
+{
+  "_help": "Media kit at shubhkaprateek.com/portfolio (not linked anywhere on the site). Anything left empty (\"\") is hidden on the page.",
+  "updated": "November 2026",
+  "intro": "We're Shubhi & Prateek — a married couple posting a reel every day about our life, games, and gifting each other everything from Marvel merch to the weirdest gadgets on the internet.",
+  "stats": [
+    { "label": "Views on one reel", "value": "6.1M", "note": "in under 24 hours" },
+    { "label": "Instagram followers", "value": "", "note": "" },
+    { "label": "Average views per reel", "value": "", "note": "" },
+    { "label": "Accounts reached (last 30 days)", "value": "", "note": "" },
+    { "label": "New reel", "value": "Every day", "note": "for months, without a break" },
+    { "label": "Audience", "value": "", "note": "e.g. 70% India · 65% aged 18–34" }
+  ],
+  "bestReels": [
+    { "code": "DfHN_zDSN5X", "views": "" },
+    { "code": "DfOmcXdST8W", "views": "" },
+    { "code": "Ddg3vjWSoEZ", "views": "" },
+    { "code": "DezXjJvzdYg", "views": "" }
+  ],
+  "why": {
+    "collab": {
+      "title": "Collab — on our page",
+      "points": [
+        "Your product in a real couple moment: a surprise gift, a game night or a reaction — not an ad",
+        "Posted on @shubhkaprateek with you tagged, plus the reel on our YouTube Shorts",
+        "A permanent product page on shubhkaprateek.com with your buy link — we can share click numbers",
+        "Our viewers already shop from our reels through this page — your product is one tap away"
+      ]
+    },
+    "ugc": {
+      "title": "UGC — for your page / ads",
+      "points": [
+        "We shoot it, you own it: raw video + edited reel for your page and ads",
+        "Relatable Hinglish couple content that feels native on Instagram",
+        "Unboxing, demo, reaction or gifting formats",
+        "Quick turnaround — we post daily, so shooting is routine for us"
+      ]
+    }
+  },
+  "packages": [
+    { "name": "Gifting reel", "price": "", "items": ["1 dedicated reel on @shubhkaprateek", "Brand tagged + in caption", "Product listed on shubhkaprateek.com", "Repost rights"] },
+    { "name": "Reel + Stories", "price": "", "items": ["1 dedicated reel", "3 story frames with your link", "Product listed on shubhkaprateek.com", "Repost rights"] },
+    { "name": "UGC only", "price": "", "items": ["1 edited reel + raw footage", "Full rights for your page and ads", "Not posted on our page"] }
+  ],
+  "contact": {
+    "email": "",
+    "instagram": "shubhkaprateek",
+    "note": "Tell us about your product — we reply within a day."
+  }
+}
