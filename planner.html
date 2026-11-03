@@ -153,7 +153,10 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
 <div class="toast" id="toast"></div>
 
 <script>
-(() => {
+// Private content planner: shubhkaprateek.com/planner?key=<secret> (send /planner to the Telegram bot for the link).
+// The ideas are stored in the bot (Cloudflare); this page reads/saves them through the bot's address in
+// data/site.json → site.reportApi. (The old <bot>/planner?key=… link opens this same page too.)
+(async () => {
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const KEY = new URLSearchParams(location.search).get("key");
@@ -161,7 +164,11 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
     document.querySelector("main").innerHTML = '<p class="empty" style="padding:30px 0">This planner only opens from your private link — send <b>/planner</b> to the Telegram bot and tap the link it sends.</p>';
     return;
   }
-  const API = "/planner/api?key=" + encodeURIComponent(KEY);
+  let BOT = "";
+  if (!/workers\.dev$/.test(location.hostname)) {
+    try { BOT = ((await (await fetch("/data/site.json", { cache: "no-cache" })).json()).site || {}).reportApi || ""; } catch {}
+  }
+  const API = BOT + "/planner/api?key=" + encodeURIComponent(KEY);
   const ICON = { idea: "💡", planned: "📅", shot: "🎥", edited: "✂️", uploaded: "✅" };
   const LABEL = { idea: "Idea", planned: "To shoot", shot: "Shot", edited: "Edited", uploaded: "Uploaded" };
   const DAYNAME = { mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday", fri: "Friday", sat: "Saturday", sun: "Sunday" };

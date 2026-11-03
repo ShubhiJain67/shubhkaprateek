@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Brand page — ShubhKaPrateek</title>
 <meta name="color-scheme" content="light dark">
-<!-- Brand page: shubhkaprateek.com/brand/<5-digit number> (get it in Telegram: /brand Blix). Older /brand/<name>?k=… and /report/… links work too.
+<!-- Brand page: shubhkaprateek.com/brand/<5-digit number> — each brand's number is in bot/brands.json (make brands lists them all).
      Numbers come live from our analytics through the Telegram bot's worker (data/site.json → site.reportApi). -->
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
@@ -59,17 +59,17 @@
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const fmt = v => (+v || 0).toLocaleString("en-IN");
   const main = document.getElementById("rp");
-  const q = new URLSearchParams(location.search), brand = q.get("b") || "", key = q.get("k") || "";
-  if (brand) history.replaceState(null, "", `/brand/${encodeURIComponent(brand)}${key ? "?k=" + encodeURIComponent(key) : ""}`);   // keep the nice address
+  const q = new URLSearchParams(location.search), brand = q.get("b") || "", fresh = q.get("fresh") ? "&fresh=1" : "";   // ?fresh=1 = newest numbers, no 5-min wait
+  if (brand) history.replaceState(null, "", `/brand/${encodeURIComponent(brand)}${fresh ? "?fresh=1" : ""}`);   // keep the nice address
   const fail = msg => { main.innerHTML = `<p class="muted">${msg}</p>`; };
-  if (!brand || (!key && !/^\d{5}$/.test(brand))) return fail("This link isn't complete — ask us for the link again 🙂");
+  if (!/^\d{5}$/.test(brand)) return fail("This link isn't complete — ask us for the link again 🙂");
   let api = "";
   try { api = ((await (await fetch("/data/site.json", { cache: "no-cache" })).json()).site || {}).reportApi || ""; } catch {}
   if (!api) return fail("Brand pages aren't set up yet.");
   let days = 30;
   async function load() {
     let r;
-    try { r = await fetch(`${api}/brand/api?brand=${encodeURIComponent(brand)}${key ? "&k=" + encodeURIComponent(key) : ""}&days=${days}`); }
+    try { r = await fetch(`${api}/brand/api?brand=${encodeURIComponent(brand)}&days=${days}${fresh}`); }
     catch { return fail("Couldn't load the page right now — please try again in a minute."); }
     if (r.status === 404) return fail("This link isn't valid — ask us for the link again 🙂");
     const d = await r.json().catch(() => ({}));

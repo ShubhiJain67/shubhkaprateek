@@ -11,8 +11,8 @@
 // Drafts waiting for your ✅ live in the KV namespace DRAFTS (auto-deleted after 7 days).
 
 import { plannerCommand, plannerButton, plannerHttp } from "./planner.js";
-import PLANNER_PAGE from "./planner.html";   // the private planner page (see planner.js)
-import { reportHttp, reportCommand, brandLink, slugOf, hitHttp } from "./report.js";   // 🏷 brand pages: shubhkaprateek.com/brand/<brand>
+import PLANNER_PAGE from "../planner.html";  // the private planner page (lives at shubhkaprateek.com/planner; see planner.js)
+import { reportHttp, hitHttp } from "./report.js";   // 🏷 brand pages (shubhkaprateek.com/brand/<number>) + the click counter
 import { DATA_FILES, dataJs } from "../tools/data.mjs"; // builds assets/js/data.js — same code `make ship` uses
 
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
@@ -54,7 +54,6 @@ I'll show exactly what goes before anything is removed.
 <code>/feature Hulk Comforter</code> (or its id) — add it to the featured tile (up to 2)
 <code>/unfeature Hulk Comforter</code> — take it off · <code>/unfeature all</code> — clear it
 <code>/featured</code> — what's featured now
-🏷 <code>/brand Blix</code> — the brand's page link (products, reels, live clicks) to send them · <code>/brand Deciwood 49 50</code> — set products 49 + 50 to Deciwood · <code>/brands</code> — all brands
 
 🔗 <code>/link https://www.instagram.com/reel/ABC123/</code> — a tracking link for the reel's CTA (any name works too: <code>?from=queaky</code>)`;
 
@@ -110,7 +109,6 @@ export async function handleUpdate(update, env) {
   if (cmd === "/cancel") { await env.DRAFTS.delete(String(chat)); return say(env, chat, "🗑 Draft dropped."); }
   if (cmd === "/cats") return say(env, chat, await catsHelp(env));
   if (await plannerCommand(cmd, text, env, chat)) return;
-  if (await reportCommand(cmd, text, env, chat, { say, esc, readJson, ensureReportApi, saveProducts })) return;   // /brand /brands (/report)          // /idea /ideas /plan /shot /edited /uploaded /week /planner …
   if (cmd === "/delete" || cmd === "/remove") return onDelete(text.replace(/^\/\S+\s*/, "").trim(), env, chat);
   if (cmd === "/featured") return showFeatured(env, chat);
   if (cmd === "/link") {                                   // /link <reel link or code> → that reel's CTA link
@@ -421,20 +419,6 @@ async function commitFiles(env, message, files) {
 const loadDraft = async (env, chat) => { const s = await env.DRAFTS.get(String(chat)); return s ? JSON.parse(s) : null; };
 const saveDraft = (env, chat, d) => env.DRAFTS.put(String(chat), JSON.stringify(d), { expirationTtl: 7 * 24 * 3600 });
 
-// The website's report page (/report/<brand>) fetches its numbers from this worker — save this worker's address in
-// data/site.json → site.reportApi once, so the page knows where to ask
-async function ensureReportApi(env) {
-  if (!env.WORKER_URL) return;
-  const site = await readJson(env, "data/site.json");
-  if (site.site && site.site.reportApi === env.WORKER_URL) return;
-  site.site = { ...site.site, reportApi: env.WORKER_URL };
-  await commitFiles(env, "Connect brand reports to the bot (via Telegram bot)", [{ path: "data/site.json", text: pretty(site, "featured") }]);
-}
-
-async function saveProducts(env, products, message) {
-  await commitFiles(env, message, [{ path: "data/products.json", text: pretty(products, "category") }]);
-}
-
 async function loadSite(env) {
   const [products, reels, categories, site] = await Promise.all(["products", "reels", "categories", "site"].map(f => readJson(env, `data/${f}.json`)));
   return { products, reels, categories, cats: flattenCats(categories), site };
@@ -706,8 +690,6 @@ export async function publish(d, env) {
     d.reel ? `🔗 Reel page: ${esc(siteUrl(env))}/reel/${esc(d.reel.code)}` : "",
     reelLine ? `🎬 Tracking link for this reel's CTA (opens the home page, counts visits from this reel):\n${esc(reelLine)}` : "",
     added.length ? `🆕 ${esc(added.join(", "))}` : "",
-    ...(await Promise.all([...new Set(S.products.filter(p => ids.includes(p.id) && p.brand).map(p => p.brand))]
-      .map(async b => `🏷 ${esc(b)}'s page (send it to them): ${esc(await brandLink(env, slugOf(b)))}`))),
     notes.length ? `ℹ️ ${esc(notes.join("; "))}` : "",
     `\n💻 On your laptop, run <code>git pull</code> before editing the site files.`
   ].filter(Boolean).join("\n");

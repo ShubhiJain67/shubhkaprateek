@@ -4,7 +4,8 @@
 // (the repo is public, so anything there could be read by anyone).
 //
 // Telegram:  /idea …  /ideas  /plan  /shot  /edited  /uploaded  /drop  /week  /planner
-// Page:      https://<worker>/planner?key=<secret>   (the bot sends you the link with /planner)
+// Page:      https://shubhkaprateek.com/planner?key=<secret>   (the bot sends you the link with /planner)
+//            The page (planner.html, in the site's root folder) saves through <worker>/planner/api.
 
 const KEY = "planner";
 const STATUSES = ["idea", "planned", "shot", "edited", "uploaded"];
@@ -219,7 +220,7 @@ export async function plannerCommand(cmd, text, env, chat) {
   const P = await load(env);
   try {
     if (cmd === "/planner") {
-      const url = `${env.WORKER_URL || ""}/planner?key=${await plannerKey(env)}`;
+      const url = `${env.SITE_URL || "https://shubhkaprateek.com"}/planner?key=${await plannerKey(env)}`;
       await say(env, chat, `📒 Your private planner:\n${esc(url)}\n\nDon't share this link — anyone with it can see and edit your ideas.\n\n${PLANNER_HELP}`);
       return true;
     }
@@ -291,9 +292,12 @@ export async function plannerButton(q, env) {
 // ---------------------------------------------------------------- the private page + its API
 export async function plannerHttp(req, env, url, page) {
   if (!url.pathname.startsWith("/planner")) return null;
+  // the page on shubhkaprateek.com talks to this API from another address, so the browser asks permission first
+  const cors = { "Access-Control-Allow-Origin": env.SITE_URL || "https://shubhkaprateek.com", "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", "Vary": "Origin" };
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   const key = url.searchParams.get("key") || "";
-  if (key !== await plannerKey(env)) return new Response("Not found", { status: 404 });   // looks like nothing's here
-  const headers = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex", "Referrer-Policy": "no-referrer" };
+  if (key !== await plannerKey(env)) return new Response("Not found", { status: 404, headers: cors });   // looks like nothing's here
+  const headers = { ...cors, "Cache-Control": "no-store", "X-Robots-Tag": "noindex", "Referrer-Policy": "no-referrer" };
   if (url.pathname === "/planner") return new Response(page, { headers: { ...headers, "Content-Type": "text/html; charset=utf-8" } });
   if (url.pathname !== "/planner/api") return new Response("Not found", { status: 404 });
   const P = await load(env);

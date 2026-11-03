@@ -1,0 +1,61 @@
+{
+  "_help": "Every brand's page number: shubhkaprateek.com/brand/<id>. Numbers never change. New brands get one automatically on `make ship` (tools/build.mjs). This file isn't on the public website.",
+  "brands": {
+    "blix": {
+      "name": "Blix",
+      "id": "19327"
+    },
+    "brickadda": {
+      "name": "Brickadda",
+      "id": "19892"
+    },
+    "crocs": {
+      "name": "Crocs",
+      "id": "89565"
+    },
+    "eazy-arts": {
+      "name": "Eazy Arts",
+      "id": "29174"
+    },
+    "funblast": {
+      "name": "Funblast",
+      "id": "26590"
+    },
+    "hamleys": {
+      "name": "Hamleys",
+      "id": "35777"
+    },
+    "play-retro": {
+      "name": "Play Retro",
+      "id": "97065"
+    },
+    "samvardhan": {
+      "name": "Samvardhan",
+      "id": "76890"
+    },
+    "socksxpress": {
+      "name": "Socksxpress",
+      "id": "17691"
+    },
+    "storegenie": {
+      "name": "Storegenie",
+      "id": "58823"
+    },
+    "the-7-dots": {
+      "name": "The 7 Dots",
+      "id": "25502"
+    },
+    "the-souled-store": {
+      "name": "The Souled Store",
+      "id": "66039"
+    },
+    "tipsytap": {
+      "name": "Tipsytap",
+      "id": "75691"
+    },
+    "wonderbox": {
+      "name": "Wonderbox",
+      "id": "61312"
+    }
+  }
+}

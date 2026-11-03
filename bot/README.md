@@ -105,4 +105,4 @@ Ideas for @shubhkaprateek, planned by week, tracked from idea → shot → edite
 (tap the status pill to move it along, tap an idea to edit category / tags / week / day), and the idea list with "Add to this week".
 ⚙️ edits categories, weekly target % and the keywords used for guessing.
 
-Don't share the link. If it ever leaks, run `bash bot/setup.sh` again — a new webhook secret makes a new planner link.
+The page lives on the website (shubhkaprateek.com/planner, file `planner.html` in the main folder) and saves through the bot. Don't share the link. If it ever leaks, run `bash bot/setup.sh` again — a new webhook secret makes a new planner link.
