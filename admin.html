@@ -25,7 +25,14 @@
   nav a .n { background: #fff; color: var(--accent-ink); border-radius: 999px; padding: 0 8px; font-size: 13px; font-weight: 700; }
   nav .foot { margin-top: auto; font-size: 13px; color: #c9b8ad; padding: 10px; }
   main { flex: 999 1 560px; min-width: 0; padding: 28px clamp(16px, 3vw, 40px) 60px; display: flex; flex-direction: column; gap: 18px; }
-  @media (max-width: 760px) { nav { max-width: none; flex-direction: row; flex-wrap: wrap; padding: 12px; } nav .logo { width: 100%; margin: 0 4px 6px; } nav .foot { display: none; } }
+  nav .links { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  nav .top { display: flex; align-items: center; justify-content: space-between; }
+  nav .burger { display: none; background: transparent; border: 1px solid rgba(245,236,230,.35); color: #f5ece6; width: 44px; height: 44px; border-radius: 10px; font-size: 20px; padding: 0; }
+  @media (max-width: 760px) {
+    nav { max-width: none; flex: none; width: 100%; box-sizing: border-box; padding: 10px 14px; position: sticky; top: 0; z-index: 20; }
+    nav .logo { margin: 0; } nav .burger { display: inline-grid; place-items: center; } nav .foot { display: none; }
+    nav .links { display: none; flex-direction: column; gap: 2px; padding-top: 10px; } nav.open .links { display: flex; }
+  }
   h1 { margin: 0; font: 700 clamp(26px, 4vw, 34px) Fraunces, Georgia, serif; }
   h2 { margin: 0 0 10px; font-size: 18px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -312,18 +319,20 @@
   const money = v => { const n = +String(v || "").replace(/[^\d.]/g, ""); return n || 0; };
 
   // ---------- views
-  let view = "enquiries", filter = "all", srcFilter = "all", moneyRange = "30", moneyFrom = "", moneyTo = "", editCard = new Set(), q = "", openId = null, editing = null, reelEdit = null;
-  const go = (v, id = null) => { view = v; openId = id; editing = null; reelEdit = null; editCard = new Set(); location.hash = v + (id != null ? "/" + id : ""); render(); window.scrollTo(0, 0); };
+  let navOpen = false, view = "enquiries", filter = "all", srcFilter = "all", moneyRange = "30", moneyFrom = "", moneyTo = "", editCard = new Set(), q = "", openId = null, editing = null, reelEdit = null;
+  const go = (v, id = null) => { navOpen = false; view = v; openId = id; editing = null; reelEdit = null; editCard = new Set(); location.hash = v + (id != null ? "/" + id : ""); render(); window.scrollTo(0, 0); };
   window.addEventListener("hashchange", () => { const [v, id] = location.hash.slice(1).split("/"); if (v && v !== view + "") { view = v; openId = id || null; render(); } });
 
   function shell(body) {
-    const n = D.enquiries.filter(e => e.status === "new").length;
-    root.innerHTML = `<div class="app"><nav aria-label="Dashboard">
-      <div class="logo">ShubhKaPrateek</div>
+    const n = D.enquiries.filter(e => ["new", "confirmed", "product", "live"].includes(e.status)).length;   // open deals: new + confirmed + live
+    const cur = { enquiry: "enquiries", brand: "brands" }[view] || view, curName = { enquiries: "Enquiries", money: "Money", brands: "Brands", products: "Products", categories: "Categories", reels: "Reels" }[cur] || "";
+    root.innerHTML = `<div class="app"><nav aria-label="Dashboard" class="${navOpen ? "open" : ""}">
+      <div class="top"><div class="logo">ShubhKaPrateek</div><button type="button" class="burger" data-burger aria-label="Menu" aria-expanded="${navOpen}">${navOpen ? "✕" : "☰"}</button></div>
+      <div class="links">
       ${[["enquiries", "Enquiries", n], ["money", "Money"], ["brands", "Brands"], ["products", "Products"], ["categories", "Categories"], ["reels", "Reels"]].map(([k, t, c]) =>
         `<a href="#${k}" data-go="${k}" class="${view === k || (view === "enquiry" && k === "enquiries") || (view === "brand" && k === "brands") ? "on" : ""}">${t}${c ? `<span class="n">${c}</span>` : ""}</a>`).join("")}
       <a href="${SITE}/" target="_blank" rel="noopener">Open website ↗</a>
-      <div class="foot">Saves go live on the website in about a minute.</div></nav><main>${body}</main></div>`;
+      <div class="foot">Saves go live on the website in about a minute.</div></div></nav><main>${body}</main></div>`;
   }
 
   // ---- Enquiries
@@ -479,7 +488,6 @@
     return `<div class="between"><h1>Products <span class="muted" style="font:500 16px Inter,sans-serif">${D.products.length}</span></h1>
         <div class="row"><input id="q" placeholder="Search products, brands, categories…" value="${esc(q)}" style="width:260px"><button class="main" data-act="newProd">+ New product</button></div></div>
       ${editing ? productForm(null) : ""}
-      <p class="muted small" style="margin:0"><span class="gold-key"></span> Golden = we got it from a brand collab (didn't pay for it). Newest first.</p>
       <div class="tablebox"><table class="table"><thead><tr><th></th><th>Product</th><th>Brand</th><th>Categories</th><th>Reels</th><th>Featured</th><th></th></tr></thead><tbody>
       ${list.map(p => `<tr class="click ${isFreeProduct(p.id) ? "gold" : ""}" data-href="${SITE}/product/${p.id}" title="Open the product page"><td><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" loading="lazy" referrerpolicy="no-referrer"></td>
         <td><b>${esc(p.name)}</b><br><span class="muted small">#${p.id}</span></td>
@@ -497,7 +505,6 @@
     return `<div class="between"><h1>Reels <span class="muted" style="font:500 16px Inter,sans-serif">${D.reels.length}</span></h1>
         <div class="row"><input id="q" placeholder="Search reels…" value="${esc(q)}" style="width:220px"><button class="main" data-act="newReel">+ New reel</button></div></div>
       ${reelEdit ? reelForm() : ""}
-      <p class="muted small" style="margin:0"><span class="gold-key"></span> Golden = a brand collab. Newest first.</p>
       <div class="tablebox"><table class="table"><thead><tr><th></th><th>Reel</th><th>Products</th><th></th></tr></thead><tbody>
       ${list.map(r => `<tr class="click ${isCollabReel(codeOf(r)) ? "gold" : ""}" data-href="${SITE}/reel/${esc(codeOf(r))}" title="Open the reel page"><td><img class="cover" src="/assets/covers/${esc(codeOf(r))}.jpg" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></td>
         <td><b>${esc(r.title)}</b><br><span class="muted small">${esc(codeOf(r))}</span></td>
@@ -664,6 +671,7 @@
     editing.form = { name: fd.get("name") || "", brand: fd.get("brand") || "", link: fd.get("link") || "", image: fd.get("image") || (editing.form || {}).image || "", category: fd.getAll("cat") }; };
 
   function wire() {
+    root.querySelectorAll("[data-burger]").forEach(b => b.onclick = () => { navOpen = !navOpen; render(); });
     root.querySelectorAll("[data-go]").forEach(a => a.onclick = e => { e.preventDefault(); q = ""; go(a.dataset.go); });
     root.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { filter = b.dataset.filter; render(); });
     root.querySelectorAll("[data-mrange]").forEach(b => b.onclick = () => { moneyRange = b.dataset.mrange; render(); });
