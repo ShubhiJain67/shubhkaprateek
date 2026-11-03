@@ -128,8 +128,13 @@ async function run(a, env, h) {
       const d = await packageDefaults(env, h, clip(p.package, 120));
       const r = await env.STATS.prepare("INSERT INTO enquiries (created, updated, status, brand, email, package, price, payment, product_ids) VALUES (?, ?, 'new', ?, ?, ?, ?, ?, '[]')")
         .bind(t, t, clip(p.brand, 120) || "New brand", clip(p.email, 200), clip(p.package, 120), d.price, d.payment).run();
-      await logEvent(env, r.meta.last_row_id, "Added by you");
-      return load(env, h);
+      const id = r.meta.last_row_id;
+      // everything else filled in the form (price/payment here replace the package's defaults)
+      const sets = [], vals = [];
+      for (const k of DEAL_FIELDS) if (!["brand", "email", "package"].includes(k) && clip(p[k]).trim()) { sets.push(`${k} = ?`); vals.push(clip(p[k])); }
+      if (sets.length) await env.STATS.prepare(`UPDATE enquiries SET ${sets.join(", ")} WHERE id = ?`).bind(...vals, id).run();
+      await logEvent(env, id, "Added by you");
+      return { ...(await load(env, h)), newId: id };
     }
     const e = await getEnquiry(env, a.id); if (!e) throw new Error("That enquiry is gone");
     const sets = [], vals = [];

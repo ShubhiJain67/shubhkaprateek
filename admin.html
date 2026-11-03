@@ -337,7 +337,7 @@
     root.querySelectorAll("[data-act]").forEach(b => b.onclick = async ev => {
       const k = b.dataset.act;
       ev.preventDefault();
-      if (k === "addEnq") { const brand = prompt("Brand name?"); if (!brand) return; const email = prompt("Their email (optional)") || ""; act(b, async () => { await api("enquiry.add", { patch: { brand, email } }); }, "Enquiry added"); }
+      if (k === "addEnq") openAddEnquiry();
       if (k === "delEnq") { if (!confirmTwice(b)) return; act(b, async () => { await api("enquiry.delete", { id: +openId }); view = "enquiries"; openId = null; }, "Deleted"); }
       if (k === "newProd") { editing = { id: null }; render(); $("pf")?.scrollIntoView({ behavior: "smooth" }); }
       if (k === "newReel") { reelEdit = { code: null }; render(); }
@@ -362,6 +362,41 @@
       act(reelf.querySelector("button"), () => api("reel.save", { link: new FormData(reelf).get("link"), products: e.product_ids, enquiryId: e.id }), "Reel is live — the website updates in about a minute 🚀"); };
     const rf = $("rf"); if (rf) rf.onsubmit = ev => { ev.preventDefault(); const fd = new FormData(rf);
       act(rf.querySelector("button.main"), async () => { await api("reel.save", { link: fd.get("link"), title: fd.get("title"), products: fd.getAll("p").map(Number) }); reelEdit = null; }, "Reel saved — live in about a minute"); };
+  }
+  // ---- "+ Add enquiry": one form in a pop-up (for brands that DM'd or emailed you)
+  function openAddEnquiry() {
+    const pk = D.packages || [];
+    const dlg = document.createElement("dialog");
+    dlg.style.cssText = "border:0;border-radius:18px;padding:0;width:min(560px,94vw);max-height:90vh;box-shadow:0 20px 60px rgba(43,31,26,.25)";
+    dlg.innerHTML = `<form id="addf" method="dialog" style="padding:22px;display:grid;gap:12px">
+      <div class="between"><h2 style="margin:0">Add an enquiry</h2><button type="button" data-x aria-label="Close">✕</button></div>
+      <div class="grid2">
+        <label>Brand name<input name="brand" required autocomplete="organization"></label>
+        <label>Email<input name="email" type="email"></label>
+        <label>Package<select name="package"><option value=""></option>${pk.map(p => `<option>${esc(p.name)}</option>`).join("")}<option>Not sure yet</option></select></label>
+        <label>Agreed price<input name="price" placeholder="filled from the package"></label>
+        <label>Payment<select name="payment"><option></option><option>Paid</option><option>Barter</option><option>Pending</option></select></label>
+        <label>Payment deadline<input name="payment_due" type="date"></label>
+        <label>Product value<input name="product_value" placeholder="₹4,999"></label>
+        <label>Contact person / phone<input name="contact"></label>
+        <label style="grid-column:1/-1">Their product link<input name="product_link" placeholder="https://…"></label>
+        <label style="grid-column:1/-1">Their message / notes<textarea name="notes" rows="3"></textarea></label>
+      </div>
+      <div class="row"><button class="main" type="submit">Add enquiry</button><button type="button" data-x>Cancel</button></div></form>`;
+    document.body.appendChild(dlg);
+    const f = dlg.querySelector("form"), close = () => { dlg.close(); dlg.remove(); };
+    dlg.querySelectorAll("[data-x]").forEach(x => x.onclick = close);
+    dlg.addEventListener("cancel", close);
+    f.package.onchange = () => { const p = pk.find(x => x.name === f.package.value); if (p) { f.price.value = p.price; f.payment.value = p.payment; } };
+    f.onsubmit = async ev => {
+      ev.preventDefault();
+      const patch = Object.fromEntries(new FormData(f));
+      if (!patch.brand.trim()) return f.brand.focus();
+      const btn = f.querySelector("button.main"); btn.disabled = true;
+      try { const r = await api("enquiry.add", { patch }); close(); toast("Enquiry added"); if (r.newId) go("enquiry", r.newId); else render(); }
+      catch { btn.disabled = false; }
+    };
+    dlg.showModal(); f.brand.focus();
   }
   // destructive buttons need a second tap
   function confirmTwice(b) { if (b.dataset.sure) return true; b.dataset.sure = "1"; const t = b.textContent; b.textContent = "Tap again to confirm"; setTimeout(() => { delete b.dataset.sure; b.textContent = t; }, 3000); return false; }
