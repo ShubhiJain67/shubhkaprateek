@@ -94,9 +94,11 @@
   .bars .col { flex: 1 1 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; min-width: 0; }
   .bars .col em { font-style: normal; font-size: 11px; font-weight: 700; text-align: center; color: var(--ink); white-space: nowrap; margin: 0 -24px 3px; }
   .bars .bar { display: flex; flex-direction: column; border-radius: 4px 4px 0 0; overflow: hidden; }
+  @media (max-width: 760px) { .xlab .yr { display: none; } }
   .xlab { display: flex; gap: 3px; margin-top: 4px; } .xlab span { flex: 1 1 0; text-align: center; font-size: 11px; color: var(--muted); min-width: 0; overflow: hidden; white-space: nowrap; }
   @media (max-width: 760px) { .bars .col em { font-size: 9px; } }
-  .bars .bar i { display: block; min-height: 0; } .bars .bar i.c { background: var(--accent); } .bars .bar i.p { background: #d4a62a; } .bars .bar i.z { flex: 1; background: var(--line); }
+  .bars .bar i { display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden; }
+  .bars .bar i b { font-size: 11px; font-style: normal; font-weight: 700; color: #fff; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.25); } .bars .bar i.c { background: var(--accent); } .bars .bar i.p { background: #d4a62a; } .bars .bar i.z { flex: 1; background: var(--line); }
   .ctree { display: grid; gap: 10px; max-height: 320px; overflow: auto; padding: 10px; background: var(--field); border-radius: 10px; }
   .ctree .grp { display: grid; gap: 6px; }
   .ctree .kids { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 14px; padding-left: 12px; border-left: 2px solid var(--line); }
@@ -554,6 +556,11 @@
     const buckets = []; for (let t = new Date(from + "T12:00:00"); t.toLocaleDateString("en-CA") <= to; t.setDate(t.getDate() + 1)) { const b = bucketOf(t.toLocaleDateString("en-CA")); if (buckets[buckets.length - 1] !== b) buckets.push(b); }
     const val = (b, k) => items.filter(x => bucketOf(x.d) === b && x.kind === k).reduce((t, x) => t + x.v, 0);
     const top = Math.max(1, ...buckets.map(b => val(b, "cash") + val(b, "prod")));
+    // one part of a bar (products on top, money below); its amount shows inside when there's room
+    const wide = buckets.length <= 14;
+    // inner amounts only when a bar has both parts (the total is already on top); a thin part gets just enough height for its number
+    const seg = (v, t, k) => { if (!v) return ""; const both = v !== t, px = (t / top) * 0.82 * 170 * (v / t);
+      return `<i style="flex:${v};${both && wide && px < 16 ? "min-height:16px;" : ""}" class="${k}">${both && wide ? `<b>${short(v)}</b>` : ""}</i>`; };
     const bLabel = b => unit === "month" ? new Date(b + "-01T12:00:00").toLocaleDateString("en-IN", { month: "short", year: "2-digit" }) : unit === "week" ? "week of " + date(b) : date(b);
     // day by day
     const byDay = {}; items.forEach(x => (byDay[x.d] = byDay[x.d] || []).push(x));
@@ -573,9 +580,10 @@
       </div>
       <section class="card"><h2>Earned per ${unit} <span class="muted small" style="font-weight:500">· ${esc(lbl)} · <span style="color:var(--accent)">■</span> money <span style="color:#d4a62a">■</span> products</span></h2>
         <div class="bars" role="img" aria-label="Earned per ${unit}, ${esc(lbl)}">${buckets.map(b => { const c = val(b, "cash"), pr = val(b, "prod"), t = c + pr;
-          return `<span class="col" title="${esc(bLabel(b))}: ${rs(t)}${t ? ` (money ${rs(c)} · products ${rs(pr)})` : ""}">${t ? `<em>${short(t)}</em>` : ""}<span class="bar" style="height:${t ? Math.max(4, t / top * 82) : 1.5}%">${t ? `<i style="flex:${pr}" class="p"></i><i style="flex:${c}" class="c"></i>` : `<i class="z"></i>`}</span></span>`; }).join("")}</div>
-        ${buckets.length <= 14 ? `<div class="xlab">${buckets.map(b => `<span>${esc(unit === "day" ? date(b).split(" ")[0] : bLabel(b).replace("week of ", ""))}</span>`).join("")}</div>`
-          : `<div class="between small muted" style="margin-top:4px"><span>${esc(bLabel(buckets[0]))}</span><span>${esc(bLabel(buckets[buckets.length - 1]))}</span></div>`}</section>
+          return `<span class="col" title="${esc(bLabel(b))}: ${rs(t)}${t ? ` (money ${rs(c)} · products ${rs(pr)})` : ""}">${t ? `<em>${short(t)}</em>` : ""}<span class="bar" style="height:${t ? Math.max(4, t / top * 82) : 1.5}%">${t ? seg(pr, t, "p") + seg(c, t, "c") : `<i class="z"></i>`}</span></span>`; }).join("")}</div>
+        ${buckets.length <= 14 ? `<div class="xlab">${buckets.map((b, i) => `<span>${esc(unit === "day" ? date(b).split(" ")[0] : unit === "month" ? new Date(b + "-01T12:00:00").toLocaleDateString("en-IN", { month: "short" }) : bLabel(b).replace("week of ", ""))}${unit === "month" && (i === 0 || b.endsWith("-01")) ? `<span class="yr"> '${b.slice(2, 4)}</span>` : ""}</span>`).join("")}</div>`
+          : `<div class="between small muted" style="margin-top:4px"><span>${esc(bLabel(buckets[0]))}</span><span>${esc(bLabel(buckets[buckets.length - 1]))}</span></div>`}
+        ${unit !== "day" ? `<div class="row small" style="margin-top:10px">${buckets.filter(b => val(b, "cash") + val(b, "prod")).reverse().map(b => `<span class="chip" style="cursor:default">${esc(bLabel(b))}: <b>${rs(val(b, "cash") + val(b, "prod"))}</b>${val(b, "prod") ? ` · 🎁 ${rs(val(b, "prod"))}` : ""}${val(b, "cash") ? ` · 💸 ${rs(val(b, "cash"))}` : ""}</span>`).join("")}</div>` : ""}</section>
       <div class="split">
         <section class="card"><h2>Day by day</h2>
           ${days.map(d => `<div style="padding:8px 0;border-bottom:1px dashed var(--line)"><div class="between"><b>${dateY(d)}</b><b>${rs(byDay[d].reduce((t, x) => t + x.v, 0))}</b></div>
