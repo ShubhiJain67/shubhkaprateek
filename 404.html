@@ -19,6 +19,8 @@
     var p = location.pathname, m;
     if ((m = p.match(/^\/(?:reels?|p|tv)\/([A-Za-z0-9_-]{5,})(?:\.html)?\/?$/))) location.replace("/?reel=" + m[1] + location.search.replace(/^\?/, "&"));
     else if ((m = p.match(/^\/products?\/(\d+)(?:\.html)?\/?$/))) location.replace("/?product=" + m[1] + location.search.replace(/^\?/, "&"));
+    else if (/^\/(?:media-?kit|portfolio)\/?$/i.test(p)) location.replace("/mediakit" + location.search);            // media kit (pitch)
+    else if (/^\/(?:rates|packages|collabs?)\/?$/i.test(p)) location.replace("/collab" + location.search);               // media kit + packages
     else if ((m = p.match(/^\/(?:brand|brands|report)\/([a-z0-9-]+)\/?$/i))) location.replace("/brand.html?b=" + m[1] + location.search.replace(/^\?/, "&"));   // brand pages
   })();
 </script>

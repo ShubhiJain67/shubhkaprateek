@@ -22,7 +22,9 @@ Every reel from @shubhkaprateek, playing on the page, with its products listed u
 │                           (back end: bot/admin.js · enquiries live in the Cloudflare database)
 ├── brand.html              Brand pages: shubhkaprateek.com/brand/<number> — products, reels, live clicks
 │                           (every brand's number + link: bot/brands.json)
-├── portfolio.html          Media kit for brands: shubhkaprateek.com/portfolio (data/portfolio.json)
+├── mediakit.html           Media kit for brands (data/portfolio.json): /mediakit = for pitching (no prices),
+│                           /collab = same page + packages & prices (collab.html is copied from it on make ship)
+├── portfolio.html          Old address — redirects to /mediakit
 ├── bot/                    Telegram bot (Cloudflare Worker) — add reels from your phone, see bot/README.md
 ├── CNAME                   Custom domain (shubhkaprateek.com) — don't delete
 ├── _config.yml             GitHub Pages: keeps bot/, Makefile and README off the public website — don't delete

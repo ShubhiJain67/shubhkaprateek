@@ -7,9 +7,9 @@
 //   • brand page numbers → bot/brands.json (new brands get a number the moment a product gets that brand)
 //
 // Login: the X-Passcode header must equal the ADMIN_PASSCODE secret  (cd bot && npx wrangler secret put ADMIN_PASSCODE)
-// Public: POST /enquiry — the media kit's enquiry form (shubhkaprateek.com/portfolio) saves into the database here.
+// Public: POST /enquiry — the media kit's enquiry form (shubhkaprateek.com/mediakit and /collab) saves into the database here.
 
-const STATUSES = ["new", "replied", "hold", "confirmed", "product", "live", "delivered", "declined"];   // delivered = everything done, deal closed
+const STATUSES = ["new", "hold", "confirmed", "product", "live", "delivered", "declined"];   // delivered = everything done, deal closed
 const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels"];
 const now = () => new Date().toISOString();
 const clip = (v, n = 2000) => String(v ?? "").slice(0, n);
@@ -27,6 +27,8 @@ async function tables(env) {
   ]);
   // columns added later — tables made before them get them here (fails harmlessly once they exist)
   for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT"]) { try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
+  // there's no "replied" status any more: those go back to New, and their "Status → replied" log lines are dropped
+  try { await env.STATS.batch([env.STATS.prepare("UPDATE enquiries SET status = 'new' WHERE status = 'replied'"), env.STATS.prepare("DELETE FROM events WHERE text = 'Status → replied'")]); } catch {}
   ready = true;
 }
 const logEvent = (env, id, text) => env.STATS.prepare("INSERT INTO events (enquiry_id, at, text) VALUES (?, ?, ?)").bind(id, now(), clip(text, 300)).run();
@@ -58,8 +60,9 @@ async function onEnquiry(req, env, h) {
   await tables(env);
   const t = now();
   const d = await packageDefaults(env, h, clip(b.package, 120));
-  const r = await env.STATS.prepare(`INSERT INTO enquiries (created, updated, status, brand, email, package, product_link, message, price, payment, product_ids, source)
-    VALUES (?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, '[]', 'brand')`).bind(t, t, brand, email, clip(b.package, 120), clip(b.link, 500), clip(b.message, 2000), d.price, d.payment).run();
+  const via = b.via === "collab" ? "Sent from the collab packages link (/collab) — they saw your rates" : b.via === "mediakit" ? "Sent from the media kit link (/mediakit) — no rates shown" : "";
+  const r = await env.STATS.prepare(`INSERT INTO enquiries (created, updated, status, brand, email, package, product_link, message, price, payment, product_ids, source, notes)
+    VALUES (?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, '[]', 'brand', ?)`).bind(t, t, brand, email, clip(b.package, 120), clip(b.link, 500), clip(b.message, 2000), d.price, d.payment, via).run();
   const id = r.meta && r.meta.last_row_id;
   if (id) await logEvent(env, id, "Enquiry received");
   for (const chat of String(env.ALLOWED_CHAT_IDS || "").split(/[\s,]+/).filter(Boolean))   // a ping on your phone
@@ -202,7 +205,7 @@ async function run(a, env, h) {
       const e = await getEnquiry(env, a.enquiryId);
       if (e) {
         const ids = [...new Set([...(JSON.parse(e.product_ids || "[]")), p.id])];
-        const status = ["new", "replied", "hold", "confirmed"].includes(e.status) ? "product" : e.status;
+        const status = ["new", "hold", "confirmed"].includes(e.status) ? "product" : e.status;
         await env.STATS.prepare("UPDATE enquiries SET product_ids = ?, status = ?, brand = COALESCE(NULLIF(brand, ''), ?), updated = ? WHERE id = ?").bind(JSON.stringify(ids), status, p.brand, now(), e.id).run();
         await logEvent(env, e.id, `Product added: ${p.name}`);
       }

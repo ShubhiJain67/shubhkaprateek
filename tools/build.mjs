@@ -16,6 +16,8 @@ for (const f of DATA_FILES) {
   catch (e) { console.error(`❌ data/${f}.json has a typo: ${e.message}`); process.exit(1); }
 }
 fs.writeFileSync(path.join(root, "assets/js/data.js"), dataJs(data));
+// shubhkaprateek.com/collab is the media kit with packages + prices: the same page, so it's copied from mediakit.html
+fs.copyFileSync(path.join(root, "mediakit.html"), path.join(root, "collab.html"));
 const version = Math.floor(Date.now() / 1000);
 for (const f of ["index.html", "404.html"]) {
   const p = path.join(root, f);

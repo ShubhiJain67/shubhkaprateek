@@ -45,7 +45,7 @@
   label { display: grid; gap: 5px; font-size: 13px; font-weight: 600; }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
   .pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
-  .s-new { background: var(--accent); color: #fff; } .s-replied { background: #e8eefc; color: #1f4fa3; } .s-hold { background: #fdf0d8; color: #8a5a00; }
+  .s-new { background: var(--accent); color: #fff; } .s-hold { background: #fdf0d8; color: #8a5a00; }
   .s-confirmed { background: var(--ok); color: #fff; } .s-product { background: #efe6fb; color: #5b2ea6; } .s-live { background: #e3f3ea; color: #1f6b41; } .s-delivered { background: #1f6b41; color: #fff; } .s-declined { background: #f1ecea; color: var(--muted); }
   .list { display: grid; gap: 10px; }
   .item { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: center; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-radius: 14px; cursor: pointer; text-align: left; width: 100%; font-weight: 400; }
@@ -190,8 +190,8 @@
   }
 
   // ---------- helpers on the data
-  const STATUS = { new: "New", replied: "Replied", hold: "On hold", confirmed: "Confirmed", product: "Product added", live: "Live", delivered: "Delivered", declined: "Declined" };
-  const FLOW = ["new", "replied", "confirmed", "product", "live", "delivered"];
+  const STATUS = { new: "New", hold: "On hold", confirmed: "Confirmed", product: "Product added", live: "Live", delivered: "Delivered", declined: "Declined" };
+  const FLOW = ["new", "confirmed", "product", "live", "delivered"];
   const today = () => new Date().toLocaleDateString("en-CA");   // YYYY-MM-DD in your time zone
   const pill = s => `<span class="pill s-${esc(s)}">${esc(STATUS[s] || s)}</span>`;
   const img = u => !u ? "" : /^https?:/.test(u) ? u : "/" + String(u).replace(/^\//, "");
@@ -328,8 +328,8 @@
 
   // ---- Enquiries
   function vEnquiries() {
-    // tabs: New also holds "replied", Confirmed also holds "product added"
-    const TAB = { new: ["new", "replied"], confirmed: ["confirmed", "product"], live: ["live"], delivered: ["delivered"], declined: ["declined"], hold: ["hold"] };
+    // tabs: Confirmed also holds "product added"
+    const TAB = { new: ["new"], confirmed: ["confirmed", "product"], live: ["live"], delivered: ["delivered"], declined: ["declined"], hold: ["hold"] };
     const inTab = (e, t) => t === "all" || (TAB[t] || [t]).includes(e.status);
     // in All: everything open first (newest on top), then on hold, then delivered, then declined
     const rank = e => ({ hold: 1, delivered: 2, declined: 3 })[e.status] || 0;
@@ -359,8 +359,6 @@
       <div class="steps">${FLOW.map((s, i) => `<span class="${i < at ? "done" : i === at ? "now" : ""}">${STATUS[s]}${i < at ? " ✓" : ""}</span>`).join("")}</div>
       <div class="row">
         <a class="btn" href="${mail}">Reply by email</a>
-        ${["new", "hold"].includes(e.status) ? `<button data-status="replied">Mark as replied</button>` : ""}
-        ${e.status === "replied" ? `<button data-status="new">Not replied yet</button>` : ""}
         ${e.status !== "confirmed" && at < 2 ? `<button class="ok" data-status="confirmed">${e.pitched === "1" && e.reel_code ? "Confirm (reel is already live)" : "Confirm"}</button>` : ""}
         ${e.status === "live" ? `<button class="ok" data-status="delivered">Mark delivered ✓</button>` : ""}
         ${e.status === "delivered" ? `<button data-status="live">Reopen (back to Live)</button>` : ""}
