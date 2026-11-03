@@ -48,6 +48,7 @@ export default {
     if (hits) return hits;
     const report = await reportHttp(req, env, url, { readJson });
     if (report) return report;
+    if (url.pathname === "/deployed") return onDeployed(req, env);    // GitHub → "the site is live" message
     if (req.method !== "POST" || url.pathname !== "/telegram") return new Response("ShubhKaPrateek bot is running.");
     if (req.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.WEBHOOK_SECRET) return new Response("nope", { status: 401 });
     let update;
@@ -61,6 +62,27 @@ export default {
     return new Response("ok"); // always 200 so Telegram doesn't re-send the same message
   }
 };
+
+// ---------------------------------------------------------------- 🚀 "changes are live" message
+// .github/workflows/notify-live.yml calls this when GitHub Pages finishes publishing the site. The call carries the
+// NOTIFY_KEY password (saved both as a GitHub secret and a Cloudflare secret), so nobody else can trigger messages.
+async function onDeployed(req, env) {
+  if (req.method !== "POST" || !env.NOTIFY_KEY || req.headers.get("X-Notify-Key") !== env.NOTIFY_KEY) return new Response("nope", { status: 401 });
+  let sha = "";
+  try { sha = String((await req.json()).sha || "").replace(/[^0-9a-f]/gi, "").slice(0, 40); } catch {}
+  let what = "";
+  // the commit's message — skipping make ship's automatic "Build latest data…" / merge commits to find your own
+  for (let i = 0; sha && i < 4; i++) try {
+    const c = await gh(env, `/commits/${sha}`);
+    what = (c.commit.message || "").split("\n")[0];
+    if (!/^(Build latest data|Merge branch)/.test(what)) break;
+    sha = (c.parents && c.parents[0] && c.parents[0].sha) || "";
+  } catch { break; }
+  const text = `🚀 <b>Live on shubhkaprateek.com</b>${what ? "\n" + esc(what) : ""}`;
+  for (const chat of String(env.ALLOWED_CHAT_IDS || "").split(/[\s,]+/).filter(Boolean))
+    await say(env, chat, text).catch(e => console.error(e));
+  return new Response("sent");
+}
 
 // ---------------------------------------------------------------- Telegram
 const allowed = (env, chatId) => String(env.ALLOWED_CHAT_IDS || "").split(/[\s,]+/).filter(Boolean).includes(String(chatId));
