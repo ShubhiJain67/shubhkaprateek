@@ -10,7 +10,7 @@
 // Public: POST /enquiry — the media kit's enquiry form (shubhkaprateek.com/portfolio) saves into the database here.
 
 const STATUSES = ["new", "replied", "hold", "confirmed", "product", "live", "declined"];
-const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "notes"];
+const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes"];
 const now = () => new Date().toISOString();
 const clip = (v, n = 2000) => String(v ?? "").slice(0, n);
 const slugOf = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
@@ -25,7 +25,7 @@ async function tables(env) {
     env.STATS.prepare("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, enquiry_id INTEGER, at TEXT, text TEXT)")
   ]);
   // columns added later — tables made before them get them here (fails harmlessly once they exist)
-  for (const col of ["payment_due TEXT"]) { try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
+  for (const col of ["payment_due TEXT", "contacts TEXT"]) { try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
   ready = true;
 }
 const logEvent = (env, id, text) => env.STATS.prepare("INSERT INTO events (enquiry_id, at, text) VALUES (?, ?, ?)").bind(id, now(), clip(text, 300)).run();

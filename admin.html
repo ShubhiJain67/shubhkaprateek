@@ -127,6 +127,24 @@
   const reelsOf = id => D.reels.filter(r => (r.products || []).includes(+id));
   const brandLink = name => { const b = Object.values(D.brands || {}).find(b => b.name.toLowerCase() === String(name || "").trim().toLowerCase()); return b ? b.link : ""; };
   const date = s => s ? new Date(s).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "";
+  // contacts at a brand: [{ name, role, phone }, …] (older enquiries had one "contact" line → shown as the first)
+  const contactsOf = e => { try { const c = JSON.parse(e.contacts || "[]"); if (Array.isArray(c) && c.length) return c; } catch {} return e.contact ? [{ name: e.contact, role: "", phone: "" }] : []; };
+  const contactRow = c => `<div class="crow" style="position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;border:1px solid var(--line,#eadfd6);border-radius:12px;padding:12px 44px 12px 12px">
+      <label>Name<input data-c="name" value="${esc(c.name)}"></label>
+      <label>Designation<input data-c="role" value="${esc(c.role)}" placeholder="e.g. Marketing head"></label>
+      <label>Phone<input data-c="phone" type="tel" value="${esc(c.phone)}" placeholder="+91 …"></label>
+      <button type="button" data-crm aria-label="Remove contact" title="Remove contact" style="position:absolute;top:8px;right:8px;width:30px;height:30px;padding:0;min-height:0;border-radius:8px;line-height:1">✕</button></div>`;
+  const contactsBlock = list => `<div style="grid-column:1/-1;display:grid;gap:8px"><b class="small">Contacts</b>
+      <div class="clist" style="display:grid;gap:8px">${(list.length ? list : [{}]).map(contactRow).join("")}</div>
+      <div><button type="button" data-cadd>+ Add another contact</button></div></div>`;
+  // reads the contact rows inside a form → JSON for the database (empty rows are dropped)
+  const readContacts = form => JSON.stringify([...form.querySelectorAll(".crow")].map(r => ({ name: r.querySelector('[data-c="name"]').value.trim(), role: r.querySelector('[data-c="role"]').value.trim(), phone: r.querySelector('[data-c="phone"]').value.trim() })).filter(c => c.name || c.role || c.phone));
+  const wireContacts = form => {
+    form.addEventListener("click", ev => {
+      if (ev.target.closest("[data-cadd]")) { form.querySelector(".clist").insertAdjacentHTML("beforeend", contactRow({})); form.querySelector(".crow:last-child input").focus(); }
+      const rm = ev.target.closest("[data-crm]"); if (rm) { const rows = form.querySelectorAll(".crow"); if (rows.length > 1) rm.closest(".crow").remove(); else rm.closest(".crow").querySelectorAll("input").forEach(i => i.value = ""); }
+    });
+  };
   const money = v => { const n = +String(v || "").replace(/[^\d.]/g, ""); return n || 0; };
 
   // ---------- views
@@ -187,7 +205,7 @@
           <label>Product value<input name="product_value" value="${esc(e.product_value)}" placeholder="₹4,999"></label>
           <label>Shoot by<input name="shoot_by" type="date" value="${esc(e.shoot_by)}"></label>
           <label>Post by<input name="post_by" type="date" value="${esc(e.post_by)}"></label>
-          <label>Contact person / phone<input name="contact" value="${esc(e.contact)}"></label>
+          ${contactsBlock(contactsOf(e))}
           <label>Their product link<input name="product_link" value="${esc(e.product_link)}"></label>
           <label style="grid-column:1/-1">Their message<textarea name="message" rows="2">${esc(e.message)}</textarea></label>
           <label style="grid-column:1/-1">Your notes<textarea name="notes" rows="2">${esc(e.notes)}</textarea></label>
@@ -357,7 +375,7 @@
     const up = $("up"); if (up) up.onchange = () => { const file = up.files[0]; if (!file) return; readPF(); shrink(file).then(url => { editing.photo = url; render(); }); };
     const pf = $("pf"); if (pf) pf.onsubmit = ev => { ev.preventDefault(); readPF(); const f = editing.form, btn = pf.querySelector("button.main");
       act(btn, async () => { const r = await api("product.save", { product: { id: editing.id, ...f, image: /^https?:|^assets\//.test(f.image) ? f.image : "" }, photo: editing.photo || null, enquiryId: view === "enquiry" ? +openId : null }); editing = null; }, "Saved — live in about a minute"); };
-    const deal = $("deal"); if (deal) deal.onsubmit = ev => { ev.preventDefault(); const patch = Object.fromEntries(new FormData(deal)); act(deal.querySelector("button"), () => api("enquiry.update", { id: +openId, patch }), "Deal saved"); };
+    const deal = $("deal"); if (deal) { wireContacts(deal); deal.onsubmit = ev => { ev.preventDefault(); const patch = Object.fromEntries(new FormData(deal)); patch.contacts = readContacts(deal); patch.contact = ""; act(deal.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch }), "Deal saved"); }; }
     const reelf = $("reelf"); if (reelf) reelf.onsubmit = ev => { ev.preventDefault(); const e = D.enquiries.find(x => x.id === +openId);
       act(reelf.querySelector("button"), () => api("reel.save", { link: new FormData(reelf).get("link"), products: e.product_ids, enquiryId: e.id }), "Reel is live — the website updates in about a minute 🚀"); };
     const rf = $("rf"); if (rf) rf.onsubmit = ev => { ev.preventDefault(); const fd = new FormData(rf);
@@ -378,7 +396,7 @@
         <label>Payment<select name="payment"><option></option><option>Paid</option><option>Barter</option><option>Pending</option></select></label>
         <label>Payment deadline<input name="payment_due" type="date"></label>
         <label>Product value<input name="product_value" placeholder="₹4,999"></label>
-        <label>Contact person / phone<input name="contact"></label>
+        ${contactsBlock([])}
         <label style="grid-column:1/-1">Their product link<input name="product_link" placeholder="https://…"></label>
         <label style="grid-column:1/-1">Their message / notes<textarea name="notes" rows="3"></textarea></label>
       </div>
@@ -387,10 +405,11 @@
     const f = dlg.querySelector("form"), close = () => { dlg.close(); dlg.remove(); };
     dlg.querySelectorAll("[data-x]").forEach(x => x.onclick = close);
     dlg.addEventListener("cancel", close);
+    wireContacts(f);
     f.package.onchange = () => { const p = pk.find(x => x.name === f.package.value); if (p) { f.price.value = p.price; f.payment.value = p.payment; } };
     f.onsubmit = async ev => {
       ev.preventDefault();
-      const patch = Object.fromEntries(new FormData(f));
+      const patch = Object.fromEntries(new FormData(f)); patch.contacts = readContacts(f);
       if (!patch.brand.trim()) return f.brand.focus();
       const btn = f.querySelector("button.main"); btn.disabled = true;
       try { const r = await api("enquiry.add", { patch }); close(); toast("Enquiry added"); if (r.newId) go("enquiry", r.newId); else render(); }
