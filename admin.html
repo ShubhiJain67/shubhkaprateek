@@ -73,6 +73,14 @@
   .trow { position: relative; display: grid; grid-template-columns: 2fr 160px 2fr; gap: 8px; align-items: center; padding-right: 84px; }
   .trow .tb { position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; gap: 6px; }
   @media (max-width: 760px) { .trow { grid-template-columns: 1fr; border: 1px solid var(--line); border-radius: 12px; padding: 10px 84px 10px 10px; } .trow .tb { top: 10px; right: 10px; transform: none; } }
+  .stats4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .stat { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .stat b { font: 700 26px Fraunces, Georgia, serif; display: block; }
+  .stat span { font-size: 13px; color: var(--muted); }
+  .stat.warn b { color: #9b2c2c; }
+  .bars { display: flex; align-items: flex-end; gap: 3px; height: 140px; padding: 8px 0 0; border-bottom: 1px solid var(--line); }
+  .bars i { flex: 1 1 0; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; opacity: .9; }
+  .bars i.z { background: var(--line); }
   .ctree { display: grid; gap: 10px; max-height: 320px; overflow: auto; padding: 10px; background: var(--field); border-radius: 10px; }
   .ctree .grp { display: grid; gap: 6px; }
   .ctree .kids { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 14px; padding-left: 12px; border-left: 2px solid var(--line); }
@@ -173,7 +181,7 @@
   const sourceSelect = cur => `<label>Who reached out<select name="source">${Object.entries(SOURCES).map(([k, t]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
   // ---- deliverables: ticked from the package's list, then yours to change
   const DELIV = [
-    { k: "reel", t: "Collaborative reel", re: /collaborative reel/i },
+    { k: "reel", t: "Collaborative reels", re: /collaborative reel/i, count: true },
     { k: "mention", t: "Brand mention in the reel", re: /mention in the reel/i },
     { k: "stories", t: "Instagram stories", re: /instagram stor/i, count: true },
     { k: "raw", t: "Raw footage (Google Drive)", re: /raw footage/i },
@@ -188,7 +196,7 @@
   const delivFromPackage = name => { const items = ((D.packages || []).find(p => p.name === name) || {}).items || [];
     return { items: Object.fromEntries(DELIV.map(d => { const hit = items.find(i => d.re.test(i));
       return [d.k, { on: !!hit, done: false, ...(d.count ? { count: hit ? +((hit.match(/(\d+)/) || [])[1] || 1) : 1 } : {}) }]; })), extra: [] }; };
-  const delivDefault = (e, pkg) => { const d = delivFromPackage(pkg ?? e.package); if (e.pitched === "1") d.items.reel = { on: true, done: true }; return d; };   // pitched: the reel is already up
+  const delivDefault = (e, pkg) => { const d = delivFromPackage(pkg ?? e.package); if (e.pitched === "1") d.items.reel = { on: true, done: true, count: 1 }; return d; };   // pitched: the reel is already up
   const delivOf = e => { try { const d = JSON.parse(e.deliverables || ""); if (d && d.items) return d; } catch {} return delivDefault(e); };
   const statsOf = e => { try { return JSON.parse(e.pitch_stats || "{}") || {}; } catch { return {}; } };
   const reelTitle = code => (D.reels.find(r => codeOf(r).toLowerCase() === String(code || "").toLowerCase()) || {}).title || code;
@@ -263,7 +271,7 @@
   const money = v => { const n = +String(v || "").replace(/[^\d.]/g, ""); return n || 0; };
 
   // ---------- views
-  let view = "enquiries", filter = "all", srcFilter = "all", q = "", openId = null, editing = null, reelEdit = null;
+  let view = "enquiries", filter = "all", srcFilter = "all", moneyRange = "30", q = "", openId = null, editing = null, reelEdit = null;
   const go = (v, id = null) => { view = v; openId = id; editing = null; reelEdit = null; location.hash = v + (id != null ? "/" + id : ""); render(); window.scrollTo(0, 0); };
   window.addEventListener("hashchange", () => { const [v, id] = location.hash.slice(1).split("/"); if (v && v !== view + "") { view = v; openId = id || null; render(); } });
 
@@ -271,7 +279,7 @@
     const n = D.enquiries.filter(e => e.status === "new").length;
     root.innerHTML = `<div class="app"><nav aria-label="Dashboard">
       <div class="logo">ShubhKaPrateek</div>
-      ${[["enquiries", "Enquiries", n], ["brands", "Brands"], ["products", "Products"], ["categories", "Categories"], ["reels", "Reels"]].map(([k, t, c]) =>
+      ${[["enquiries", "Enquiries", n], ["money", "Money"], ["brands", "Brands"], ["products", "Products"], ["categories", "Categories"], ["reels", "Reels"]].map(([k, t, c]) =>
         `<a href="#${k}" data-go="${k}" class="${view === k || (view === "enquiry" && k === "enquiries") || (view === "brand" && k === "brands") ? "on" : ""}">${t}${c ? `<span class="n">${c}</span>` : ""}</a>`).join("")}
       <a href="${SITE}/" target="_blank" rel="noopener">Open website ↗</a>
       <div class="foot">Saves go live on the website in about a minute.</div></nav><main>${body}</main></div>`;
@@ -451,6 +459,40 @@
     D.enquiries.forEach(e => add(e.brand, "enquiries", e));
     return [...map.values()].sort((a, b) => (b.enquiries.length + b.products.length) - (a.enquiries.length + a.products.length));
   }
+  // ---- Money: received by day (Payment received date), and what's still due
+  function vMoney() {
+    const rs = n => "₹" + Math.round(n).toLocaleString("en-IN");
+    const agreed = D.enquiries.filter(e => ["confirmed", "product", "live", "delivered"].includes(e.status) && e.payment !== "Barter" && money(e.price) > 0);
+    const got = agreed.filter(e => e.paid_on), due = agreed.filter(e => !e.paid_on), now = today();
+    const late = due.filter(e => e.payment_due && e.payment_due < now);
+    const from = moneyRange === "all" ? "" : moneyRange === "month" ? now.slice(0, 8) + "01" : new Date(Date.now() - 29 * 864e5).toLocaleDateString("en-CA");
+    const inRange = got.filter(e => !from || e.paid_on >= from);
+    const sum = l => l.reduce((t, e) => t + money(e.price), 0);
+    // per day
+    const byDay = {}; inRange.forEach(e => (byDay[e.paid_on] = byDay[e.paid_on] || []).push(e));
+    const days = Object.keys(byDay).sort().reverse();
+    const chartDays = [...Array(30)].map((_, i) => new Date(Date.now() - (29 - i) * 864e5).toLocaleDateString("en-CA"));
+    const perDay = d => sum(got.filter(e => e.paid_on === d)), top = Math.max(1, ...chartDays.map(perDay));
+    const dueRow = e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br>
+        <span class="small ${e.payment_due && e.payment_due < now ? "" : "muted"}" style="${e.payment_due && e.payment_due < now ? "color:#9b2c2c;font-weight:600" : ""}">${e.payment_due ? (e.payment_due < now ? "Late — was due " : "Due ") + date(e.payment_due) : "No deadline set"}</span></span><b>${rs(money(e.price))}</b></button>`;
+    return `<div class="between"><h1>Money</h1><div class="row">${[["30", "Last 30 days"], ["month", "This month"], ["all", "All time"]].map(([k, t]) => `<button class="chip ${moneyRange === k ? "on" : ""}" data-mrange="${k}">${t}</button>`).join("")}</div></div>
+      <div class="stats4">
+        <div class="stat"><b>${rs(sum(inRange))}</b><span>Received${moneyRange === "all" ? "" : moneyRange === "month" ? " this month" : " in 30 days"} · ${inRange.length} deal${inRange.length === 1 ? "" : "s"}</span></div>
+        <div class="stat"><b>${rs(sum(due))}</b><span>Still due · ${due.length} deal${due.length === 1 ? "" : "s"}</span></div>
+        <div class="stat ${late.length ? "warn" : ""}"><b>${rs(sum(late))}</b><span>Late (past deadline) · ${late.length}</span></div>
+        <div class="stat"><b>${rs(sum(got))}</b><span>Received all time</span></div>
+      </div>
+      <section class="card"><h2>Received per day <span class="muted small" style="font-weight:500">· last 30 days</span></h2>
+        <div class="bars" role="img" aria-label="Money received per day, last 30 days">${chartDays.map(d => { const v = perDay(d); return `<i class="${v ? "" : "z"}" style="height:${v ? Math.max(6, v / top * 100) : 2}%" title="${date(d)}: ${rs(v)}"></i>`; }).join("")}</div>
+        <div class="between small muted" style="margin-top:4px"><span>${date(chartDays[0])}</span><span>Today</span></div></section>
+      <div class="split">
+        <section class="card"><h2>Day by day</h2>
+          ${days.map(d => `<div class="between" style="padding:8px 0;border-bottom:1px dashed var(--line)"><span><b>${date(d)}</b><br><span class="muted small">${byDay[d].map(e => esc(e.brand) + (e.txn_id ? " · " + esc(e.txn_id) : "")).join(" · ")}</span></span><b>${rs(sum(byDay[d]))}</b></div>`).join("") || `<p class="muted" style="margin:0">Nothing received in this range. A deal counts here once you fill its <b>Payment received</b> date.</p>`}</section>
+        <section class="card"><h2>Still due</h2><div class="list">${due.sort((a, b) => (a.payment_due || "9999").localeCompare(b.payment_due || "9999")).map(dueRow).join("") || `<p class="muted" style="margin:0">Nothing due 🎉</p>`}</div></section>
+      </div>
+      <p class="muted small" style="margin:0">Counts confirmed, live and delivered deals with an agreed price (barter excluded). Received = has a Payment received date; due = doesn't yet.</p>`;
+  }
+
   // ---- Categories: tab → sub-category → products
   function vCategories() {
     const has = (p, id) => (p.category || []).includes(id);
@@ -503,7 +545,7 @@
 
   function render() {
     if (!D) return;
-    const body = view === "enquiry" ? vEnquiry() : view === "products" ? vProducts() : view === "reels" ? vReels() : view === "brands" ? vBrands() : view === "brand" ? vBrand() : view === "categories" ? vCategories() : vEnquiries();
+    const body = view === "enquiry" ? vEnquiry() : view === "products" ? vProducts() : view === "reels" ? vReels() : view === "brands" ? vBrands() : view === "brand" ? vBrand() : view === "categories" ? vCategories() : view === "money" ? vMoney() : vEnquiries();
     shell(body);
     if (view === "enquiry") applyFolds();
     const qi = $("q"); if (qi) { qi.oninput = () => { q = qi.value.trim().toLowerCase(); const pos = qi.selectionStart; render(); const n = $("q"); n.focus(); n.setSelectionRange(pos, pos); }; }
@@ -517,6 +559,7 @@
   function wire() {
     root.querySelectorAll("[data-go]").forEach(a => a.onclick = e => { e.preventDefault(); q = ""; go(a.dataset.go); });
     root.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { filter = b.dataset.filter; render(); });
+    root.querySelectorAll("[data-mrange]").forEach(b => b.onclick = () => { moneyRange = b.dataset.mrange; render(); });
     root.querySelectorAll("[data-src]").forEach(b => b.onclick = () => { srcFilter = b.dataset.src; render(); });
     root.querySelectorAll("[data-editp]").forEach(b => b.onclick = () => { go("products"); editing = { id: +b.dataset.editp }; render(); $("pf")?.scrollIntoView({ behavior: "smooth" }); });
     root.querySelectorAll("[data-open]").forEach(b => b.onclick = () => go("enquiry", b.dataset.open));
