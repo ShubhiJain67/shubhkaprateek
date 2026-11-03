@@ -89,3 +89,27 @@ UPDATE events SET at = (SELECT substr(e.created, 1, 10) FROM enquiries e WHERE e
 UPDATE events SET at = (SELECT COALESCE(NULLIF(e.paid_on, ''), substr(e.created, 1, 10)) FROM enquiries e WHERE e.id = events.enquiry_id) || 'T06:' || substr(at, 15)
   WHERE enquiry_id IN (SELECT id FROM enquiries WHERE lower(replace(brand, ' ', '')) IN ('wonderbox', 'storegenie') AND created NOT LIKE '2026-11-03%' AND created NOT LIKE '2026-11-04%')
     AND text LIKE 'Status → delivered%';
+
+-- Samvardhan Mart — they reached out on 4 Nov to swap our Amazon link for theirs on the Flower Bubble Machine reel (+ 2 trial reels). ₹2,000, done + closed the same day.
+INSERT INTO enquiries (created,updated,status,brand,email,package,price,payment,product_value,contacts,contact,source,live_on,paid_on,deliverables,trial_reels,product_ids,reel_code,notes)
+  SELECT '2026-11-04T04:30:00Z','2026-11-04T12:30:00Z','delivered','Samvardhan Mart','sanchitonline2019@gmail.com','After-live pitch','₹2,000','Paid','','[]','','brand','','2026-11-04','{"items": {"reel": {"on": false, "done": false, "count": 1}, "mention": {"on": false, "done": false}, "stories": {"on": false, "done": false, "count": 0}, "raw": {"on": false, "done": false}, "rights": {"on": false, "done": false}, "website": {"on": false, "done": false}, "featured": {"on": false, "done": false}, "collab": {"on": false, "done": false}, "links": {"on": true, "done": true}, "repush": {"on": false, "done": false}, "refund": {"on": false, "done": false}}, "extra": [{"t": "Links changed on 2 trial reels too", "done": true}]}','[{"link": "https://www.instagram.com/reel/DfKdPziSDDC/", "date": "2026-11-04", "note": "Link changed to Samvardhan''s"}, {"link": "https://www.instagram.com/reel/DfJV3uTyG-1/", "date": "2026-11-04", "note": "Link changed to Samvardhan''s"}]','[49]','DfJSWTLSvaV','They asked us to replace our Amazon link with theirs on the reel. Changed it on the main-feed reel + 2 trial reels the same day. ₹2,000.'
+  WHERE NOT EXISTS (SELECT 1 FROM enquiries WHERE brand = 'Samvardhan Mart' AND reel_code = 'DfJSWTLSvaV');
+INSERT INTO events (enquiry_id, at, text)
+  SELECT id, '2026-11-04T04:30:00Z', 'Imported — they reached out to change the links' FROM enquiries WHERE brand = 'Samvardhan Mart' AND reel_code = 'DfJSWTLSvaV' AND id NOT IN (SELECT enquiry_id FROM events)
+  UNION ALL SELECT id, '2026-11-04T04:31:00Z', 'Status → confirmed' FROM enquiries WHERE brand = 'Samvardhan Mart' AND reel_code = 'DfJSWTLSvaV' AND id NOT IN (SELECT enquiry_id FROM events)
+  UNION ALL SELECT id, '2026-11-04T04:32:00Z', 'Status → delivered' FROM enquiries WHERE brand = 'Samvardhan Mart' AND reel_code = 'DfJSWTLSvaV' AND id NOT IN (SELECT enquiry_id FROM events);
+
+-- Jellico — we reached out 16 Oct, they replied on Instagram 30 Oct, confirmed 31 Oct (barter, 6 products, MRP ₹10,494), shipped 1 Nov. Still to do: reel, 5 photos, raw data.
+INSERT INTO enquiries (created,updated,status,brand,email,instagram,package,price,payment,product_value,contacts,contact,source,dispatched_on,deliverables,product_ids,reel_code,product_link,notes)
+  SELECT '2026-10-16T06:30:00Z','2026-11-01T06:30:00Z','confirmed','Jellico','sukritimishra@jellico.in','@jellico_in','Barter','','Barter','₹10,494','[]','','us','2026-11-01','{"items": {"reel": {"on": true, "done": false, "count": 1}, "mention": {"on": false, "done": false}, "stories": {"on": false, "done": false, "count": 0}, "raw": {"on": true, "done": false}, "rights": {"on": false, "done": false}, "website": {"on": false, "done": false}, "featured": {"on": false, "done": false}, "collab": {"on": true, "done": false}, "links": {"on": false, "done": false}, "repush": {"on": false, "done": false}, "refund": {"on": false, "done": false}}, "extra": [{"t": "5 static photos shared with them", "done": false}]}','[]','','https://jellico.in/collections/frontpage/products/comfort-crew-pizza','6 products (MRP total ₹10,494) — add them to the website only when the reel goes live:
+• Pizza Plush (₹1,749) — https://jellico.in/collections/frontpage/products/comfort-crew-pizza
+• Donuts Plush (₹1,249) — https://jellico.in/collections/comfort-crew/products/comfort-crew-donut
+• Ice Cream Plush (₹1,499) — https://jellico.in/collections/comfort-crew/products/comfort-crew-icecream-1
+• Glow-in-the-dark Name Blanket (₹1,999) — https://jellico.in/products/personalised-name-blanket-embroidered-fleece-jellico-copy
+• Personalised Bunny Sweater (₹1,999) — https://jellico.in/collections/personalized/products/personalised-bunny-sweater-cocoa-brown-sandstone-beige
+• Bouquet Plush (₹1,999) — https://jellico.in/collections/comfort-crew/products/bouqet'
+  WHERE NOT EXISTS (SELECT 1 FROM enquiries WHERE brand = 'Jellico' AND created = '2026-10-16T06:30:00Z');
+INSERT INTO events (enquiry_id, at, text)
+  SELECT id, '2026-10-16T06:30:00Z', 'Imported — we reached out' FROM enquiries WHERE brand = 'Jellico' AND created = '2026-10-16T06:30:00Z' AND id NOT IN (SELECT enquiry_id FROM events)
+  UNION ALL SELECT id, '2026-10-30T06:30:00Z', '💬 They replied on Instagram (@jellico_in)' FROM enquiries WHERE brand = 'Jellico' AND created = '2026-10-16T06:30:00Z' AND id NOT IN (SELECT enquiry_id FROM events)
+  UNION ALL SELECT id, '2026-10-31T06:30:00Z', 'Status → confirmed' FROM enquiries WHERE brand = 'Jellico' AND created = '2026-10-16T06:30:00Z' AND id NOT IN (SELECT enquiry_id FROM events);

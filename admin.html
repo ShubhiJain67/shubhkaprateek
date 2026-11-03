@@ -550,8 +550,9 @@
     const got = cash.filter(e => e.paid_on), due = cash.filter(e => !e.paid_on);
     const late = due.filter(e => e.payment_due && e.payment_due < now);
     // a product counts the day it became yours for free: Product received — or, for a reel pitched after you bought the product, the day they paid you back
-    const pday = e => day(e.pitched === "1" ? (e.paid_on || e.collab_on || e.created) : (e.received_on || e.live_on || e.collab_on || e.paid_on || e.created));
-    const prods = agreed.filter(e => money(e.product_value) > 0);
+    // (a product that's still on its way doesn't count yet)
+    const pday = e => day(e.pitched === "1" ? (e.paid_on || e.collab_on || e.created) : (e.received_on || e.live_on || e.collab_on || e.paid_on));
+    const prods = agreed.filter(e => money(e.product_value) > 0 && pday(e));
     // the range
     const first = [...got.map(e => e.paid_on), ...prods.map(pday)].filter(Boolean).sort()[0] || now;
     const back = n => new Date(Date.now() - n * 864e5).toLocaleDateString("en-CA");
