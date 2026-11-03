@@ -505,5 +505,18 @@
         "image": "https://m.media-amazon.com/images/I/61lELikd+hL._SY879_.jpg"
       }
     ]
+  },
+  {
+    "id": 52,
+    "name": "BEAR QUEAKY RECHARGEABLE",
+    "brand": "Blix",
+    "category": [],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://blix.in/products/bear-queaky-rechargeable",
+        "image": "https://blix.in/cdn/shop/files/Queaky_Jungle_Bear_1.png?v=1786447701"
+      }
+    ]
   }
 ]
