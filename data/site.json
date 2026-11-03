@@ -16,7 +16,8 @@
       "Punisher",
       "Minion"
     ],
-    "featured": [47, 48]
+    "featured": [47, 48],
+    "reportApi": "https://shubhkaprateek-bot.shubhkaprateek.workers.dev"
   },
   "contact": {
     "instagram": "shubhkaprateek",
