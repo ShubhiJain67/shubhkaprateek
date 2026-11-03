@@ -173,7 +173,8 @@
     document.head.appendChild(s);
   }
   // Our own free click counter (the Telegram bot's Cloudflare database) — feeds the brand pages (/brand/…).
-  // Counts buy clicks + product/reel page views per product; ?from=… is kept for the visit.
+  // Counts per product: Buy clicks on its product page ("buy_page"), Buy clicks anywhere else ("buy"), product/reel
+  // page views ("view"); /go/<id> link clicks ("go") are counted by 404.html. ?from=… is kept for the visit.
   const hitFrom = (new URLSearchParams(location.search).get("from") || "").trim().slice(0, 40);
   const hit = (k, i) => { try {
     if (!site.reportApi || !/shubhkaprateek\.com$/.test(location.hostname)) return;   // local previews aren't counted
@@ -185,7 +186,7 @@
       const box = buy.closest("[data-key]"), p = box && pmap.get(box.dataset.key);
       const where = buy.closest(".feat-tile") ? "featured" : buy.closest(".pd-grid") ? "product page" : buy.closest(".item") ? "reel list" : buy.closest("#view-reel") ? "reel page" : "products";
       track("buy", { product: p ? p.name : "?", id: p && p.id != null ? p.id : "?", store: storeOf(buy.href), where });
-      if (p && p.id != null) hit("buy", "p:" + p.id);
+      if (p && p.id != null) hit(where === "product page" ? "buy_page" : "buy", "p:" + p.id);   // product page vs anywhere else
       return;
     }
     if (e.target.closest("#ask-dm")) track("ask-instagram");

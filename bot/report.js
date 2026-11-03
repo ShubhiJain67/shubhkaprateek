@@ -30,7 +30,7 @@ export async function hitHttp(req, env, url) {
   if (req.method !== "POST" || !env.STATS) return new Response(null, { status: 204, headers: cors });
   try {
     const h = JSON.parse((await req.text()).slice(0, 500));
-    const kind = ["buy", "go", "view"].includes(h.k) ? h.k : "";
+    const kind = ["buy", "buy_page", "go", "view"].includes(h.k) ? h.k : "";   // buy = Buy clicked on home/reel pages, buy_page = on the product's own page
     const item = /^(p:\d{1,6}|r:[A-Za-z0-9_-]{5,20})$/.test(h.i || "") ? h.i : "";
     const src = String(h.f || "").toLowerCase().replace(/[^a-z0-9 _.-]/g, "").trim().slice(0, 40) || "direct";
     if (kind && item) {
@@ -106,7 +106,7 @@ export async function buildReport(env, { readJson }, slug, days) {
       const v = (p.variants || [])[0] || {};
       return { id: p.id, name: p.name, image: (p.variants || []).map(v => v.image).find(Boolean) || "", link: v.link || "",
         page: `${siteUrl}/product/${p.id}`, categories: [].concat(p.category || []).map(c => catName[c] || c),
-        reels: myReels.filter(r => r.products.includes(p.id)).length, buy: 0, go: 0, views: 0, from: {} };
+        reels: myReels.filter(r => r.products.includes(p.id)).length, buy: 0, buyPage: 0, go: 0, views: 0, from: {} };
     }),
     reels: myReels.map(({ products, ...r }) => ({ ...r, views: 0 })), note: ""
   };
@@ -116,6 +116,7 @@ export async function buildReport(env, { readJson }, slug, days) {
     for (const r of rows) {
       const n = +r.n || 0, p = byItem(r.item);
       if (p && r.kind === "buy") p.buy += n;
+      else if (p && r.kind === "buy_page") p.buyPage += n;
       else if (p && r.kind === "go") { p.go += n; p.from[r.src] = (p.from[r.src] || 0) + n; }
       else if (p && r.kind === "view") p.views += n;
       else if (r.kind === "view") { const rl = out.reels.find(x => "r:" + x.code === r.item); if (rl) rl.views += n; }
