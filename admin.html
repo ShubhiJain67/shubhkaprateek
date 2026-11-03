@@ -201,6 +201,8 @@
   const delivDefault = (e, pkg) => { const d = delivFromPackage(pkg ?? e.package); if (e.pitched === "1") d.items.reel = { on: true, done: true, count: 1 }; return d; };   // pitched: the reel is already up
   const delivOf = e => { try { const d = JSON.parse(e.deliverables || ""); if (d && d.items) return d; } catch {} return delivDefault(e); };
   const statsOf = e => { try { return JSON.parse(e.pitch_stats || "{}") || {}; } catch { return {}; } };
+  // reels that already have a brand deal (anything but declined) — no pitching those
+  const dealOfReel = code => D.enquiries.find(e => e.status !== "declined" && String(e.reel_code || "").toLowerCase() === String(code || "").toLowerCase());
   const reelTitle = code => (D.reels.find(r => codeOf(r).toLowerCase() === String(code || "").toLowerCase()) || {}).title || code;
   const delivRows = d => DELIV.map(x => { const v = d.items[x.k] || { on: false, done: false, count: 1 };
       return `<div class="drow"><label class="dl"><input type="checkbox" data-on="${x.k}" ${v.on ? "checked" : ""}>${esc(x.t)}</label>
@@ -438,7 +440,7 @@
       ${list.map(r => `<tr><td><img class="cover" src="/assets/covers/${esc(codeOf(r))}.jpg" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></td>
         <td><b>${esc(r.title)}</b><br><span class="muted small">${esc(codeOf(r))}</span></td>
         <td class="small">${(r.products || []).map(prod).filter(Boolean).map(p => esc(p.name)).join(", ")}</td>
-        <td><div class="row" style="flex-wrap:nowrap"><button data-reel="${esc(codeOf(r))}">Edit</button><button data-pitch="${esc(codeOf(r))}" title="Start a brand deal from this reel">🎯 Pitch</button><a class="btn" href="${SITE}/reel/${esc(codeOf(r))}" target="_blank" rel="noopener">View ↗</a></div></td></tr>`).join("")}
+        <td><div class="row" style="flex-wrap:nowrap"><button data-reel="${esc(codeOf(r))}">Edit</button>${(d => d ? `<button data-open="${d.id}" title="Open the deal">🤝 ${esc(d.brand)}</button>` : `<button data-pitch="${esc(codeOf(r))}" title="Start a brand deal from this reel">🎯 Pitch</button>`)(dealOfReel(codeOf(r)))}<a class="btn" href="${SITE}/reel/${esc(codeOf(r))}" target="_blank" rel="noopener">View ↗</a></div></td></tr>`).join("")}
       </tbody></table></div>`;
   }
   function reelForm() {
@@ -648,7 +650,7 @@
       <div class="between"><h2 style="margin:0">${pitchCode ? "Pitch this reel to a brand" : "Add an enquiry"}</h2><button type="button" data-x aria-label="Close">✕</button></div>
       <div class="grid2">
         <div style="grid-column:1/-1;display:grid;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px">
-          <label>🎯 Pitching a reel you already posted? <span class="muted small" style="font-weight:500">(optional)</span><select name="reel_pick"><option value="">— No, a new collab —</option>${D.reels.slice().reverse().map(r => `<option value="${esc(codeOf(r))}" ${codeOf(r) === pitchCode ? "selected" : ""}>${esc(r.title || codeOf(r))}</option>`).join("")}</select></label>
+          <label>🎯 Pitching a reel you already posted? <span class="muted small" style="font-weight:500">(optional)</span><select name="reel_pick"><option value="">— No, a new collab —</option>${D.reels.slice().reverse().filter(r => codeOf(r) === pitchCode || !dealOfReel(codeOf(r))).map(r => `<option value="${esc(codeOf(r))}" ${codeOf(r) === pitchCode ? "selected" : ""}>${esc(r.title || codeOf(r))}</option>`).join("")}</select></label>
           <label class="small">…or paste its Instagram link<input name="reel_paste" placeholder="https://www.instagram.com/reel/…"></label></div>
         <label>Brand name<input name="brand" required autocomplete="organization"></label>
         <label>Email<input name="email" type="email"></label>
