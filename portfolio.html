@@ -174,10 +174,11 @@
       setTimeout(() => document.getElementById("enq-brand").focus({ preventScroll: true }), 500); }
   });
 
-  // Enquiry → sent to our inbox through the same form service as the shop page's "Can't find something?" box
-  // (key in data/site.json → contact.formKey). If that fails, it opens an email instead.
-  let formKey = "";
-  fetch("/data/site.json").then(r => r.json()).then(j => { formKey = (j.contact || {}).formKey || ""; }).catch(() => {});
+  // Enquiry → saved in our database (shows up in the dashboard: shubhkaprateek.com/admin) through the bot
+  // (data/site.json → site.reportApi), plus an email copy through the form service (contact.formKey).
+  // If both fail, it opens an email instead.
+  let formKey = "", bot = "";
+  fetch("/data/site.json").then(r => r.json()).then(j => { formKey = (j.contact || {}).formKey || ""; bot = (j.site || {}).reportApi || ""; }).catch(() => {});
   const $ = id => document.getElementById(id), status = (t, ok) => { $("enq-status").textContent = t; $("enq-status").className = "enq-status " + (ok ? "ok" : "bad"); };
   $("enq").addEventListener("submit", async e => {
     e.preventDefault();
@@ -186,14 +187,15 @@
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { status("Please add a valid email so we can reply.", false); $("enq-email").focus(); return; }
     const text = `Package: ${pkg}\nBrand: ${brand}\nEmail: ${email}\nProduct: ${link || "—"}\n\n${msg}`;
     const mailto = () => { if (has(c.email)) location.href = `mailto:${c.email}?subject=${encodeURIComponent("Collab enquiry: " + brand + " — " + pkg)}&body=${encodeURIComponent(text)}`; };
-    if (!formKey) return mailto();
     $("enq-send").disabled = true;
-    try {
-      const r = await fetch("https://api.web3forms.com/submit", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ access_key: formKey, botcheck: $("enq-bot").checked, subject: `Collab enquiry: ${brand} — ${pkg}`, from_name: brand, replyto: email, message: text }) });
-      const j = await r.json(); if (!j.success) throw new Error(j.message);
-      status("Sent ✓ Thank you! We'll reply to " + email + " within a day.", true); $("enq").reset();
-    } catch (err) { console.error(err); status("Couldn't send — opening your email app instead…", false); mailto(); }
+    const saved = bot ? fetch(bot + "/enquiry", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ package: pkg, brand, email, link, message: msg, botcheck: $("enq-bot").checked }) }).then(r => r.ok).catch(() => false) : Promise.resolve(false);
+    const mailed = formKey ? fetch("https://api.web3forms.com/submit", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ access_key: formKey, botcheck: $("enq-bot").checked, subject: `Collab enquiry: ${brand} — ${pkg}`, from_name: brand, replyto: email, message: text }) })
+        .then(r => r.json()).then(j => !!j.success).catch(() => false) : Promise.resolve(false);
+    const [inDb, inMail] = await Promise.all([saved, mailed]);
+    if (inDb || inMail) { status("Sent ✓ Thank you! We'll reply to " + email + " within a day.", true); $("enq").reset(); }
+    else { status("Couldn't send — opening your email app instead…", false); mailto(); }
     $("enq-send").disabled = false;
   });
 })();

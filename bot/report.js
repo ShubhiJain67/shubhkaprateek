@@ -134,7 +134,10 @@ export async function reportHttp(req, env, url, helpers) {
   if (req.method === "OPTIONS") return new Response(null, { headers: { ...cors, "Access-Control-Allow-Methods": "GET" } });
   const asked = String(url.searchParams.get("brand") || "");
   const days = [7, 30, 90, 365].includes(+url.searchParams.get("days")) ? +url.searchParams.get("days") : 30;
-  const slug = (Object.entries(BRANDS.brands || {}).find(([, b]) => b.id === asked) || [""])[0];   // /brand/19327 → "blix"
+  // /brand/19327 → "blix" (bot/brands.json on GitHub, so brands added from the dashboard work straight away)
+  let list = BRANDS.brands || {};
+  try { list = (await helpers.readJson(env, "bot/brands.json")).brands || list; } catch {}
+  const slug = (Object.entries(list).find(([, b]) => b.id === asked) || [""])[0];
   if (!slug) return new Response('{"error":"not found"}', { status: 404, headers: cors });
   const cacheKey = `reportcache:${slug}:${days}`;
   // ?fresh=1 skips the 5-minute cache — handy while testing

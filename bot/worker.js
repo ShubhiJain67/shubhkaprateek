@@ -10,7 +10,8 @@
 // Settings in wrangler.toml [vars]: GITHUB_REPO, GITHUB_BRANCH, SITE_URL
 // Drafts waiting for your ✅ live in the KV namespace DRAFTS (auto-deleted after 7 days).
 
-import { reportHttp, hitHttp } from "./report.js";   // 🏷 brand pages (shubhkaprateek.com/brand/<number>) + the click counter
+import { reportHttp, hitHttp } from "./report.js";
+import { adminHttp } from "./admin.js";   // 🗂 the dashboard (shubhkaprateek.com/admin) + the media kit's enquiry form   // 🏷 brand pages (shubhkaprateek.com/brand/<number>) + the click counter
 import { DATA_FILES, dataJs } from "../tools/data.mjs"; // builds assets/js/data.js — same code `make ship` uses
 
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
@@ -48,6 +49,9 @@ export default {
     if (hits) return hits;
     const report = await reportHttp(req, env, url, { readJson });
     if (report) return report;
+    const admin = await adminHttp(req, env, url, { readJson, commitFiles, pretty, gh, enrichProduct, enrichReel, guessCategories, flattenCats,
+      guessBrand, REEL_RE, fetchBytes, planDelete, applyDelete, say, esc, slug });
+    if (admin) return admin;
     if (url.pathname === "/deployed") return onDeployed(req, env);    // GitHub → "the site is live" message
     if (req.method !== "POST" || url.pathname !== "/telegram") return new Response("ShubhKaPrateek bot is running.");
     if (req.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.WEBHOOK_SECRET) return new Response("nope", { status: 401 });

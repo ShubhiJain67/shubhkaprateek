@@ -18,6 +18,8 @@ Every reel from @shubhkaprateek, playing on the page, with its products listed u
 │   └── covers/             Reel cover images, one per reel: <reel code>.jpg
 ├── 404.html                "Page not found" — also opens /reel/<code> and /product/<id> links in the one page
 ├── tools/build.mjs         Builds assets/js/data.js from data/ (make ship runs it; the bot uses tools/data.mjs too)
+├── admin.html              🗂 Your dashboard: shubhkaprateek.com/admin — enquiries, brands, products, reels
+│                           (back end: bot/admin.js · enquiries live in the Cloudflare database)
 ├── brand.html              Brand pages: shubhkaprateek.com/brand/<number> — products, reels, live clicks
 │                           (every brand's number + link: bot/brands.json)
 ├── portfolio.html          Media kit for brands: shubhkaprateek.com/portfolio (data/portfolio.json)
