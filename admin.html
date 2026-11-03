@@ -152,7 +152,7 @@
       <div class="row">${["all", "new", "replied", "hold", "confirmed", "product", "live", "declined"].map(s =>
         `<button class="chip ${filter === s ? "on" : ""}" data-filter="${s}">${s === "all" ? "All" : STATUS[s]} ${s === "all" ? D.enquiries.length : count(s)}</button>`).join("")}</div>
       <div class="list">${list.map(e => `<button class="item" data-open="${e.id}">
-          <span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${esc(e.email)} · ${date(e.created)}</span></span>
+          <span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${esc(e.email)} · ${date(e.created)}${e.payment_due ? ` · payment due ${date(e.payment_due)}` : ""}</span></span>
           ${pill(e.status)}</button>`).join("") || `<p class="empty">No enquiries here yet. When a brand sends the form on your media kit, it shows up here.</p>`}</div>`;
   }
 
@@ -162,12 +162,15 @@
     const prods = (e.product_ids || []).map(prod).filter(Boolean);
     const ev = D.events.filter(x => x.enquiry_id === e.id);
     const reelUrl = e.reel_code ? `${SITE}/reel/${e.reel_code}` : "";
+    const pk = (D.packages || []).find(p => p.name === e.package) || { price: "", payment: "" };   // the package's price + payment type, until you change them
     const mail = `mailto:${encodeURIComponent(e.email)}?subject=${encodeURIComponent("Collab with ShubhKaPrateek — " + e.brand)}&body=${encodeURIComponent(`Hi ${e.brand} team,\n\nThank you for reaching out! We'd love to work with you on ${e.package || "a collab"}.\n\n[your reply]\n\nWarm regards,\nShubhi & Prateek\n@shubhkaprateek | shubhkaprateek.com`)}`;
     return `<a href="#enquiries" data-go="enquiries" class="small" style="font-weight:600;text-decoration:none">← Enquiries</a>
       <div class="between"><h1>${esc(e.brand)} <span class="muted" style="font:500 16px Inter,sans-serif">· ${esc(e.package || "—")}</span></h1>${pill(e.status)}</div>
       <div class="steps">${FLOW.map((s, i) => `<span class="${i < at ? "done" : i === at ? "now" : ""}">${STATUS[s]}${i < at ? " ✓" : ""}</span>`).join("")}</div>
       <div class="row">
-        <a class="btn" href="${mail}" data-act="replied">Reply by email</a>
+        <a class="btn" href="${mail}">Reply by email</a>
+        ${["new", "hold"].includes(e.status) ? `<button data-status="replied">Mark as replied</button>` : ""}
+        ${e.status === "replied" ? `<button data-status="new">Not replied yet</button>` : ""}
         ${e.status !== "confirmed" && at < 2 ? `<button class="ok" data-status="confirmed">Confirm</button>` : ""}
         ${e.status !== "hold" ? `<button data-status="hold">Put on hold</button>` : ""}
         ${e.status !== "declined" ? `<button class="danger" data-status="declined">Decline</button>` : `<button data-status="new">Reopen</button>`}
@@ -177,9 +180,10 @@
         <section class="card"><h2>The deal</h2><form id="deal" class="grid2">
           <label>Brand<input name="brand" value="${esc(e.brand)}"></label>
           <label>Email<input name="email" value="${esc(e.email)}"></label>
-          <label>Package<input name="package" value="${esc(e.package)}"></label>
-          <label>Agreed price<input name="price" value="${esc(e.price)}" placeholder="₹3,000"></label>
-          <label>Payment<select name="payment">${["", "Pending", "Paid", "Barter"].map(o => `<option ${o === (e.payment || "") ? "selected" : ""}>${o}</option>`).join("")}</select></label>
+          <label>Package<select name="package">${[...new Set([e.package || "", ...(D.packages || []).map(p => p.name)])].map(o => `<option ${o === (e.package || "") ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></label>
+          <label>Agreed price<input name="price" value="${esc(e.price || pk.price)}" placeholder="₹3,000"></label>
+          <label>Payment<select name="payment">${["Paid", "Barter", "Pending"].map(o => `<option ${o === (e.payment || pk.payment) ? "selected" : ""}>${o}</option>`).join("")}</select></label>
+          <label>Payment deadline<input name="payment_due" type="date" value="${esc(e.payment_due)}"></label>
           <label>Product value<input name="product_value" value="${esc(e.product_value)}" placeholder="₹4,999"></label>
           <label>Shoot by<input name="shoot_by" type="date" value="${esc(e.shoot_by)}"></label>
           <label>Post by<input name="post_by" type="date" value="${esc(e.post_by)}"></label>
@@ -279,23 +283,23 @@
   function vBrands() {
     const list = brandList().filter(b => !q || b.name.toLowerCase().includes(q));
     return `<div class="between"><h1>Brands <span class="muted" style="font:500 16px Inter,sans-serif">${list.length}</span></h1><input id="q" placeholder="Search brands…" value="${esc(q)}" style="width:220px"></div>
-      <div class="tablebox"><table class="table"><thead><tr><th>Brand</th><th>Collabs</th><th>Products</th><th>Earned</th><th>Brand page</th></tr></thead><tbody>
+      <div class="tablebox"><table class="table"><thead><tr><th>Brand</th><th>Collabs</th><th>Products</th><th>Paid deals</th><th>Brand page</th></tr></thead><tbody>
       ${list.map(b => `<tr style="cursor:pointer" data-brand="${esc(b.name)}"><td><b>${esc(b.name)}</b></td><td>${b.enquiries.length}</td><td>${b.products.length}</td>
-        <td>₹${b.enquiries.filter(e => e.payment === "Paid").reduce((s, e) => s + money(e.price), 0).toLocaleString("en-IN")}</td>
+        <td>₹${b.enquiries.filter(e => e.payment === "Paid" && e.status !== "declined").reduce((s, e) => s + money(e.price), 0).toLocaleString("en-IN")}</td>
         <td>${brandLink(b.name) ? `<a href="${esc(brandLink(b.name))}" target="_blank" rel="noopener">${esc(brandLink(b.name).replace(/^https:\/\//, ""))}</a>` : `<span class="muted small">after first product</span>`}</td></tr>`).join("")}
       </tbody></table></div>`;
   }
   function vBrand() {
     const b = brandList().find(x => x.name.toLowerCase() === String(openId || "").toLowerCase());
     if (!b) return `<p class="empty">Brand not found. <a href="#brands" data-go="brands">Back</a></p>`;
-    const paid = b.enquiries.filter(e => e.payment === "Paid").reduce((s, e) => s + money(e.price), 0);
-    const pending = b.enquiries.filter(e => e.payment === "Pending").reduce((s, e) => s + money(e.price), 0);
+    const paid = b.enquiries.filter(e => e.payment === "Paid" && e.status !== "declined").reduce((s, e) => s + money(e.price), 0);
+    const pending = b.enquiries.filter(e => e.payment === "Pending" && e.status !== "declined").reduce((s, e) => s + money(e.price), 0);
     const reels = [...new Set(b.products.flatMap(p => reelsOf(p.id)))];
     return `<a href="#brands" data-go="brands" class="small" style="font-weight:600;text-decoration:none">← Brands</a>
       <div class="between"><h1>${esc(b.name)}</h1>${brandLink(b.name) ? `<a class="btn main" href="${esc(brandLink(b.name))}" target="_blank" rel="noopener">Their brand page ↗</a>` : ""}</div>
       <div class="grid2">
         <div class="card"><b style="font:700 26px Fraunces,serif">${b.enquiries.length}</b><br><span class="muted small">Collabs / enquiries</span></div>
-        <div class="card"><b style="font:700 26px Fraunces,serif">₹${paid.toLocaleString("en-IN")}</b><br><span class="muted small">Earned${pending ? ` · ₹${pending.toLocaleString("en-IN")} pending` : ""}</span></div>
+        <div class="card"><b style="font:700 26px Fraunces,serif">₹${paid.toLocaleString("en-IN")}</b><br><span class="muted small">Paid deals${pending ? ` · ₹${pending.toLocaleString("en-IN")} pending` : ""}</span></div>
         <div class="card"><b style="font:700 26px Fraunces,serif">${b.products.length}</b><br><span class="muted small">Products · ${reels.length} reel${reels.length === 1 ? "" : "s"}</span></div>
       </div>
       <section class="card"><h2>Collabs</h2><div class="list">${b.enquiries.map(e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.package || "Collab")}</b> <span class="muted small">· ${esc(e.price || "—")} · ${esc(e.payment || "")}</span><br><span class="muted small">${date(e.created)}</span></span>${pill(e.status)}</button>`).join("") || `<p class="muted" style="margin:0">No enquiries yet.</p>`}</div></section>
@@ -332,7 +336,6 @@
     root.querySelectorAll("[data-delreel]").forEach(b => b.onclick = () => { if (!confirmTwice(b)) return; act(b, async () => { await api("reel.delete", { code: b.dataset.delreel }); reelEdit = null; }, "Reel removed"); });
     root.querySelectorAll("[data-act]").forEach(b => b.onclick = async ev => {
       const k = b.dataset.act;
-      if (k === "replied") { const e = D.enquiries.find(x => x.id === +openId); if (e && ["new", "hold"].includes(e.status)) api("enquiry.update", { id: e.id, patch: { status: "replied" } }).then(render).catch(() => {}); return; }
       ev.preventDefault();
       if (k === "addEnq") { const brand = prompt("Brand name?"); if (!brand) return; const email = prompt("Their email (optional)") || ""; act(b, async () => { await api("enquiry.add", { patch: { brand, email } }); }, "Enquiry added"); }
       if (k === "delEnq") { if (!confirmTwice(b)) return; act(b, async () => { await api("enquiry.delete", { id: +openId }); view = "enquiries"; openId = null; }, "Deleted"); }

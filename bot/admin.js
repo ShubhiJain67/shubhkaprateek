@@ -10,7 +10,7 @@
 // Public: POST /enquiry — the media kit's enquiry form (shubhkaprateek.com/portfolio) saves into the database here.
 
 const STATUSES = ["new", "replied", "hold", "confirmed", "product", "live", "declined"];
-const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "product_value", "shoot_by", "post_by", "contact", "notes"];
+const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "notes"];
 const now = () => new Date().toISOString();
 const clip = (v, n = 2000) => String(v ?? "").slice(0, n);
 const slugOf = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
@@ -24,6 +24,8 @@ async function tables(env) {
       shoot_by TEXT, post_by TEXT, contact TEXT, notes TEXT, product_ids TEXT, reel_code TEXT)`),
     env.STATS.prepare("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, enquiry_id INTEGER, at TEXT, text TEXT)")
   ]);
+  // columns added later — tables made before them get them here (fails harmlessly once they exist)
+  for (const col of ["payment_due TEXT"]) { try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
   ready = true;
 }
 const logEvent = (env, id, text) => env.STATS.prepare("INSERT INTO events (enquiry_id, at, text) VALUES (?, ?, ?)").bind(id, now(), clip(text, 300)).run();
@@ -35,6 +37,16 @@ function cors(env, extra = {}) {
 }
 const json = (env, body, status = 200) => new Response(JSON.stringify(body), { status, headers: cors(env, { "Content-Type": "application/json" }) });
 
+// A package's price + payment type, from the media kit (data/portfolio.json): "Option 2 — …" → ₹3,000 · Paid,
+// the barter card → Barter. Used to pre-fill a new enquiry's deal — you can change them in the dashboard.
+async function packageDefaults(env, h, name) {
+  let k = {}; try { k = await h.readJson(env, "data/portfolio.json"); } catch {}
+  const p = (k.packages || []).find(x => x.name === name);
+  if (p) return { price: p.price || "", payment: "Paid" };
+  if (k.barter && k.barter.title && k.barter.title === name) return { price: "", payment: "Barter" };
+  return { price: "", payment: "" };
+}
+
 // ---------------------------------------------------------------- public: the media kit's enquiry form
 async function onEnquiry(req, env, h) {
   if (!env.STATS) return json(env, { error: "not set up" }, 503);
@@ -44,8 +56,9 @@ async function onEnquiry(req, env, h) {
   if (!brand || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json(env, { error: "Please add your brand name and email." }, 400);
   await tables(env);
   const t = now();
-  const r = await env.STATS.prepare(`INSERT INTO enquiries (created, updated, status, brand, email, package, product_link, message, product_ids)
-    VALUES (?, ?, 'new', ?, ?, ?, ?, ?, '[]')`).bind(t, t, brand, email, clip(b.package, 120), clip(b.link, 500), clip(b.message, 2000)).run();
+  const d = await packageDefaults(env, h, clip(b.package, 120));
+  const r = await env.STATS.prepare(`INSERT INTO enquiries (created, updated, status, brand, email, package, product_link, message, price, payment, product_ids)
+    VALUES (?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, '[]')`).bind(t, t, brand, email, clip(b.package, 120), clip(b.link, 500), clip(b.message, 2000), d.price, d.payment).run();
   const id = r.meta && r.meta.last_row_id;
   if (id) await logEvent(env, id, "Enquiry received");
   for (const chat of String(env.ALLOWED_CHAT_IDS || "").split(/[\s,]+/).filter(Boolean))   // a ping on your phone
@@ -95,7 +108,9 @@ async function load(env, h) {
   const enquiries = (await env.STATS.prepare("SELECT * FROM enquiries ORDER BY id DESC").all()).results || [];
   const events = (await env.STATS.prepare("SELECT * FROM events ORDER BY id DESC LIMIT 2000").all()).results || [];
   enquiries.forEach(e => { try { e.product_ids = JSON.parse(e.product_ids || "[]"); } catch { e.product_ids = []; } });
-  return { products, reels, categories, featured: (site.site || {}).featured || [], brands, enquiries, events };
+  let kit = {}; try { kit = await h.readJson(env, "data/portfolio.json"); } catch {}
+  const packages = [...(kit.packages || []).map(p => ({ name: p.name, price: p.price || "", payment: "Paid" })), ...(kit.barter && kit.barter.title ? [{ name: kit.barter.title, price: "", payment: "Barter" }] : [])];
+  return { products, reels, categories, featured: (site.site || {}).featured || [], brands, enquiries, events, packages };
 }
 
 async function run(a, env, h) {
@@ -110,8 +125,9 @@ async function run(a, env, h) {
     const p = a.patch || {};
     if (op === "enquiry.add") {
       const t = now();
-      const r = await env.STATS.prepare("INSERT INTO enquiries (created, updated, status, brand, email, package, product_ids) VALUES (?, ?, 'new', ?, ?, ?, '[]')")
-        .bind(t, t, clip(p.brand, 120) || "New brand", clip(p.email, 200), clip(p.package, 120)).run();
+      const d = await packageDefaults(env, h, clip(p.package, 120));
+      const r = await env.STATS.prepare("INSERT INTO enquiries (created, updated, status, brand, email, package, price, payment, product_ids) VALUES (?, ?, 'new', ?, ?, ?, ?, ?, '[]')")
+        .bind(t, t, clip(p.brand, 120) || "New brand", clip(p.email, 200), clip(p.package, 120), d.price, d.payment).run();
       await logEvent(env, r.meta.last_row_id, "Added by you");
       return load(env, h);
     }
