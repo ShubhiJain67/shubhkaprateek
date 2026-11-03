@@ -5,12 +5,6 @@ main = "worker.js"
 account_id = "02444c1df471cf35375ccc29d2ee0be0"
 compatibility_date = "2025-06-01"
 
-# lets worker.js import planner.html (the private planner page) as text
-[[rules]]
-type = "Text"
-globs = ["**/*.html"]
-fallthrough = true
-
 [[kv_namespaces]]
 binding = "DRAFTS"
 id = "cc3ed0c7ca624ba3a93a9ecdef1bba4a"

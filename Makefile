@@ -5,7 +5,7 @@
 #   4. pushes to GitHub (site updates in ~1 min)   5. deploys the Telegram bot
 # The steps are joined with `\` into ONE command, so the single `cd` at the top applies to all of them
 # (make runs each separate line in its own shell). `&&` stops at the first step that fails.
-.PHONY: ship deploy-bot brands
+.PHONY: ship deploy-bot
 
 ship:
 	@test -n "$(m)" || { echo "Add a message:  make ship m=\"What you changed\""; exit 1; }
@@ -25,7 +25,3 @@ ship:
 
 deploy-bot:
 	cd ~/Desktop/shubhkaprateek/bot && npx --yes wrangler@4 deploy
-
-# every brand's page link (numbers live in bot/brands.json — new brands get one on `make ship`)
-brands:
-	@cd ~/Desktop/shubhkaprateek && node -e 'const b=require("./bot/brands.json").brands;for(const k in b)console.log(b[k].name.padEnd(22)+" https://shubhkaprateek.com/brand/"+b[k].id)'

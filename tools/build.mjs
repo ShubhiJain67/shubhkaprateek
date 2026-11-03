@@ -30,7 +30,7 @@ for (const p of data.products) {
   const slug = slugOf(p.brand);
   if (!slug || B.brands[slug]) continue;
   let id; do { id = String(crypto.randomInt(10000, 100000)); } while (used.has(id));
-  used.add(id); B.brands[slug] = { name: p.brand.trim(), id }; fresh.push(B.brands[slug]);
+  used.add(id); B.brands[slug] = { name: p.brand.trim(), id, link: `https://shubhkaprateek.com/brand/${id}` }; fresh.push(B.brands[slug]);
 }
 if (fresh.length) {
   B.brands = Object.fromEntries(Object.entries(B.brands).sort());

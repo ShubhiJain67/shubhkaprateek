@@ -10,39 +10,23 @@
 // Settings in wrangler.toml [vars]: GITHUB_REPO, GITHUB_BRANCH, SITE_URL
 // Drafts waiting for your ✅ live in the KV namespace DRAFTS (auto-deleted after 7 days).
 
-import { plannerCommand, plannerButton, plannerHttp } from "./planner.js";
-import PLANNER_PAGE from "../planner.html";  // the private planner page (lives at shubhkaprateek.com/planner; see planner.js)
 import { reportHttp, hitHttp } from "./report.js";   // 🏷 brand pages (shubhkaprateek.com/brand/<number>) + the click counter
 import { DATA_FILES, dataJs } from "../tools/data.mjs"; // builds assets/js/data.js — same code `make ship` uses
 
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
 const MAX_PRODUCTS = 10;
-const HELP = `<b>Send me a reel + its products</b>, e.g.
+const HELP = `<b>Add a reel + its products in one message</b>:
 
 <code>https://www.instagram.com/reel/ABC123/
-Hulk Comforter - https://amzn.to/xxxx
-Thor mug https://amzn.to/yyyy
-Balloons (Golden) - https://amzn.to/aaa
-Balloons (Silver) - https://amzn.to/bbb</code>
+Hulk mug - https://amzn.to/xxxx
+Thor mug - https://amzn.to/yyyy | img https://…photo.jpg | cat mugs marvel</code>
 
-• One product per line: name + link (or just the link — I'll read the name from the page).
-• <code>(Golden)</code> after a name = a variation of the same product.
-• A name with no link that's already on the site (e.g. <code>Dice</code>) gets this reel added to it.
-• No reel link? The products are added on their own.
+• One product per line: name + link. The photo, category and brand are found for you.
+• Want to set them yourself? Add them on the same line after <code>|</code> — <code>img</code> (photo link), <code>cat</code> (/cats), <code>brand</code>.
+• Then send the <b>reel cover</b> as a photo with caption <code>cover</code> (optional), check the preview, tap ✅.
 
-I'll send a preview. Fix anything by replying:
-<code>title New reel title</code>
-<code>name 2 Thor mug</code>
-<code>cat 2 mugs marvel</code>   (list: /cats)
-<code>link 2 https://…</code>
-<code>img 2 https://…photo.jpg</code>
-<code>brand 2 Deciwood</code>
-<code>remove 2</code>
-Send a <b>photo</b> with caption <code>cover</code> (reel cover) or <code>2</code> (product 2's photo).
-📷 Product already on the site? Send its photo with its id or name as the caption (e.g. <code>49</code>), or <code>img 49 https://…jpg</code>.
-Then tap ✅ <b>Add to site</b>. /cancel drops the draft.
-
-📒 <b>Content planner</b> (private): <code>/idea …</code> · <code>/ideas</code> · <code>/week</code> · <code>/planner</code> — send /planner for all its commands
+Fix the preview by replying <code>name 2 …</code> · <code>cat 2 …</code> · <code>img 2 https://…</code> · <code>brand 2 …</code> · <code>link 2 …</code> · <code>remove 2</code> · <code>title …</code>
+📷 Product already on the site? Send its photo with its id as the caption (e.g. <code>49</code>), or <code>img 49 https://…jpg</code>. /cancel drops the draft.
 
 <b>Remove things from the site</b>
 <code>/delete https://www.instagram.com/reel/ABC123/</code> — the reel, plus its products that aren't in any other reel
@@ -60,9 +44,6 @@ I'll show exactly what goes before anything is removed.
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
-    env.WORKER_URL = url.origin;                                  // used for the planner link
-    const planner = await plannerHttp(req, env, url, PLANNER_PAGE);
-    if (planner) return planner;
     const hits = await hitHttp(req, env, url);                     // the website's click counter → brand pages
     if (hits) return hits;
     const report = await reportHttp(req, env, url, { readJson });
@@ -108,7 +89,6 @@ export async function handleUpdate(update, env) {
   if (cmd === "/start" || cmd === "/help") return say(env, chat, HELP);
   if (cmd === "/cancel") { await env.DRAFTS.delete(String(chat)); return say(env, chat, "🗑 Draft dropped."); }
   if (cmd === "/cats") return say(env, chat, await catsHelp(env));
-  if (await plannerCommand(cmd, text, env, chat)) return;
   if (cmd === "/delete" || cmd === "/remove") return onDelete(text.replace(/^\/\S+\s*/, "").trim(), env, chat);
   if (cmd === "/featured") return showFeatured(env, chat);
   if (cmd === "/link") {                                   // /link <reel link or code> → that reel's CTA link
@@ -160,6 +140,17 @@ export function parseMessage(text) {
   for (let line of lines) {
     line = line.replace(/https?:\/\/(?:www\.)?instagram\.com\/\S*/gi, "").trim();
     if (!line) continue;
+    // everything for a product on one line:  Name - link | img https://…jpg | cat mugs marvel | brand Deciwood
+    const extra = {};
+    line = line.split(/\s+\|\s+/).filter((part, i) => {
+      const m = i > 0 && part.match(/^(img|image|photo|cat|cats|category|brand)\s+(.+)$/i);
+      if (!m) return true;
+      const k = m[1].toLowerCase();
+      if (/^(img|image|photo)$/.test(k)) extra.image = (m[2].match(URL_RE) || [""])[0];
+      else if (k === "brand") extra.brand = m[2].trim();
+      else extra.cats = m[2].split(/[\s,]+/).filter(Boolean);
+      return false;
+    }).join(" | ");
     const links = (line.match(URL_RE) || []).map(u => u.replace(/[),.]+$/, ""));
     let name = line.replace(URL_RE, " ")
       .replace(/^\s*(?:\d+[.)]|[-•*–])\s*/, "")      // "1." "•" "-" bullets
@@ -172,7 +163,7 @@ export function parseMessage(text) {
     if (!name && pendingName) name = pendingName;
     pendingName = null;
     const v = name.match(/^(.*?)\s*\(([^()]+)\)\s*$/);   // "Balloons (Golden)" → variant
-    items.push({ name: v ? v[1].trim() : name, variant: v ? v[2].trim() : "", link: links[0] });
+    items.push({ name: v ? v[1].trim() : name, variant: v ? v[2].trim() : "", link: links[0], ...extra });
   }
   if (pendingName) items.push({ name: pendingName, link: "" });
   // group variants of the same product
@@ -181,7 +172,9 @@ export function parseMessage(text) {
     const key = it.name.toLowerCase();
     let p = key && products.find(x => x.name.toLowerCase() === key);
     if (!p) { p = { name: it.name, variants: [] }; products.push(p); }
-    p.variants.push({ name: it.variant || "", link: it.link });
+    p.variants.push({ name: it.variant || "", link: it.link, ...(it.image ? { image: it.image } : {}) });
+    if (it.cats) p.cats = it.cats;
+    if (it.brand) p.brand = it.brand;
   }
   products.forEach(p => {
     if (p.variants.length === 1 && !p.variants[0].name) p.variants[0].name = "Default";
@@ -449,8 +442,10 @@ async function onNewPost(text, env, chat) {
     const known = (p.name && byName.get(norm(p.name))) || p.variants.map(v => byLink.get((v.link || "").replace(/\/$/, ""))).find(Boolean);
     if (known) { draft.products.push({ existingId: known.id, name: known.name, category: known.category, variants: known.variants }); continue; }
     if (!p.variants.some(v => v.link)) { draft.products.push({ ...p, missing: true, category: [] }); continue; }
-    await enrichProduct(p);
-    p.category = guessCategories(p.name + " " + (p.pageTitle || ""), S.cats);
+    await enrichProduct(p);                          // keeps a photo you gave (img …); finds the rest
+    const typed = (p.cats || []).map(w => (S.cats.find(c => c.id === w.toLowerCase()) || S.cats.find(c => norm(c.name).includes(norm(w))) || {}).id).filter(Boolean);
+    p.category = typed.length ? [...new Set(typed)] : guessCategories(p.name + " " + (p.pageTitle || ""), S.cats);
+    delete p.cats;
     draft.products.push(p);
   }
   await saveDraft(env, chat, draft);
@@ -586,7 +581,6 @@ async function onPhoto(msg, env) {
 async function onButton(q, env) {
   const chat = q.message.chat.id;
   if (!allowed(env, chat)) return tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Private bot" });
-  if (await plannerButton(q, env)) return;                         // planner category / "this week" buttons
   const [action, id] = String(q.data || "").split(":");
   if (action === "delok" || action === "delno") return onDeleteButton(q, env, action, id);
   if (action === "featok" || action === "featno") return onFeatureButton(q, env, action, id);

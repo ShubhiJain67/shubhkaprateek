@@ -19,8 +19,7 @@ Every reel from @shubhkaprateek, playing on the page, with its products listed u
 ├── 404.html                "Page not found" — also opens /reel/<code> and /product/<id> links in the one page
 ├── tools/build.mjs         Builds assets/js/data.js from data/ (make ship runs it; the bot uses tools/data.mjs too)
 ├── brand.html              Brand pages: shubhkaprateek.com/brand/<number> — products, reels, live clicks
-│                           (every brand's number: bot/brands.json · `make brands` lists all links)
-├── planner.html            Private content planner: shubhkaprateek.com/planner?key=… (link: /planner in Telegram)
+│                           (every brand's number + link: bot/brands.json)
 ├── portfolio.html          Media kit for brands: shubhkaprateek.com/portfolio (data/portfolio.json)
 ├── bot/                    Telegram bot (Cloudflare Worker) — add reels from your phone, see bot/README.md
 ├── CNAME                   Custom domain (shubhkaprateek.com) — don't delete
