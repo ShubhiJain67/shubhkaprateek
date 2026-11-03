@@ -1,9 +1,14 @@
 {
   "_help": "Media kit at shubhkaprateek.com/portfolio (not linked anywhere on the site). Anything left empty (\"\" or []) is hidden on the page. brands: [{\"name\": \"Deciwood\", \"link\": \"https://…\"}]  ·  brandCollabs: [{\"brand\": \"Deciwood\", \"code\": \"<reel code>\", \"views\": \"1.2M\"}]  ·  bestReels / series codes = the part after instagram.com/reel/ (needs a cover in assets/covers)",
   "updated": "November 2026",
-  "tagline": "20M+ Reach | Couple Content | Gifting & Surprises",
+  "tagline": "24M+ Reach | Couple Content | Gifting & Surprises",
   "intro": "We're Shubhi & Prateek — a married couple posting a reel every day about our life, games, and gifting each other everything from Marvel merch to the weirdest gadgets on the internet.",
   "stats": [
+    {
+      "label": "Reach",
+      "value": "24M+",
+      "note": "in the last 7 days"
+    },
     {
       "label": "Views in last 30 Days",
       "value": "20M+",
@@ -12,7 +17,7 @@
     {
       "label": "Views in 24 hours",
       "value": "9M+",
-      "note": "on 2 ree₹ls"
+      "note": "on 2 reels"
     },
     {
       "label": "Average reach",

@@ -101,7 +101,7 @@
   catch { main.innerHTML = `<p class="empty">Couldn't load — <a href="">try again</a>.</p>`; return; }
   const c = k.contact || {}, ig = has(c.instagram) ? `https://www.instagram.com/${c.instagram}/` : "";
   const cover = code => `/assets/covers/${encodeURIComponent(code)}.jpg`;
-  const reels = (k.bestReels || []).filter(r => has(r.code));
+  const reels = (k.bestReels || []).filter(r => has(r.code));   // only used for the 3 fanned covers at the top
   const btns = `<div class="hero-btns">
       ${has(c.email) ? `<a class="btn-mk main" href="mailto:${esc(c.email)}?subject=${encodeURIComponent("Collab with ShubhKaPrateek")}">✉️ Email us</a>` : ""}
       ${ig ? `<a class="btn-mk ${has(c.email) ? "" : "main"}" href="https://ig.me/m/${esc(c.instagram)}" target="_blank" rel="noopener">💬 DM on Instagram</a>` : ""}
@@ -140,7 +140,6 @@
     ${brands.length ? section("Trusted by", "Brands we've worked with",
       `<div class="brands">${brands.map(b => has(b.link) ? `<a class="brand-chip" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<span class="brand-chip">${esc(b.name)}</span>`).join("")}</div>`) : ""}
     ${collabs.length ? section("Brand collabs", "Top performing brand collabs", carousel(collabs)) : ""}
-    ${reels.length ? section("Our work", "Top performing posts", carousel(reels)) : ""}
     ${series.length ? section("Series", "Top performing series", `<div class="two">${series.map(x => `<div class="card-mk series">
         ${(x.codes || []).length ? `<div class="series-covers">${x.codes.slice(0, 3).map(code => `<a href="https://www.instagram.com/reel/${esc(code)}/" target="_blank" rel="noopener"><img loading="lazy" src="${cover(code)}" alt="" onerror="this.parentNode.remove()"></a>`).join("")}</div>` : ""}
         <h3>${esc(x.title)}</h3>${has(x.views) ? `<p class="series-views">▶ ${esc(x.views)} views</p>` : ""}<p class="muted">${esc(x.description || "")}</p></div>`).join("")}</div>`) : ""}
