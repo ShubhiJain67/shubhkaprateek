@@ -40,6 +40,7 @@
       if (!v || !v.link) return go("/product/" + id);              // unknown product / no link → its page says so
       var store = ""; try { var h = new URL(v.link).hostname; store = /amazon|amzn/.test(h) ? "amazon" : h.replace(/^www\./, "").split(".")[0]; } catch (e) {}
       setTimeout(function () { go(v.link); }, 1500);               // never keep anyone waiting if tracking is slow
+      try { if (site.reportApi) navigator.sendBeacon(site.reportApi + "/hit", JSON.stringify({ k: "go", i: "p:" + p.id, f: (q.get("from") || "").slice(0, 40) })); } catch (e) {}   // our own counter (brand pages)
       if (!site.umamiWebsiteId) return go(v.link);
       var u = document.createElement("script"); u.src = "https://cloud.umami.is/script.js";
       u.setAttribute("data-website-id", site.umamiWebsiteId); u.setAttribute("data-auto-track", "false");

@@ -19,3 +19,9 @@ id = "cc3ed0c7ca624ba3a93a9ecdef1bba4a"
 GITHUB_REPO = "ShubhiJain67/shubhkaprateek"
 GITHUB_BRANCH = "main"
 SITE_URL = "https://shubhkaprateek.com"
+
+# free click counter for the brand pages (bot/report.js → hits table)
+[[d1_databases]]
+binding = "STATS"
+database_name = "skp-stats"
+database_id = "751c2e42-6da7-4340-b1c8-df8866bcbd59"

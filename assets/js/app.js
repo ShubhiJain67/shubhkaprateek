@@ -172,12 +172,20 @@
     s.onload = () => { while (pending.length) track(...pending.shift()); };
     document.head.appendChild(s);
   }
+  // Our own free click counter (the Telegram bot's Cloudflare database) — feeds the brand pages (/brand/…).
+  // Counts buy clicks + product/reel page views per product; ?from=… is kept for the visit.
+  const hitFrom = (new URLSearchParams(location.search).get("from") || "").trim().slice(0, 40);
+  const hit = (k, i) => { try {
+    if (!site.reportApi || !/shubhkaprateek\.com$/.test(location.hostname)) return;   // local previews aren't counted
+    navigator.sendBeacon(site.reportApi + "/hit", JSON.stringify({ k, i, f: hitFrom }));
+  } catch {} };
   document.addEventListener("click", e => {
     const buy = e.target.closest("a.buy");
     if (buy) {
       const box = buy.closest("[data-key]"), p = box && pmap.get(box.dataset.key);
       const where = buy.closest(".feat-tile") ? "featured" : buy.closest(".pd-grid") ? "product page" : buy.closest(".item") ? "reel list" : buy.closest("#view-reel") ? "reel page" : "products";
       track("buy", { product: p ? p.name : "?", id: p && p.id != null ? p.id : "?", store: storeOf(buy.href), where });
+      if (p && p.id != null) hit("buy", "p:" + p.id);
       return;
     }
     if (e.target.closest("#ask-dm")) track("ask-instagram");
@@ -601,6 +609,7 @@
   function reelByCode(code) { return reels.find(r => codeOf(r) === String(code || "").toLowerCase()); }
   function openReel(code, push = true) {
     const r = reelByCode(code);
+    if (r) hit("view", "r:" + permalink(r.reel).split("/")[4]);
     const sec = $("view-reel");
     $("view-product").hidden = true; $("view-product").innerHTML = "";
     document.body.classList.add("on-reel-page");
@@ -680,6 +689,7 @@
   }
   function openProduct(id, push = true) {
     const p = productById(id), sec = $("view-product");
+    if (p) hit("view", "p:" + p.id);
     $("view-reel").hidden = true; $("view-reel").innerHTML = "";
     document.body.classList.add("on-reel-page");
     sec.hidden = false;

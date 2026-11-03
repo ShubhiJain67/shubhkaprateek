@@ -13,6 +13,43 @@
 // Setup (once): Umami → Settings → API keys → Create key, then in bot/:  npx wrangler secret put UMAMI_API_KEY
 
 const UMAMI = "https://api.umami.is/v1";
+
+// ---------------------------------------------------------------- our own free click counter
+// The website sends a tiny "hit" for every buy click, /go/ link click and product/reel page view. They're counted per
+// day in a free Cloudflare D1 database (binding STATS in wrangler.toml). Brand pages read their numbers from here.
+const IST = () => new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);      // today, India time
+let tableReady = false;
+async function statsTable(env) {
+  if (tableReady) return;
+  await env.STATS.prepare("CREATE TABLE IF NOT EXISTS hits (day TEXT, kind TEXT, item TEXT, src TEXT, n INTEGER, PRIMARY KEY (day, kind, item, src))").run();
+  tableReady = true;
+}
+export async function hitHttp(req, env, url) {
+  if (url.pathname !== "/hit") return null;
+  const cors = { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" };
+  if (req.method !== "POST" || !env.STATS) return new Response(null, { status: 204, headers: cors });
+  try {
+    const h = JSON.parse((await req.text()).slice(0, 500));
+    const kind = ["buy", "go", "view"].includes(h.k) ? h.k : "";
+    const item = /^(p:\d{1,6}|r:[A-Za-z0-9_-]{5,20})$/.test(h.i || "") ? h.i : "";
+    const src = String(h.f || "").toLowerCase().replace(/[^a-z0-9 _.-]/g, "").trim().slice(0, 40) || "direct";
+    if (kind && item) {
+      await statsTable(env);
+      await env.STATS.prepare("INSERT INTO hits (day, kind, item, src, n) VALUES (?, ?, ?, ?, 1) ON CONFLICT (day, kind, item, src) DO UPDATE SET n = n + 1")
+        .bind(IST(), kind, item, src).run();
+    }
+  } catch (e) { console.error(e); }
+  return new Response(null, { status: 204, headers: cors });
+}
+async function statsFor(env, items, days) {
+  await statsTable(env);
+  const since = new Date(Date.now() + 5.5 * 3600e3 - (days - 1) * 864e5).toISOString().slice(0, 10);
+  const marks = items.map(() => "?").join(",");
+  const rows = items.length ? (await env.STATS.prepare(`SELECT kind, item, src, SUM(n) AS n FROM hits WHERE day >= ? AND item IN (${marks}) GROUP BY kind, item, src`)
+    .bind(since, ...items).all()).results || [] : [];
+  const first = (await env.STATS.prepare("SELECT MIN(day) AS d FROM hits").first()) || {};
+  return { rows, since: first.d || "" };
+}
 export const slugOf = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 const flat = s => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const REEL_CODE = /instagram\.com\/(?:[\w.]+\/)?(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/;
@@ -73,6 +110,19 @@ export async function buildReport(env, { readJson }, slug, days) {
     }),
     reels: myReels.map(({ products, ...r }) => ({ ...r, views: 0 })), note: ""
   };
+  if (env.STATS) {                                               // our own counter (free) — used whenever it's set up
+    const { rows, since } = await statsFor(env, [...out.products.map(p => "p:" + p.id), ...out.reels.map(r => "r:" + r.code)], days);
+    const byItem = it => out.products.find(p => "p:" + p.id === it);
+    for (const r of rows) {
+      const n = +r.n || 0, p = byItem(r.item);
+      if (p && r.kind === "buy") p.buy += n;
+      else if (p && r.kind === "go") { p.go += n; p.from[r.src] = (p.from[r.src] || 0) + n; }
+      else if (p && r.kind === "view") p.views += n;
+      else if (r.kind === "view") { const rl = out.reels.find(x => "r:" + x.code === r.item); if (rl) rl.views += n; }
+    }
+    if (since) out.since = since;
+    return out;
+  }
   const wid = ((site || {}).site || {}).umamiWebsiteId;
   if (!env.UMAMI_API_KEY || !wid) { out.note = "Live numbers aren't connected yet."; return out; }
   const endAt = Date.now(), startAt = endAt - days * 864e5, range = { startAt, endAt };
@@ -111,7 +161,7 @@ export async function reportHttp(req, env, url, helpers) {
   if (hit) return new Response(hit, { headers: cors });
   try {
     const body = JSON.stringify({ ...(await buildReport(env, helpers, slug, days)), updated: new Date().toISOString() });
-    await env.DRAFTS.put(cacheKey, body, { expirationTtl: 600 });           // numbers refresh every 10 minutes
+    await env.DRAFTS.put(cacheKey, body, { expirationTtl: 300 });           // numbers refresh every 5 minutes
     return new Response(body, { headers: cors });
   } catch (e) {
     console.error(e);
@@ -150,7 +200,7 @@ export async function reportCommand(cmd, text, env, chat, { say, esc, readJson, 
   const mine = productsForBrand(slug, products);
   if (!mine.length) return (await say(env, chat, `No products have the brand “${esc(name)}” yet. Set them: <code>/brand ${esc(name)} 49 50</code> (product ids — /brands lists the ones without a brand)`), true);
   await ensureReportApi(env);                                 // tells the website where to fetch the numbers (first time only)
-  const notes = env.UMAMI_API_KEY ? "" : "\n\n⚠️ Live numbers aren't connected yet: Umami → Settings → API keys → Create key, then in bot/ run <code>npx wrangler secret put UMAMI_API_KEY</code>";
+  const notes = env.STATS || env.UMAMI_API_KEY ? "" : "\n\n⚠️ Live numbers aren't connected yet — the free click counter (STATS database) isn't set up.";
   return (await say(env, chat, `🏷 <b>${esc(brandName(slug, products))}</b> — ${mine.length} product${mine.length > 1 ? "s" : ""}:\n` +
     mine.map(p => `• <code>${p.id}</code> ${esc(p.name)}`).join("\n") +
     `\n\nTheir page (send them this):\n${esc(await brandLink(env, slug))}${notes}`), true);

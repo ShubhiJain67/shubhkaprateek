@@ -104,7 +104,7 @@
       ${R.length ? `<h2>Reels featuring ${esc(d.brand)}</h2><div class="reels">${R.map(r => `<a class="reel" href="https://www.instagram.com/reel/${esc(r.code)}/" target="_blank" rel="noopener">
           <img loading="lazy" src="/assets/covers/${encodeURIComponent(r.code)}.jpg" alt="" onerror="this.remove()"><span>${esc(r.title)}</span></a>`).join("")}</div>` : ""}
       ${d.note ? `<p class="note">ℹ️ ${esc(d.note)}</p>` : ""}
-      <p class="foot">Updated ${esc(new Date(d.updated || Date.now()).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }))} · refreshes every 10 minutes<br>
+      <p class="foot">${d.since ? `Counting since ${esc(new Date(d.since + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }))} · ` : ""}Updated ${esc(new Date(d.updated || Date.now()).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }))} · refreshes every 5 minutes<br>
         Reel views and likes are on Instagram; these are the visits and clicks on our website.</p>`;
   }
   main.addEventListener("click", e => { const b = e.target.closest("[data-days]"); if (b) { days = +b.dataset.days; main.querySelectorAll("[data-days]").forEach(x => x.setAttribute("aria-pressed", x === b)); load(); } });

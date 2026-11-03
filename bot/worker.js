@@ -12,7 +12,7 @@
 
 import { plannerCommand, plannerButton, plannerHttp } from "./planner.js";
 import PLANNER_PAGE from "./planner.html";   // the private planner page (see planner.js)
-import { reportHttp, reportCommand, brandLink, slugOf } from "./report.js";   // 🏷 brand pages: shubhkaprateek.com/brand/<brand>
+import { reportHttp, reportCommand, brandLink, slugOf, hitHttp } from "./report.js";   // 🏷 brand pages: shubhkaprateek.com/brand/<brand>
 import { DATA_FILES, dataJs } from "../tools/data.mjs"; // builds assets/js/data.js — same code `make ship` uses
 
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
@@ -64,6 +64,8 @@ export default {
     env.WORKER_URL = url.origin;                                  // used for the planner link
     const planner = await plannerHttp(req, env, url, PLANNER_PAGE);
     if (planner) return planner;
+    const hits = await hitHttp(req, env, url);                     // the website's click counter → brand pages
+    if (hits) return hits;
     const report = await reportHttp(req, env, url, { readJson });
     if (report) return report;
     if (req.method !== "POST" || url.pathname !== "/telegram") return new Response("ShubhKaPrateek bot is running.");
