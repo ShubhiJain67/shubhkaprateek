@@ -1,5 +1,5 @@
 # Sends you a Telegram message ("🚀 Live on shubhkaprateek.com") every time GitHub Pages finishes publishing the
-# site — after `make ship` and after the Telegram bot adds something.
+# site — after `make ship` and after you save something in the dashboard.
 # Needs the NOTIFY_KEY secret (GitHub → Settings → Secrets and variables → Actions) — the same password as the
 # bot's Cloudflare secret:  cd bot && npx wrangler secret put NOTIFY_KEY
 name: Tell me when the site is live

@@ -10,7 +10,7 @@
 // Public: POST /enquiry — the media kit's enquiry form (shubhkaprateek.com/mediakit and /collab) saves into the database here.
 
 const STATUSES = ["new", "hold", "confirmed", "product", "live", "delivered", "declined"];   // delivered = everything done, deal closed
-const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels"];
+const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels", "show_kit", "kit_views"];
 const now = () => new Date().toISOString();
 const clip = (v, n = 2000) => String(v ?? "").slice(0, n);
 const LONG = { script: 20000, non_negotiables: 5000, contacts: 5000, deliverables: 5000, trial_reels: 10000 };   // fields allowed to be longer than 2,000 characters
@@ -26,7 +26,7 @@ async function tables(env) {
     env.STATS.prepare("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, enquiry_id INTEGER, at TEXT, text TEXT)")
   ]);
   // columns added later — tables made before them get them here (fails harmlessly once they exist)
-  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT"]) { try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
+  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT", "show_kit TEXT", "kit_views TEXT"]) { try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
   // there's no "replied" status any more: those go back to New, and their "Status → replied" log lines are dropped
   try { await env.STATS.batch([env.STATS.prepare("UPDATE enquiries SET status = 'new' WHERE status = 'replied'"), env.STATS.prepare("DELETE FROM events WHERE text = 'Status → replied'")]); } catch {}
   ready = true;
@@ -65,8 +65,7 @@ async function onEnquiry(req, env, h) {
     VALUES (?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, '[]', 'brand', ?)`).bind(t, t, brand, email, clip(b.package, 120), clip(b.link, 500), clip(b.message, 2000), d.price, d.payment, via).run();
   const id = r.meta && r.meta.last_row_id;
   if (id) await logEvent(env, id, "Enquiry received");
-  for (const chat of String(env.ALLOWED_CHAT_IDS || "").split(/[\s,]+/).filter(Boolean))   // a ping on your phone
-    await h.say(env, chat, `📩 <b>New enquiry</b> — ${h.esc(brand)}\n${h.esc(clip(b.package, 120))}\nOpen the dashboard: ${h.esc((env.SITE_URL || "https://shubhkaprateek.com") + "/admin")}`).catch(() => {});
+  await h.notify(env, `📩 <b>New enquiry</b> — ${h.esc(brand)}${b.package ? "\n" + h.esc(clip(b.package, 120)) : ""}\nOpen the dashboard: ${h.esc((env.SITE_URL || "https://shubhkaprateek.com") + "/admin")}`).catch(() => {});   // a ping on your phone
   return json(env, { ok: true });
 }
 
@@ -114,7 +113,40 @@ async function load(env, h) {
   enquiries.forEach(e => { try { e.product_ids = JSON.parse(e.product_ids || "[]"); } catch { e.product_ids = []; } });
   let kit = {}; try { kit = await h.readJson(env, "data/portfolio.json"); } catch {}
   const packages = [...[...(kit.packages || []), ...(kit.privatePackages || []).map(p => ({ ...p, private: true }))].map(p => ({ name: p.name, price: p.price || "", payment: "Paid", items: p.items || [], private: !!p.private })), ...(kit.barter && kit.barter.title ? [{ name: kit.barter.title, price: "", payment: "Barter" }] : [])];
+  await syncKit(env, h, kit, reels, enquiries);
   return { products, reels, categories, featured: (site.site || {}).featured || [], brands, enquiries, events, packages };
+}
+
+// ---------------------------------------------------------------- the media kit's brand lists, from your deals
+// data/portfolio.json → brandCollabs (the reels carousel) + brands ("Brands we've worked with") are rebuilt from the
+// dashboard: every Live or Delivered deal with a reel on the website, unless you untick "Show on media kit".
+// Runs whenever the dashboard loads or saves; it only commits when something actually changed.
+async function syncKit(env, h, kit, reels, enquiries) {
+  if (!kit || !Array.isArray(reels)) return;
+  const codeOf = r => ((r.reel || "").match(h.REEL_RE) || [])[1] || "";
+  const order = new Map(reels.map(r => [codeOf(r).toLowerCase(), { id: +r.id || 0, code: codeOf(r) }]));
+  const shown = enquiries.filter(e => ["live", "delivered"].includes(e.status) && e.show_kit !== "0");
+  const collabs = [], seen = new Set();
+  for (const e of shown) {
+    let more = []; try { more = JSON.parse(e.reels || "[]"); } catch {}
+    [e.reel_code, ...(Array.isArray(more) ? more : [])].filter(Boolean).forEach((c, i) => {
+      const r = order.get(String(c).toLowerCase()); if (!r || seen.has(r.code)) return;   // only reels that are on the website (they have a cover)
+      seen.add(r.code); collabs.push({ id: r.id, brand: String(e.brand || "").trim(), code: r.code, views: i === 0 ? String(e.kit_views || "").trim() : "" });
+    });
+  }
+  collabs.sort((a, b) => b.id - a.id);
+  const brandCollabs = collabs.map(({ brand, code, views }) => ({ brand, code, views }));
+  const ig = v => !v ? "" : /^https?:/.test(v) ? v : "https://www.instagram.com/" + String(v).replace(/^@/, "") + "/";
+  const brandsSeen = new Map();
+  for (const c of collabs) if (!brandsSeen.has(c.brand.toLowerCase())) {
+    const e = shown.find(x => String(x.brand || "").trim().toLowerCase() === c.brand.toLowerCase() && x.instagram);
+    brandsSeen.set(c.brand.toLowerCase(), { name: c.brand, link: e ? ig(e.instagram) : "" });
+  }
+  const brandsList = [...brandsSeen.values()];
+  if (JSON.stringify(kit.brandCollabs || []) === JSON.stringify(brandCollabs) && JSON.stringify(kit.brands || []) === JSON.stringify(brandsList)) return;
+  kit.brandCollabs = brandCollabs; kit.brands = brandsList;
+  try { await h.commitFiles(env, "Media kit: brand collabs updated from the dashboard", [{ path: "data/portfolio.json", text: JSON.stringify(kit, null, 2) + "\n" }]); }
+  catch (e) { console.error("media kit sync", e); }
 }
 
 async function run(a, env, h) {

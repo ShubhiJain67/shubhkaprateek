@@ -6,7 +6,7 @@
 // vs elsewhere, and product/reel page views.
 //
 // Each brand's number is fixed in bot/brands.json (not on the public site). `make ship` gives new brands a number
-// automatically and prints their link (tools/build.mjs). Nothing to do in Telegram.
+// automatically and prints their link (tools/build.mjs). Nothing to do by hand.
 
 import BRANDS from "./brands.json";
 

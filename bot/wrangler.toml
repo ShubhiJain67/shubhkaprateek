@@ -1,4 +1,4 @@
-# Cloudflare Worker settings for the Telegram bot. setup.sh fills in the KV id.
+# Cloudflare Worker settings for the bot behind the dashboard. setup.sh fills in the KV id.
 name = "shubhkaprateek-bot"
 main = "worker.js"
 # the Cloudflare account the bot lives on (jainshubhi67@gmail.com) — deploys always go here

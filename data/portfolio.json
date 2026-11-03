@@ -1,5 +1,5 @@
 {
-  "_help": "Media kit at shubhkaprateek.com/portfolio (not linked anywhere on the site). Anything left empty (\"\" or []) is hidden on the page. brands: [{\"name\": \"Deciwood\", \"link\": \"https://…\"}]  ·  brandCollabs: [{\"brand\": \"Deciwood\", \"code\": \"<reel code>\", \"views\": \"1.2M\"}]  ·  bestReels / series codes = the part after instagram.com/reel/ (needs a cover in assets/covers)",
+  "_help": "Media kit at shubhkaprateek.com/mediakit (for pitching, no prices) and /collab (with packages + prices) — not linked anywhere on the site. Anything left empty (\"\" or []) is hidden on the page. brands + brandCollabs are filled automatically from the dashboard (Live/Delivered deals with a reel; untick \"Show on media kit\" on a deal to hide it) — don't edit them here  ·  bestReels / series codes = the part after instagram.com/reel/ (needs a cover in assets/covers)",
   "updated": "November 2026",
   "tagline": "24M+ Reach | Couple Content | Gifting & Surprises",
   "intro": "We're Shubhi & Prateek — a married couple posting a reel every day about our life, games, and gifting each other everything from Marvel merch to the weirdest gadgets on the internet.",
@@ -48,7 +48,7 @@
   "brands": [],
   "brandCollabs": [
     {
-      "brand": "Flower Bubble Machine",
+      "brand": "Samvardhan Mart",
       "code": "DfJSWTLSvaV",
       "views": ""
     },
@@ -58,8 +58,8 @@
       "views": ""
     },
     {
-      "brand": "Clay IceCream Maker",
-      "code": "DfOmcXdST8W",
+      "brand": "Tipsytap",
+      "code": "De8uBTrSgB9",
       "views": ""
     },
     {
@@ -68,23 +68,38 @@
       "views": ""
     },
     {
-      "brand": "Tipsytap",
-      "code": "De8uBTrSgB9",
+      "brand": "Play Retro",
+      "code": "DemM1ceylf2",
       "views": ""
     },
     {
-      "brand": "Eazy Arts",
-      "code": "DV2XLW2EuoN",
+      "brand": "Brickadda",
+      "code": "DeccYpmSfkN",
       "views": ""
     },
     {
-      "brand": "Superhero Jigsaw Puzzle",
+      "brand": "Brickadda",
+      "code": "DeCzq_uyf92",
+      "views": ""
+    },
+    {
+      "brand": "Wonderbox",
       "code": "DdxwWwSSS8q",
       "views": ""
     },
     {
       "brand": "Brickadda",
       "code": "DdrMH5JSjEz",
+      "views": ""
+    },
+    {
+      "brand": "Storegenie",
+      "code": "DdWmp5fyKvb",
+      "views": ""
+    },
+    {
+      "brand": "Eazy Arts",
+      "code": "DV2XLW2EuoN",
       "views": ""
     }
   ],

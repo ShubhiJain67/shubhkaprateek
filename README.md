@@ -25,16 +25,16 @@ Every reel from @shubhkaprateek, playing on the page, with its products listed u
 ├── mediakit.html           Media kit for brands (data/portfolio.json): /mediakit = for pitching (no prices),
 │                           /collab = same page + packages & prices (collab.html is copied from it on make ship)
 ├── portfolio.html          Old address — redirects to /mediakit
-├── bot/                    Telegram bot (Cloudflare Worker) — add reels from your phone, see bot/README.md
+├── bot/                    The back end of the dashboard (Cloudflare Worker) — see bot/README.md
 ├── CNAME                   Custom domain (shubhkaprateek.com) — don't delete
 ├── _config.yml             GitHub Pages: keeps bot/, Makefile and README off the public website — don't delete
 └── .gitignore              Keeps local junk (.venv, .DS_Store) out of git
 ```
 
-## 📱 Easiest: the Telegram bot
+## 🗂 Easiest: the dashboard
 
-Send a reel link + products to the bot from your phone, check the preview, tap ✅ — done, laptop not needed.
-Setup and how to use it: [`bot/README.md`](bot/README.md). (The bot commits to GitHub, so `git pull` before editing here.)
+Everything — deals, products, reels, categories, featured, brand pages, money — is done at **shubhkaprateek.com/admin**,
+from your phone or laptop. It saves straight to GitHub, so `git pull` before editing files here by hand.
 
 ## Add a product — `data/products.json`
 
@@ -84,7 +84,7 @@ Each product is listed **once**, with a unique number `id` (use the highest id +
   ```
   `"theme": true` (used on Marvel) marks a collection that cuts across categories — it's still a tab, but on its own it doesn't make two products "similar".
 - `data/site.json` — title, tagline, Instagram and YouTube links (remove `youtube` to hide the button), and the contact form (`contact.formKey` = Web3Forms key; meant to be public — regenerate it on web3forms.com if ever abused).
-  `"featured": [35]` = product ids shown in the ⭐ Featured tile on the home page (easiest from Telegram: `/feature Hulk Comforter`); `"characters"` = names that get a "More in …" row on product pages.
+  `"featured": [35]` = product ids shown in the ⭐ Featured tile on the home page (easiest from the dashboard: ⭐ on the Products page); `"characters"` = names that get a "More in …" row on product pages.
 
 **Watch the commas:** every `}` in a list needs a `,` after it except the last one. If the page says "Couldn't load data/<file>.json", paste that file into https://jsonlint.com. If a reel lists a product id that isn't in `products.json`, the site skips it and logs a warning in the browser console.
 

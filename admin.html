@@ -429,6 +429,9 @@
           <label>Draft submitted<input name="draft_on" type="date" value="${esc(e.draft_on)}"></label>
           <label>Reel went live<input name="live_on" type="date" value="${esc(e.live_on)}"></label>
           <label>Collab added on Instagram<input name="collab_on" type="date" value="${esc(e.collab_on)}"></label>
+          <b class="small" style="grid-column:1/-1;margin-top:4px">Media kit</b>
+          <label style="display:flex;gap:8px;align-items:center"><input type="hidden" name="show_kit" value="0"><input type="checkbox" name="show_kit" value="1" style="width:auto" ${e.show_kit === "0" ? "" : "checked"}> Show this reel on the media kit <span class="muted small" style="font-weight:500">(once it's Live)</span></label>
+          <label>Views to show <span class="muted small" style="font-weight:500">(optional)</span><input name="kit_views" value="${esc(e.kit_views)}" placeholder="e.g. 1.2M"></label>
           <label>Payment received<input name="paid_on" type="date" value="${esc(e.paid_on)}"></label>
           <div data-paidbox style="grid-column:1/-1;display:${e.paid_on || e.txn_id || e.payment_notes ? "grid" : "none"};gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px">
             <b class="small" style="grid-column:1/-1">💸 Payment details</b>
@@ -450,6 +453,7 @@
       ["Payment deadline", dateY(e.payment_due)], ["Shoot by", dateY(e.shoot_by)], ["Post by", dateY(e.post_by)],
       ["Product dispatched", dateY(e.dispatched_on)], ["Product received", dateY(e.received_on)], ["Draft submitted", dateY(e.draft_on)],
       ["Reel went live", dateY(e.live_on)], ["Collab added", dateY(e.collab_on)], ["Payment received", dateY(e.paid_on)],
+      ["Media kit", reelsOfDeal(e).length ? (e.show_kit === "0" ? "Hidden" : ["live", "delivered"].includes(e.status) ? `Shown${e.kit_views ? " · ▶ " + esc(e.kit_views) + " views" : ""}` : "Shows once it's Live") : ""],
       ["Transaction ID", esc(e.txn_id)], ["Payment details", esc(e.payment_notes)],
       ["Contacts", cs.map(c => `<span class="ct">${esc([c.name, c.role].filter(Boolean).join(" · "))}${c.phone ? ` · <a href="tel:${esc(c.phone.replace(/\s/g, ""))}">${esc(c.phone)}</a>` : ""}</span>`).join("")],
       ["Product link", link(pl)], ["Their message", esc(e.message)], ["Your notes", esc(e.notes)],

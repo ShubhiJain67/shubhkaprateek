@@ -1,46 +1,23 @@
-// ShubhKaPrateek shop bot — a Telegram bot that adds reels + products to the website.
+// ShubhKaPrateek bot — the Cloudflare Worker behind the dashboard (shubhkaprateek.com/admin).
 //
-// You send:   a reel link + product names and links (from your phone)
-// Bot does:   finds photos, names, store, categories, reel cover → sends you a preview
-// You tap:    ✅ Add to site → it saves to GitHub (data/products.json, data/reels.json, assets/covers/)
-//             → GitHub Pages updates shubhkaprateek.com in ~1 minute.
+// It does the work the dashboard asks for: reads product pages (photo, name, store, categories), reads reel
+// covers + titles, and saves changes to GitHub (data/*.json, assets/covers/, assets/products/) → GitHub Pages
+// updates shubhkaprateek.com in ~1 minute. It also runs the brand pages (/brand/api), the click counter (/hit)
+// and the media kit's enquiry form (/enquiry).
 //
-// Runs on Cloudflare Workers (free). Secrets (set by setup.sh, never in this file):
-//   TELEGRAM_TOKEN, GITHUB_TOKEN, WEBHOOK_SECRET, ALLOWED_CHAT_IDS
+// It also sends you Telegram notifications (nothing else is done in Telegram): "🚀 Live on shubhkaprateek.com" after
+// every deploy, and "📩 New enquiry" when a brand sends the media kit form.
+//
+// Runs on Cloudflare Workers (free). Secrets (never in this file): GITHUB_TOKEN, ADMIN_PASSCODE,
+//   TELEGRAM_TOKEN + ALLOWED_CHAT_IDS (where notifications go), NOTIFY_KEY (lets GitHub ask for the "live" message)
 // Settings in wrangler.toml [vars]: GITHUB_REPO, GITHUB_BRANCH, SITE_URL
-// Drafts waiting for your ✅ live in the KV namespace DRAFTS (auto-deleted after 7 days).
+// KV namespace DRAFTS = a short cache for the brand pages; D1 database STATS = clicks, enquiries, deals.
 
 import { reportHttp, hitHttp } from "./report.js";
-import { adminHttp } from "./admin.js";   // 🗂 the dashboard (shubhkaprateek.com/admin) + the media kit's enquiry form   // 🏷 brand pages (shubhkaprateek.com/brand/<number>) + the click counter
+import { adminHttp } from "./admin.js";   // 🗂 the dashboard (shubhkaprateek.com/admin) + the media kit's enquiry form
 import { DATA_FILES, dataJs } from "../tools/data.mjs"; // builds assets/js/data.js — same code `make ship` uses
 
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
-const MAX_PRODUCTS = 10;
-const HELP = `<b>Add a reel + its products in one message</b>:
-
-<code>https://www.instagram.com/reel/ABC123/
-Hulk mug - https://amzn.to/xxxx
-Thor mug - https://amzn.to/yyyy | img https://…photo.jpg | cat mugs marvel</code>
-
-• One product per line: name + link. The photo, category and brand are found for you.
-• Want to set them yourself? Add them on the same line after <code>|</code> — <code>img</code> (photo link), <code>cat</code> (/cats), <code>brand</code>.
-• Then send the <b>reel cover</b> as a photo with caption <code>cover</code> (optional), check the preview, tap ✅.
-
-Fix the preview by replying <code>name 2 …</code> · <code>cat 2 …</code> · <code>img 2 https://…</code> · <code>brand 2 …</code> · <code>link 2 …</code> · <code>remove 2</code> · <code>title …</code>
-📷 Product already on the site? Send its photo with its id as the caption (e.g. <code>49</code>), or <code>img 49 https://…jpg</code>. /cancel drops the draft.
-
-<b>Remove things from the site</b>
-<code>/delete https://www.instagram.com/reel/ABC123/</code> — the reel, plus its products that aren't in any other reel
-<code>/delete Green Saree</code> (or its id, e.g. <code>/delete 48</code>) — the product; a reel left with no products goes too
-<code>/delete 12 14 15</code> or <code>/delete Queaky, Dice, Markers</code> — several products at once
-I'll show exactly what goes before anything is removed.
-
-<b>⭐ Featured tile on the home page</b>
-<code>/feature Hulk Comforter</code> (or its id) — add it to the featured tile (up to 2)
-<code>/unfeature Hulk Comforter</code> — take it off · <code>/unfeature all</code> — clear it
-<code>/featured</code> — what's featured now
-
-🔗 <code>/link https://www.instagram.com/reel/ABC123/</code> — a tracking link for the reel's CTA (any name works too: <code>?from=queaky</code>)`;
 
 export default {
   async fetch(req, env) {
@@ -50,26 +27,25 @@ export default {
     const report = await reportHttp(req, env, url, { readJson });
     if (report) return report;
     const admin = await adminHttp(req, env, url, { readJson, commitFiles, pretty, gh, enrichProduct, enrichReel, guessCategories, flattenCats,
-      guessBrand, REEL_RE, fetchBytes, planDelete, applyDelete, say, esc, slug });
+      guessBrand, REEL_RE, fetchBytes, planDelete, applyDelete, esc, slug, notify });
     if (admin) return admin;
     if (url.pathname === "/deployed") return onDeployed(req, env);    // GitHub → "the site is live" message
-    if (req.method !== "POST" || url.pathname !== "/telegram") return new Response("ShubhKaPrateek bot is running.");
-    if (req.headers.get("X-Telegram-Bot-Api-Secret-Token") !== env.WEBHOOK_SECRET) return new Response("nope", { status: 401 });
-    let update;
-    try { update = await req.json(); } catch { return new Response("ok"); }
-    try { await handleUpdate(update, env); }
-    catch (err) {
-      console.error(err);
-      const chat = update.message?.chat?.id ?? update.callback_query?.message?.chat?.id;
-      if (chat && allowed(env, chat)) await tg(env, "sendMessage", { chat_id: chat, text: "⚠️ " + String(err.message || err).slice(0, 300) }).catch(() => {});
-    }
-    return new Response("ok"); // always 200 so Telegram doesn't re-send the same message
+    return new Response("ShubhKaPrateek bot is running.");
   }
 };
 
-// ---------------------------------------------------------------- 🚀 "changes are live" message
-// .github/workflows/notify-live.yml calls this when GitHub Pages finishes publishing the site. The call carries the
-// NOTIFY_KEY password (saved both as a GitHub secret and a Cloudflare secret), so nobody else can trigger messages.
+
+// ---------------------------------------------------------------- 🔔 Telegram notifications (send only)
+// A message to everyone in ALLOWED_CHAT_IDS. The bot doesn't read anything you send it any more.
+async function notify(env, html) {
+  if (!env.TELEGRAM_TOKEN) return;
+  for (const chat of String(env.ALLOWED_CHAT_IDS || "").split(/[\s,]+/).filter(Boolean))
+    await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chat, text: html, parse_mode: "HTML", disable_web_page_preview: true }) }).catch(e => console.error(e));
+}
+
+// 🚀 "changes are live": .github/workflows/notify-live.yml calls this when GitHub Pages finishes publishing the site.
+// The call carries the NOTIFY_KEY password (a GitHub secret and a Cloudflare secret), so nobody else can trigger it.
 async function onDeployed(req, env) {
   if (req.method !== "POST" || !env.NOTIFY_KEY || req.headers.get("X-Notify-Key") !== env.NOTIFY_KEY) return new Response("nope", { status: 401 });
   let sha = "";
@@ -82,132 +58,13 @@ async function onDeployed(req, env) {
     if (!/^(Build latest data|Merge branch)/.test(what)) break;
     sha = (c.parents && c.parents[0] && c.parents[0].sha) || "";
   } catch { break; }
-  const text = `🚀 <b>Live on shubhkaprateek.com</b>${what ? "\n" + esc(what) : ""}`;
-  for (const chat of String(env.ALLOWED_CHAT_IDS || "").split(/[\s,]+/).filter(Boolean))
-    await say(env, chat, text).catch(e => console.error(e));
+  await notify(env, `🚀 <b>Live on shubhkaprateek.com</b>${what ? "\n" + esc(what) : ""}`);
   return new Response("sent");
 }
 
-// ---------------------------------------------------------------- Telegram
-const allowed = (env, chatId) => String(env.ALLOWED_CHAT_IDS || "").split(/[\s,]+/).filter(Boolean).includes(String(chatId));
-
-async function tg(env, method, body) {
-  const r = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/${method}`, {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!j.ok) throw new Error(`Telegram ${method}: ${j.description || r.status}`);
-  return j.result;
-}
-const say = (env, chat, html, extra = {}) => tg(env, "sendMessage", { chat_id: chat, text: html, parse_mode: "HTML", disable_web_page_preview: true, ...extra });
-
-export async function handleUpdate(update, env) {
-  if (update.callback_query) return onButton(update.callback_query, env);
-  const msg = update.message;
-  if (!msg) return;
-  const chat = msg.chat.id;
-  if (!allowed(env, chat)) return say(env, chat, `This bot is private 🙂\nYour chat id: <code>${chat}</code>`);
-
-  const text = (msg.text || msg.caption || "").trim();
-  const cmd = text.split(/\s+/)[0].toLowerCase().replace(/@.*$/, "");
-
-  if (msg.photo || /^image\//.test(msg.document?.mime_type || "")) return onPhoto(msg, env);
-  if (cmd === "/start" || cmd === "/help") return say(env, chat, HELP);
-  if (cmd === "/cancel") { await env.DRAFTS.delete(String(chat)); return say(env, chat, "🗑 Draft dropped."); }
-  if (cmd === "/cats") return say(env, chat, await catsHelp(env));
-  if (cmd === "/delete" || cmd === "/remove") return onDelete(text.replace(/^\/\S+\s*/, "").trim(), env, chat);
-  if (cmd === "/featured") return showFeatured(env, chat);
-  if (cmd === "/link") {                                   // /link <reel link or code> → that reel's CTA link
-    const arg = text.replace(/^\/\S+\s*/, "").trim();
-    const code = (arg.match(REEL_RE) || [])[1] || (/^[\w-]{5,}$/.test(arg) ? arg : "");
-    return say(env, chat, code ? `🔗 Tracking link for this reel — opens the home page and counts visits under its code:\n${esc(ctaLink(env, code))}\n\nYou can also use any name you like: <code>shubhkaprateek.com/?from=queaky</code>`
-      : "Send it like: <code>/link https://www.instagram.com/reel/ABC123/</code>");
-  }
-  if (cmd === "/feature" || cmd === "/unfeature") return onFeature(cmd === "/feature" ? "add" : "remove", text.replace(/^\/\S+\s*/, "").trim(), env, chat);
-  // any other /command is never treated as a product name
-  if (cmd.startsWith("/")) return say(env, chat, `I don't know <code>${esc(cmd)}</code> — see /help.`);
-  if (cmd === "/preview") { const d = await loadDraft(env, chat); return d ? sendPreview(env, chat, d) : say(env, chat, "No draft right now — send me a reel link + products."); }
-
-  const draft = await loadDraft(env, chat);
-  const hasLink = /https?:\/\//i.test(text);
-  // photo link for a product that's already on the site: img 49 https://…jpg  (or img Flower Bubble Machine https://…)
-  // "1 img https://…" (number first) = the preview's numbering: fix the draft, or — with no draft — don't guess which product
-  const flipped = text.match(/^(\d+)\s+(?:img|image|photo)\s+(https?:\/\/\S+)\s*$/i);
-  if (flipped && draft) return onEdit(draft, `img ${flipped[1]} ${flipped[2]}`, env, chat);
-  if (flipped) {
-    const recent = (await readJson(env, "data/products.json")).slice(-3).reverse();
-    return say(env, chat, "There's no preview open, so I won't guess which product that is. Use the product's <b>id</b>:\n" +
-      recent.map(p => `• <code>img ${p.id} ${esc(flipped[2])}</code> — ${esc(p.name)}`).join("\n"));
-  }
-  const imgCmd = text.match(/^(?:img|image|photo)\s+(.+?)\s+(https?:\/\/\S+)\s*$/i);
-  if (imgCmd && !(draft && /^\d+$/.test(imgCmd[1]) && draft.products[+imgCmd[1] - 1]?.existingId == null && draft.products[+imgCmd[1] - 1]))
-    return setSitePhoto(env, chat, imgCmd[1], { link: imgCmd[2] });
-  if (draft && /^(title|name|cat|cats|category|brand|link|img|image|photo|remove|delete)\b/i.test(text) && !/instagram\.com\//i.test(text)) return onEdit(draft, text, env, chat);
-  if (!hasLink) return say(env, chat, draft
-    ? "I didn't get that 🤔 Reply with a fix like <code>cat 2 mugs</code> or <code>title …</code>, tap ✅ on the preview, or /help."
-    : HELP);
-  // only photo links (no reel, no shop link)? That's a photo, not a new product — don't add it as one
-  const urls = text.match(URL_RE) || [];
-  if (urls.length && !/instagram\.com\//i.test(text) && urls.every(u => /\.(jpe?g|png|webp|gif)(\?|$)|media-amazon\.com\/images\/|\/cdn\/shop\/files\//i.test(u)))
-    return say(env, chat, "📷 That looks like a <b>photo</b> link, not a product. To set a product's photo send <code>img 51 " + esc(urls[0]) + "</code> (51 = the product's id), or send the photo itself with the id as the caption.");
-  if (draft) await say(env, chat, "🆕 Starting a new draft (the previous one is replaced).");
-  return onNewPost(text, env, chat);
-}
-
-// ---------------------------------------------------------------- parsing what you send
+// ---------------------------------------------------------------- links
 const REEL_RE = /https?:\/\/(?:www\.)?instagram\.com\/(?:[\w.]+\/)?(?:reel|reels|p|tv)\/([A-Za-z0-9_-]{5,})/i;
 const URL_RE = /https?:\/\/[^\s<>"']+/gi;
-
-export function parseMessage(text) {
-  const reel = text.match(REEL_RE);
-  const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
-  const items = [];
-  let pendingName = null;
-  for (let line of lines) {
-    line = line.replace(/https?:\/\/(?:www\.)?instagram\.com\/\S*/gi, "").trim();
-    if (!line) continue;
-    // everything for a product on one line:  Name - link | img https://…jpg | cat mugs marvel | brand Deciwood
-    const extra = {};
-    line = line.split(/\s+\|\s+/).filter((part, i) => {
-      const m = i > 0 && part.match(/^(img|image|photo|cat|cats|category|brand)\s+(.+)$/i);
-      if (!m) return true;
-      const k = m[1].toLowerCase();
-      if (/^(img|image|photo)$/.test(k)) extra.image = (m[2].match(URL_RE) || [""])[0];
-      else if (k === "brand") extra.brand = m[2].trim();
-      else extra.cats = m[2].split(/[\s,]+/).filter(Boolean);
-      return false;
-    }).join(" | ");
-    const links = (line.match(URL_RE) || []).map(u => u.replace(/[),.]+$/, ""));
-    let name = line.replace(URL_RE, " ")
-      .replace(/^\s*(?:\d+[.)]|[-•*–])\s*/, "")      // "1." "•" "-" bullets
-      .replace(/\s*[-–—:|]+\s*$/, "").replace(/^\s*[-–—:|]+\s*/, "")
-      .replace(/\s+/g, " ").trim();
-    if (!links.length) {                              // a name on its own line (link may follow on the next line)
-      if (pendingName) items.push({ name: pendingName, link: "" });
-      pendingName = name || null; continue;
-    }
-    if (!name && pendingName) name = pendingName;
-    pendingName = null;
-    const v = name.match(/^(.*?)\s*\(([^()]+)\)\s*$/);   // "Balloons (Golden)" → variant
-    items.push({ name: v ? v[1].trim() : name, variant: v ? v[2].trim() : "", link: links[0], ...extra });
-  }
-  if (pendingName) items.push({ name: pendingName, link: "" });
-  // group variants of the same product
-  const products = [];
-  for (const it of items) {
-    const key = it.name.toLowerCase();
-    let p = key && products.find(x => x.name.toLowerCase() === key);
-    if (!p) { p = { name: it.name, variants: [] }; products.push(p); }
-    p.variants.push({ name: it.variant || "", link: it.link, ...(it.image ? { image: it.image } : {}) });
-    if (it.cats) p.cats = it.cats;
-    if (it.brand) p.brand = it.brand;
-  }
-  products.forEach(p => {
-    if (p.variants.length === 1 && !p.variants[0].name) p.variants[0].name = "Default";
-    p.variants.forEach((v, i) => { if (!v.name) v.name = "Option " + (i + 1); });
-  });
-  return { reel: reel ? reel[1] : null, products };
-}
 
 // ---------------------------------------------------------------- reading product pages
 const decode = s => String(s || "")
@@ -375,11 +232,6 @@ export function guessCategories(text, cats) {
   for (const c of cats) if (c.theme && (c.keywords || []).some(k => n.includes(norm(k)))) out.push(c.id);
   return out;
 }
-
-// Reel CTA tracking link: opens the home page and tells analytics which reel the visitor came from
-const siteUrl = env => env.SITE_URL || "https://shubhkaprateek.com";
-const ctaLink = (env, code) => `${siteUrl(env)}/?from=${code}`;
-
 // ---------------------------------------------------------------- GitHub
 async function gh(env, path, opts = {}) {
   const r = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}${path}`, {
@@ -434,291 +286,18 @@ async function commitFiles(env, message, files) {
   return c.sha;
 }
 
-// ---------------------------------------------------------------- drafts
-const loadDraft = async (env, chat) => { const s = await env.DRAFTS.get(String(chat)); return s ? JSON.parse(s) : null; };
-const saveDraft = (env, chat, d) => env.DRAFTS.put(String(chat), JSON.stringify(d), { expirationTtl: 7 * 24 * 3600 });
-
-async function loadSite(env) {
-  const [products, reels, categories, site] = await Promise.all(["products", "reels", "categories", "site"].map(f => readJson(env, `data/${f}.json`)));
-  return { products, reels, categories, cats: flattenCats(categories), site };
-}
-
-async function onNewPost(text, env, chat) {
-  const parsed = parseMessage(text);
-  if (!parsed.reel && !parsed.products.length) return say(env, chat, HELP);
-  const nLinks = parsed.products.reduce((a, p) => a + p.variants.length, 0);
-  if (nLinks > MAX_PRODUCTS) return say(env, chat, `That's ${nLinks} links — please send at most ${MAX_PRODUCTS} at a time (split it into two messages: send the second one after tapping ✅).`);
-  await tg(env, "sendChatAction", { chat_id: chat, action: "typing" }).catch(() => {});
-  const S = await loadSite(env);
-
-  const existingReel = parsed.reel ? S.reels.find(r => (r.reel.match(REEL_RE) || [])[1]?.toLowerCase() === parsed.reel.toLowerCase()) : null;
-  const draft = { id: Date.now().toString(36), reel: null, products: [] };
-  if (parsed.reel) {
-    draft.reel = { code: parsed.reel, existingId: existingReel?.id ?? null, title: existingReel?.title || "", cover: "", coverFile: "" };
-    if (!existingReel) {
-      const r = await enrichReel(parsed.reel);
-      draft.reel.title = r.title || "";
-      draft.reel.cover = r.cover || "";
-    }
-  }
-
-  const byLink = new Map(), byName = new Map();
-  S.products.forEach(p => { byName.set(norm(p.name), p); (p.variants || []).forEach(v => v.link && byLink.set(v.link.replace(/\/$/, ""), p)); });
-  for (const p of parsed.products) {
-    const known = (p.name && byName.get(norm(p.name))) || p.variants.map(v => byLink.get((v.link || "").replace(/\/$/, ""))).find(Boolean);
-    if (known) { draft.products.push({ existingId: known.id, name: known.name, category: known.category, variants: known.variants }); continue; }
-    if (!p.variants.some(v => v.link)) { draft.products.push({ ...p, missing: true, category: [] }); continue; }
-    await enrichProduct(p);                          // keeps a photo you gave (img …); finds the rest
-    const typed = (p.cats || []).map(w => (S.cats.find(c => c.id === w.toLowerCase()) || S.cats.find(c => norm(c.name).includes(norm(w))) || {}).id).filter(Boolean);
-    p.category = typed.length ? [...new Set(typed)] : guessCategories(p.name + " " + (p.pageTitle || ""), S.cats);
-    delete p.cats;
-    draft.products.push(p);
-  }
-  await saveDraft(env, chat, draft);
-  return sendPreview(env, chat, draft, S);
-}
-
-// ---------------------------------------------------------------- preview
 const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-export function previewText(d, cats) {
-  // show the full path so it's clear where it lands on the site: "Clothing & Footwear › Ethnic wear"
-  const catName = id => {
-    const c = cats.find(c => c.id === id) || { name: id };
-    const parent = c.parent && cats.find(x => x.id === c.parent);
-    return parent ? `${parent.name} › ${c.name}` : c.name;
-  };
-  const lines = [];
-  const problems = [];
-  if (d.reel) {
-    const r = d.reel;
-    lines.push(`🎬 <b>Reel</b> ${r.existingId != null ? "(already on the site — products will be added to it)" : "(new)"}`);
-    lines.push(`   Title: ${r.title ? `<b>${esc(r.title)}</b>` : "❓ <i>none — reply</i> <code>title …</code>"}`);
-    if (r.existingId == null) {
-      lines.push(`   Cover: ${r.coverFile ? "✅ your photo" : r.cover ? "✅ found" : "❌ couldn't fetch — send a screenshot with caption <code>cover</code>"}`);
-      if (!r.title) problems.push("reel title");
-    }
-  } else lines.push("🛍 <b>No reel link</b> — products will be added on their own.");
-  lines.push("");
-  d.products.forEach((p, i) => {
-    const n = i + 1;
-    if (p.existingId != null) { lines.push(`${n}. <b>${esc(p.name)}</b> — already on the site ✓`); return; }
-    if (p.missing) { lines.push(`${n}. <b>${esc(p.name)}</b> — ❌ not on the site and no link. Reply <code>link ${n} https://…</code> or <code>remove ${n}</code>`); problems.push(`product ${n} link`); return; }
-    const cs = (p.category || []).map(catName);
-    lines.push(`${n}. <b>${esc(p.name)}</b> 🆕${p.needsName ? ` — ❓ couldn't read the name, reply <code>name ${n} …</code>` : ""}`);
-    if (p.needsName) problems.push(`product ${n} name`);
-    lines.push(`   ${cs.length ? esc(cs.join(" · ")) : "❓ no category — reply <code>cat " + n + " …</code> (/cats)"}`);
-    const br = p.brand ?? guessBrand(p.variants[0] && p.variants[0].link);
-    lines.push(`   🏷 ${br ? esc(br) : "no brand — reply <code>brand " + n + " Name</code> (optional)"}`);
-    p.variants.forEach(v => {
-      const photo = v.photoFile ? "📷 your photo" : v.image ? "📷 ✓" : "📷 ❌ send a photo with caption <code>" + n + "</code>";
-      lines.push(`   ${p.variants.length > 1 ? esc(v.name) + ": " : ""}${esc(storeOf(v.link) || "link")} · ${photo}`);
-    });
-    if (!cs.length) problems.push(`product ${n} category`);
-  });
-  lines.push("");
-  lines.push(problems.length ? `⚠️ Still missing: ${problems.join(", ")}. You can add anyway, or fix first.` : "Looks good? Tap ✅ — or reply a fix (/help).");
-  return lines.join("\n");
-}
-
-async function sendPreview(env, chat, d, S) {
-  S = S || { cats: flattenCats(await readJson(env, "data/categories.json")) };
-  // photos first so you can eyeball them
-  const media = [];
-  if (d.reel && d.reel.existingId == null && (d.reel.coverFile || d.reel.cover)) media.push({ type: "photo", media: d.reel.coverFile || d.reel.cover, caption: "Cover" });
-  d.products.forEach((p, i) => p.existingId == null && p.variants.forEach(v => (v.photoFile || v.image) && media.push({ type: "photo", media: v.photoFile || v.image, caption: `${i + 1}. ${p.name}${p.variants.length > 1 ? " — " + v.name : ""}` })));
-  if (media.length >= 2) await tg(env, "sendMediaGroup", { chat_id: chat, media: media.slice(0, 10) }).catch(() => {});
-  else if (media.length === 1) await tg(env, "sendPhoto", { chat_id: chat, photo: media[0].media, caption: media[0].caption }).catch(() => {});
-  return say(env, chat, previewText(d, S.cats), {
-    reply_markup: { inline_keyboard: [[{ text: "✅ Add to site", callback_data: "add:" + d.id }, { text: "❌ Cancel", callback_data: "cancel:" + d.id }]] }
-  });
-}
-
-async function catsHelp(env) {
-  const tree = await readJson(env, "data/categories.json");
-  return "<b>Categories</b> — use the id after <code>cat N</code> (you can give two, e.g. <code>cat 2 mugs marvel</code>)\n\n" + tree.map(c =>
-    `${c.emoji || ""} <b>${esc(c.name)}</b> <code>${esc(c.id)}</code>` + (c.sub || []).map(s => `\n   • ${esc(s.name)} <code>${esc(s.id)}</code>`).join("")).join("\n");
-}
-
-// ---------------------------------------------------------------- edits
-async function onEdit(d, text, env, chat) {
-  const m = text.match(/^(\w+)\s*(\d+)?\s*([\s\S]*)$/);
-  const verb = m[1].toLowerCase(), n = m[2] ? +m[2] : null, rest = (m[3] || "").trim();
-  const p = n ? d.products[n - 1] : null;
-  const needP = () => { if (!p) throw new Error(`There's no product ${n ?? ""} — numbers are from the preview.`); if (p.existingId != null && verb !== "remove" && verb !== "delete") throw new Error(`Product ${n} is already on the site — edit it in products.json instead.`); };
-  const cats = flattenCats(await readJson(env, "data/categories.json"));
-  if (verb === "title") {
-    if (!d.reel) return say(env, chat, "There's no reel in this draft.");
-    d.reel.title = text.replace(/^title\s*/i, "").trim();
-  } else if (verb === "name") {
-    needP(); p.name = rest; p.needsName = false;
-    if (!(p.category || []).length) p.category = guessCategories(p.name, cats);
-  }
-  else if (["cat", "cats", "category"].includes(verb)) {
-    needP();
-    const ids = rest.split(/[\s,]+/).filter(Boolean).map(w => {
-      const c = cats.find(c => c.id === w.toLowerCase()) || cats.find(c => norm(c.name).includes(norm(w)));
-      if (!c) throw new Error(`I don't know the category "${w}" — see /cats`);
-      return c.id;
-    });
-    p.category = [...new Set(ids)];
-  } else if (verb === "link") {
-    if (!p) throw new Error(`There's no product ${n ?? ""}.`);
-    const link = (rest.match(URL_RE) || [])[0]; if (!link) throw new Error("Send it like: link 2 https://…");
-    const fresh = { name: p.name, variants: [{ name: "Default", link }] };
-    await enrichProduct(fresh);
-    fresh.category = (p.category && p.category.length) ? p.category : guessCategories(fresh.name + " " + (fresh.pageTitle || ""), cats);
-    d.products[n - 1] = fresh;
-  } else if (verb === "brand") {
-    needP(); p.brand = rest;
-  } else if (["img", "image", "photo"].includes(verb)) {
-    needP();
-    const link = (rest.match(URL_RE) || [])[0]; if (!link) throw new Error("Send it like: img 2 https://…jpg — or just send the photo with caption 2");
-    p.variants.forEach(v => { v.image = link; v.photoFile = ""; });
-  } else if (["remove", "delete"].includes(verb)) {
-    if (!p) throw new Error(`There's no product ${n ?? ""}.`);
-    d.products.splice(n - 1, 1);
-  }
-  await saveDraft(env, chat, d);
-  return sendPreview(env, chat, d);
-}
-
-async function onPhoto(msg, env) {
-  const chat = msg.chat.id;
-  const d = await loadDraft(env, chat);
-  const fileId = msg.photo ? msg.photo[msg.photo.length - 1].file_id : msg.document.file_id;   // biggest size
-  const rawCap = (msg.caption || "").trim().replace(/^(?:img|image|photo)\s+/i, "");
-  const cap = (rawCap || "cover").toLowerCase();
-  const draftProduct = d && /^\d+$/.test(cap) ? d.products[+cap - 1] : null;
-  // not a new product in the preview → a product already on the site (caption = its id or name)
-  if (!(draftProduct && draftProduct.existingId == null) && cap !== "cover") return setSitePhoto(env, chat, rawCap, { fileId });
-  if (!d) return say(env, chat, "Send the photo with the product's id or name as the caption, e.g. <code>49</code> or <code>Flower Bubble Machine</code>.");
-  if (draftProduct) {
-    draftProduct.variants.forEach(v => { v.photoFile = fileId; });
-  } else {
-    if (!d.reel || d.reel.existingId != null) return say(env, chat, "This draft has no new reel to put a cover on. For a product photo, add its number as the caption (e.g. 2).");
-    d.reel.coverFile = fileId;
-  }
-  await saveDraft(env, chat, d);
-  return sendPreview(env, chat, d);
-}
-
-// ---------------------------------------------------------------- ✅ / ❌
-async function onButton(q, env) {
-  const chat = q.message.chat.id;
-  if (!allowed(env, chat)) return tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Private bot" });
-  const [action, id] = String(q.data || "").split(":");
-  if (action === "delok" || action === "delno") return onDeleteButton(q, env, action, id);
-  if (action === "featok" || action === "featno") return onFeatureButton(q, env, action, id);
-  const d = await loadDraft(env, chat);
-  if (!d || d.id !== id) return tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "That preview is old — use the latest one.", show_alert: true });
-  const done = label => tg(env, "editMessageReplyMarkup", { chat_id: chat, message_id: q.message.message_id, reply_markup: { inline_keyboard: [[{ text: label, callback_data: "noop:0" }]] } }).catch(() => {});
-  if (action === "cancel") {
-    await env.DRAFTS.delete(String(chat));
-    await tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Dropped" });
-    await done("❌ Cancelled");
-    return;
-  }
-  if (action !== "add") return tg(env, "answerCallbackQuery", { callback_query_id: q.id });
-  await tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Adding…" });
-  await done("⏳ Adding…");
-  try {
-    const res = await publish(d, env);
-    await env.DRAFTS.delete(String(chat));
-    await done("✅ Added");
-    return say(env, chat, res);
-  } catch (e) {
-    await done("⚠️ Failed — tap /preview to retry");
-    throw e;
-  }
-}
 
 async function fetchBytes(url) {
   const r = await fetch(url, { headers: { "User-Agent": UA } });
   if (!r.ok) throw new Error("download " + r.status);
   return bytesToB64(await r.arrayBuffer());
 }
-async function telegramFile(env, fileId) {
-  const f = await tg(env, "getFile", { file_id: fileId });
-  return fetchBytes(`https://api.telegram.org/file/bot${env.TELEGRAM_TOKEN}/${f.file_path}`);
-}
-// Change the photo of a product that's already on the site (photo with caption "49", or "img 49 https://…")
-async function setSitePhoto(env, chat, query, { fileId, link }) {
-  if (!query) return say(env, chat, "Add the product's id or name as the caption, e.g. <code>49</code>.");
-  const S = await loadSite(env);
-  const found = findProduct(query, S.products);
-  if (!found.length) return say(env, chat, `I couldn't find a product matching “${esc(query)}”. Use its id (see the site: shubhkaprateek.com/product/<b>49</b>).`);
-  if (found.length > 1) return say(env, chat, "Which one? Send it again with the id as the caption:\n" + found.slice(0, 15).map(p => `• <code>${p.id}</code> ${esc(p.name)}`).join("\n"));
-  const p = found[0], files = [];
-  let image = link;
-  if (fileId) {
-    image = `assets/products/${p.id}-${slug(p.name)}.jpg`;
-    files.push({ path: image, base64: await telegramFile(env, fileId) });
-  }
-  p.variants = (p.variants && p.variants.length ? p.variants : [{ name: "Default", link: "" }]).map(v => ({ ...v, image }));
-  files.push({ path: "data/products.json", text: pretty(S.products, "category") });
-  await commitFiles(env, `Photo for product ${p.id} ${p.name} (via Telegram bot)`, files);
-  return say(env, chat, `📷 Photo updated for <b>${esc(p.name)}</b> — live in about a minute.`);
-}
 const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "product";
-
-export async function publish(d, env) {
-  const S = await loadSite(env);                 // fresh copy, in case the files changed since the preview
-  const files = [], notes = [];
-  let nextId = Math.max(0, ...S.products.map(p => +p.id || 0)) + 1;
-  const ids = [], added = [];
-  for (const p of d.products) {
-    if (p.existingId != null) { if (S.products.some(x => x.id === p.existingId)) ids.push(p.existingId); continue; }
-    if (p.missing) { notes.push(`skipped “${p.name}” (no link)`); continue; }
-    const id = nextId++;
-    const variants = [];
-    for (const v of p.variants) {
-      let image = v.image || "";
-      if (v.photoFile) {
-        const path = `assets/products/${id}-${slug(p.name)}${p.variants.length > 1 ? "-" + slug(v.name) : ""}.jpg`;
-        files.push({ path, base64: await telegramFile(env, v.photoFile) });
-        image = path;
-      }
-      variants.push({ name: v.name || "Default", link: v.link || "", image });
-    }
-    S.products.push({ id, name: p.name, brand: p.brand ?? guessBrand(variants[0] && variants[0].link), category: p.category && p.category.length ? p.category : [], variants });
-    ids.push(id); added.push(`${p.name}`);
-  }
-  let reelLine = "";
-  if (d.reel) {
-    const code = d.reel.code;
-    const existing = S.reels.find(r => (r.reel.match(REEL_RE) || [])[1]?.toLowerCase() === code.toLowerCase());
-    if (existing) {
-      ids.forEach(id => { if (!existing.products.includes(id)) existing.products.push(id); });
-    } else {
-      const reelId = Math.max(0, ...S.reels.map(r => +r.id || 0)) + 1;
-      S.reels.push({ id: reelId, reel: `https://www.instagram.com/reel/${code}/`, title: d.reel.title || "New reel", products: [...new Set(ids)] });
-      try {
-        const b64 = d.reel.coverFile ? await telegramFile(env, d.reel.coverFile) : d.reel.cover ? await fetchBytes(d.reel.cover) : null;
-        if (b64) files.push({ path: `assets/covers/${code}.jpg`, base64: b64 });
-        else notes.push("no cover — the site will show the Instagram preview instead");
-      } catch { notes.push("couldn't download the cover — the site will show the Instagram preview instead (send a screenshot next time)"); }
-    }
-    reelLine = ctaLink(env, code);
-  }
-  files.push({ path: "data/products.json", text: pretty(S.products, "category") });
-  files.push({ path: "data/reels.json", text: pretty(S.reels, "products") });
-  const what = [d.reel ? `${S.reels.length && d.reel.existingId != null ? "products to reel" : "reel"} ${d.reel.code}` : "", added.length ? `${added.length} product${added.length > 1 ? "s" : ""}` : ""].filter(Boolean).join(" + ");
-  await commitFiles(env, `Add ${what || "products"} (via Telegram bot)`, files);
-  return [
-    `✅ <b>Added!</b> Live in about a minute.`,
-    d.reel ? `🔗 Reel page: ${esc(siteUrl(env))}/reel/${esc(d.reel.code)}` : "",
-    reelLine ? `🎬 Tracking link for this reel's CTA (opens the home page, counts visits from this reel):\n${esc(reelLine)}` : "",
-    added.length ? `🆕 ${esc(added.join(", "))}` : "",
-    notes.length ? `ℹ️ ${esc(notes.join("; "))}` : "",
-    `\n💻 On your laptop, run <code>git pull</code> before editing the site files.`
-  ].filter(Boolean).join("\n");
-}
 
 // ---------------------------------------------------------------- removing a reel / product
 // Rules: removing a product takes it out of every reel, and a reel left with no products is removed too.
 // Removing a reel also removes its products — but only the ones that aren't in any other reel.
-const delKey = chat => "del:" + chat;
 
 export function findProduct(q, products) {
   const s = String(q).trim();
@@ -757,141 +336,4 @@ export function applyDelete(plan, products, reels) {
   const goneP = new Set(plan.products.map(p => p.id)), goneR = new Set(plan.reels.map(r => r.id));
   const outReels = reels.filter(r => !goneR.has(r.id)).map(r => ({ ...r, products: r.products.filter(id => !goneP.has(id)) }));
   return { products: products.filter(p => !goneP.has(p.id)), reels: outReels.filter(r => r.products.length) };
-}
-
-function describePlan(plan) {
-  const codeOf = r => ((r.reel || "").match(REEL_RE) || [])[1] || "";
-  const L = ["🗑 <b>This will remove:</b>"];
-  plan.reels.forEach(r => L.push(`🎬 Reel: <b>${esc(r.title)}</b> (${esc(codeOf(r))})`));
-  plan.products.forEach(p => L.push(`🛍 Product: <b>${esc(p.name)}</b> (id ${p.id})`));
-  if (plan.kept.length) L.push("", "Staying (they're in other reels too):", ...plan.kept.map(p => `• ${esc(p.name)}`));
-  if (plan.trimmed.length) L.push("", "Also taken out of these reels (they keep their other products):", ...plan.trimmed.map(r => `• ${esc(r.title)}`));
-  L.push("", "Sure?");
-  return L.join("\n");
-}
-
-async function onDelete(arg, env, chat) {
-  if (!arg) return say(env, chat, "Tell me what to remove:\n<code>/delete https://www.instagram.com/reel/ABC123/</code>\n<code>/delete Green Saree</code>  or  <code>/delete 48</code>");
-  const S = await loadSite(env);
-  const reelCode = (arg.match(REEL_RE) || [])[1];
-  let target;
-  if (reelCode) target = { reel: reelCode };
-  else {
-    // several at once: "/delete 12 14 15", or names separated by commas / new lines
-    const items = /^[\d\s,]+$/.test(arg) ? arg.split(/[\s,]+/).filter(Boolean) : arg.split(/\s*[,\n]\s*/).filter(Boolean);
-    const picked = [], problems = [];
-    for (const it of items) {
-      const found = findProduct(it, S.products);
-      if (!found.length) problems.push(`• “${esc(it)}” — not found`);
-      else if (found.length > 1) problems.push(`• “${esc(it)}” matches several — use the id:\n` + found.slice(0, 10).map(p => `   <code>${p.id}</code> ${esc(p.name)}`).join("\n"));
-      else if (!picked.includes(found[0])) picked.push(found[0]);
-    }
-    if (problems.length) return say(env, chat, "I need you to fix these first, then send it again:\n" + problems.join("\n"));
-    target = { products: picked };
-  }
-  const plan = planDelete(target, S.products, S.reels);
-  if (!plan) return say(env, chat, "That reel isn't on the site.");
-  const id = Date.now().toString(36);
-  await env.DRAFTS.put(delKey(chat), JSON.stringify({ id, target: target.reel ? { reel: target.reel } : { productIds: target.products.map(p => p.id) } }), { expirationTtl: 24 * 3600 });
-  return say(env, chat, describePlan(plan), { reply_markup: { inline_keyboard: [[{ text: "🗑 Yes, remove", callback_data: "delok:" + id }, { text: "Keep it", callback_data: "delno:" + id }]] } });
-}
-
-async function onDeleteButton(q, env, action, id) {
-  const chat = q.message.chat.id;
-  const raw = await env.DRAFTS.get(delKey(chat));
-  const pending = raw ? JSON.parse(raw) : null;
-  const done = label => tg(env, "editMessageReplyMarkup", { chat_id: chat, message_id: q.message.message_id, reply_markup: { inline_keyboard: [[{ text: label, callback_data: "noop:0" }]] } }).catch(() => {});
-  if (!pending || pending.id !== id) return tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "That's an old request — send /delete again.", show_alert: true });
-  await env.DRAFTS.delete(delKey(chat));
-  if (action === "delno") { await tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Kept" }); return done("👍 Kept"); }
-  await tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Removing…" });
-  await done("⏳ Removing…");
-  // work it out again on the latest files, in case something changed since you asked
-  const S = await loadSite(env);
-  let target = pending.target;
-  if (target.productIds || target.productId != null) {
-    const ps = (target.productIds || [target.productId]).map(id => S.products.find(p => p.id === id)).filter(Boolean);
-    if (!ps.length) { await done("Already gone"); return say(env, chat, "Those products are already gone."); }
-    target = { products: ps };
-  }
-  const plan = planDelete(target, S.products, S.reels);
-  if (!plan) { await done("Already gone"); return say(env, chat, "That reel is already gone."); }
-  const out = applyDelete(plan, S.products, S.reels);
-  const files = [
-    { path: "data/products.json", text: pretty(out.products, "category") },
-    { path: "data/reels.json", text: pretty(out.reels, "products") }
-  ];
-  // also delete the cover / photos the bot uploaded for them (only if those files exist)
-  const codeOf = r => ((r.reel || "").match(REEL_RE) || [])[1] || "";
-  const extra = [
-    ...plan.reels.map(r => `assets/covers/${codeOf(r)}.jpg`),
-    ...plan.products.flatMap(p => (p.variants || []).map(v => v.image).filter(i => /^assets\//.test(i || "")))
-  ];
-  for (const path of [...new Set(extra)]) {
-    try { await gh(env, `/contents/${path}?ref=${env.GITHUB_BRANCH || "main"}`); files.push({ path, remove: true }); } catch {}
-  }
-  const what = [plan.reels.length ? `${plan.reels.length} reel${plan.reels.length > 1 ? "s" : ""}` : "", plan.products.length ? `${plan.products.length} product${plan.products.length > 1 ? "s" : ""}` : ""].filter(Boolean).join(" + ");
-  await commitFiles(env, `Remove ${what} (via Telegram bot)`, files);
-  await done("🗑 Removed");
-  return say(env, chat, `🗑 <b>Removed</b> ${esc(what)}. Gone from the site in about a minute.\n\n💻 Run <code>git pull</code> on your laptop before editing.`);
-}
-
-// ---------------------------------------------------------------- ⭐ featured tile (data/site.json → site.featured)
-const featKey = chat => "feat:" + chat;
-const featuredIds = site => [].concat(site.site?.featured || []);
-const MAX_FEATURED = 2;   // the home page shows at most 2 (assets/js/app.js → MAX_FEATURED)
-export function applyFeature(ids, op, productId) {
-  if (op === "clear") return [];
-  if (op === "add") return ids.includes(productId) ? ids : [...ids, productId];
-  return ids.filter(x => x !== productId);
-}
-const featuredLine = (ids, products) => ids.length
-  ? ids.map(id => `• ${esc((products.find(p => p.id === id) || { name: `#${id} (no longer exists)` }).name)}`).join("\n")
-  : "<i>nothing</i>";
-
-async function showFeatured(env, chat) {
-  const S = await loadSite(env);
-  return say(env, chat, `⭐ <b>Featured now:</b>\n${featuredLine(featuredIds(S.site), S.products)}\n\n<code>/feature name</code> to add · <code>/unfeature name</code> to remove`);
-}
-
-async function onFeature(op, arg, env, chat) {
-  if (!arg) return say(env, chat, op === "add" ? "Which product? e.g. <code>/feature Hulk Comforter</code> or <code>/feature 35</code>" : "Which product? e.g. <code>/unfeature Hulk Comforter</code> or <code>/unfeature all</code>");
-  const S = await loadSite(env);
-  const now = featuredIds(S.site);
-  let productId = null;
-  if (op === "remove" && /^all$/i.test(arg)) op = "clear";
-  else {
-    const found = findProduct(arg, S.products);
-    if (!found.length) return say(env, chat, `I couldn't find a product matching “${esc(arg)}”.`);
-    if (found.length > 1) return say(env, chat, `Which one? Send <code>/${op === "add" ? "feature" : "unfeature"}</code> with the id:\n` + found.slice(0, 15).map(p => `• <code>${p.id}</code> ${esc(p.name)}`).join("\n"));
-    productId = found[0].id;
-    if (op === "add" && now.includes(productId)) return say(env, chat, `⭐ ${esc(found[0].name)} is already featured.`);
-    if (op === "add" && now.length >= MAX_FEATURED) return say(env, chat, `⭐ The home page shows ${MAX_FEATURED} featured products at most, and it already has:\n${featuredLine(now, S.products)}\n\nTake one off first: <code>/unfeature name</code>`);
-    if (op === "remove" && !now.includes(productId)) return say(env, chat, `${esc(found[0].name)} isn't featured.`);
-  }
-  const next = applyFeature(now, op, productId);
-  const id = Date.now().toString(36);
-  await env.DRAFTS.put(featKey(chat), JSON.stringify({ id, op, productId }), { expirationTtl: 24 * 3600 });
-  return say(env, chat, `⭐ <b>Featured tile will show:</b>\n${featuredLine(next, S.products)}\n\nOK?`, {
-    reply_markup: { inline_keyboard: [[{ text: "✅ Update home page", callback_data: "featok:" + id }, { text: "Cancel", callback_data: "featno:" + id }]] }
-  });
-}
-
-async function onFeatureButton(q, env, action, id) {
-  const chat = q.message.chat.id;
-  const raw = await env.DRAFTS.get(featKey(chat));
-  const pending = raw ? JSON.parse(raw) : null;
-  const done = label => tg(env, "editMessageReplyMarkup", { chat_id: chat, message_id: q.message.message_id, reply_markup: { inline_keyboard: [[{ text: label, callback_data: "noop:0" }]] } }).catch(() => {});
-  if (!pending || pending.id !== id) return tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "That's an old request — send it again.", show_alert: true });
-  await env.DRAFTS.delete(featKey(chat));
-  if (action === "featno") { await tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Cancelled" }); return done("Cancelled"); }
-  await tg(env, "answerCallbackQuery", { callback_query_id: q.id, text: "Updating…" });
-  const S = await loadSite(env);                       // latest site.json, in case it changed
-  const next = applyFeature(featuredIds(S.site), pending.op, pending.productId);
-  const site = { ...S.site, site: { ...S.site.site, featured: next } };
-  if (!next.length) delete site.site.featured;
-  await commitFiles(env, `Featured: ${pending.op === "clear" ? "cleared" : (pending.op === "add" ? "+" : "−") + " product " + pending.productId} (via Telegram bot)`,
-    [{ path: "data/site.json", text: pretty(site, "featured") }]);
-  await done("✅ Updated");
-  return say(env, chat, `⭐ Done — the home page updates in about a minute.\n\n💻 Run <code>git pull</code> on your laptop before editing.`);
 }

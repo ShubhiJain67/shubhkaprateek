@@ -172,7 +172,7 @@
     s.onload = () => { while (pending.length) track(...pending.shift()); };
     document.head.appendChild(s);
   }
-  // Our own free click counter (the Telegram bot's Cloudflare database) — feeds the brand pages (/brand/…).
+  // Our own free click counter (the bot's Cloudflare database) — feeds the brand pages (/brand/…).
   // Counts per product: Buy clicks on its product page ("buy_page"), Buy clicks anywhere else ("buy"), product/reel
   // page views ("view"); /go/<id> link clicks ("go") are counted by 404.html. ?from=… is kept for the visit.
   const hitFrom = (new URLSearchParams(location.search).get("from") || "").trim().slice(0, 40);
@@ -241,7 +241,7 @@
     });
   }
 
-  // ---------- Featured tile(s) on the landing page — ids in data/site.json → "featured" (set from Telegram: /feature) ----------
+  // ---------- Featured tile(s) on the landing page — ids in data/site.json → "featured" (set from the dashboard: ⭐ on Products) ----------
   // Up to 2 products: both shown at once (stacked on phones, side by side on big screens).
   const MAX_FEATURED = 2;
   const featuredList = () => [].concat(site.featured || []).map(id => pmap.get(String(id))).filter(Boolean).slice(0, MAX_FEATURED);

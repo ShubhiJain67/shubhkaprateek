@@ -2,7 +2,7 @@
 #   1. saves (commits) your changes   2. pulls what the bot added on GitHub
 #   3. builds assets/js/data.js from data/ (after the pull, so it includes the bot's changes —
 #      if the bot changed data at the same moment, the clash in the built files is fixed automatically)
-#   4. pushes to GitHub (site updates in ~1 min)   5. deploys the Telegram bot
+#   4. pushes to GitHub (site updates in ~1 min)   5. deploys the bot (the dashboard's back end)
 # The steps are joined with `\` into ONE command, so the single `cd` at the top applies to all of them
 # (make runs each separate line in its own shell). `&&` stops at the first step that fails.
 .PHONY: ship deploy-bot
