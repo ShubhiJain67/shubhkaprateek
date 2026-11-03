@@ -90,7 +90,12 @@
   .stat span { font-size: 13px; color: var(--muted); }
   .stat.warn b { color: #9b2c2c; }
   .bars { display: flex; align-items: flex-end; gap: 3px; height: 140px; padding: 8px 0 0; border-bottom: 1px solid var(--line); }
-  .bars .bar { flex: 1 1 0; display: flex; flex-direction: column; min-height: 2px; border-radius: 4px 4px 0 0; overflow: hidden; }
+  .bars { height: 170px !important; }
+  .bars .col { flex: 1 1 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; min-width: 0; }
+  .bars .col em { font-style: normal; font-size: 11px; font-weight: 700; text-align: center; color: var(--ink); white-space: nowrap; margin: 0 -24px 3px; }
+  .bars .bar { display: flex; flex-direction: column; border-radius: 4px 4px 0 0; overflow: hidden; }
+  .xlab { display: flex; gap: 3px; margin-top: 4px; } .xlab span { flex: 1 1 0; text-align: center; font-size: 11px; color: var(--muted); min-width: 0; overflow: hidden; white-space: nowrap; }
+  @media (max-width: 760px) { .bars .col em { font-size: 9px; } }
   .bars .bar i { display: block; min-height: 0; } .bars .bar i.c { background: var(--accent); } .bars .bar i.p { background: #d4a62a; } .bars .bar i.z { flex: 1; background: var(--line); }
   .ctree { display: grid; gap: 10px; max-height: 320px; overflow: auto; padding: 10px; background: var(--field); border-radius: 10px; }
   .ctree .grp { display: grid; gap: 6px; }
@@ -319,13 +324,16 @@
 
   // ---- Enquiries
   function vEnquiries() {
-    const list = D.enquiries.filter(e => (filter === "all" || e.status === filter) && (srcFilter === "all" || srcOf(e) === srcFilter) && (!q || (e.brand + " " + e.email).toLowerCase().includes(q)));
-    const count = s => D.enquiries.filter(e => e.status === s).length;
+    // tabs: New also holds "replied", Confirmed also holds "product added"
+    const TAB = { new: ["new", "replied"], confirmed: ["confirmed", "product"], live: ["live"], delivered: ["delivered"], declined: ["declined"], hold: ["hold"] };
+    const inTab = (e, t) => t === "all" || (TAB[t] || [t]).includes(e.status);
+    // in All: everything open first (newest on top), then on hold, then delivered, then declined
+    const rank = e => ({ hold: 1, delivered: 2, declined: 3 })[e.status] || 0;
+    const list = D.enquiries.filter(e => inTab(e, filter) && (!q || (e.brand + " " + e.email).toLowerCase().includes(q))).sort((a, b) => rank(a) - rank(b));
+    const count = t => D.enquiries.filter(e => inTab(e, t)).length;
     return `<div class="between"><h1>Enquiries</h1><div class="row"><input id="q" placeholder="Search brands…" value="${esc(q)}" style="width:220px"><button class="main" data-act="addEnq">+ Add enquiry</button></div></div>
-      <div class="row">${["all", "new", "replied", "hold", "confirmed", "product", "live", "delivered", "declined"].map(s =>
-        `<button class="chip ${filter === s ? "on" : ""}" data-filter="${s}">${s === "all" ? "All" : STATUS[s]} ${s === "all" ? D.enquiries.length : count(s)}</button>`).join("")}</div>
-      <div class="row">${[["all", "Everyone"], ["brand", "↘ They reached out"], ["us", "↗ We reached out"]].map(([k, t]) =>
-        `<button class="chip ${srcFilter === k ? "on" : ""}" data-src="${k}">${t} ${k === "all" ? D.enquiries.length : D.enquiries.filter(e => srcOf(e) === k).length}</button>`).join("")}</div>
+      <div class="row">${["all", "new", "confirmed", "live", "delivered", "declined", "hold"].map(s =>
+        `<button class="chip ${filter === s ? "on" : ""}" data-filter="${s}">${s === "all" ? "All" : STATUS[s]} ${count(s)}</button>`).join("")}</div>
       <div class="list">${list.map(e => `<button class="item" data-open="${e.id}">
           <span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${e.pitched === "1" ? "🎯 Pitched a posted reel" : srcOf(e) === "us" ? "↗ We reached out" : "↘ They reached out"}${e.email ? " · " + esc(e.email) : ""} · ${date(e.created)}${e.payment_due ? ` · payment due ${date(e.payment_due)}` : ""}</span></span>
           ${pill(e.status)}</button>`).join("") || `<p class="empty">No enquiries here yet. When a brand sends the form on your media kit, it shows up here.</p>`}</div>`;
@@ -519,6 +527,7 @@
   // ---- Money: what came in (money on its Payment received date, products on their Product received date) + what's still due
   function vMoney() {
     const rs = n => "₹" + Math.round(n).toLocaleString("en-IN"), now = today();
+    const short = n => n >= 1e5 ? "₹" + (n / 1e5).toFixed(n % 1e5 ? 1 : 0) + "L" : n >= 1000 ? "₹" + (n / 1000).toFixed(n % 1000 ? 1 : 0) + "k" : "₹" + Math.round(n);
     const day = v => String(v || "").slice(0, 10);
     const agreed = D.enquiries.filter(e => AGREED.includes(e.status));
     const cash = agreed.filter(e => money(e.price) > 0);                        // any deal with an agreed amount (barter + extra payment counts too)
@@ -564,8 +573,9 @@
       </div>
       <section class="card"><h2>Earned per ${unit} <span class="muted small" style="font-weight:500">· ${esc(lbl)} · <span style="color:var(--accent)">■</span> money <span style="color:#d4a62a">■</span> products</span></h2>
         <div class="bars" role="img" aria-label="Earned per ${unit}, ${esc(lbl)}">${buckets.map(b => { const c = val(b, "cash"), pr = val(b, "prod"), t = c + pr;
-          return `<span class="bar" title="${esc(bLabel(b))}: ${rs(t)}${t ? ` (money ${rs(c)} · products ${rs(pr)})` : ""}" style="height:${t ? Math.max(6, t / top * 100) : 2}%">${t ? `<i style="flex:${pr}" class="p"></i><i style="flex:${c}" class="c"></i>` : `<i class="z"></i>`}</span>`; }).join("")}</div>
-        <div class="between small muted" style="margin-top:4px"><span>${esc(bLabel(buckets[0]))}</span><span>${esc(bLabel(buckets[buckets.length - 1]))}</span></div></section>
+          return `<span class="col" title="${esc(bLabel(b))}: ${rs(t)}${t ? ` (money ${rs(c)} · products ${rs(pr)})` : ""}">${t ? `<em>${short(t)}</em>` : ""}<span class="bar" style="height:${t ? Math.max(4, t / top * 82) : 1.5}%">${t ? `<i style="flex:${pr}" class="p"></i><i style="flex:${c}" class="c"></i>` : `<i class="z"></i>`}</span></span>`; }).join("")}</div>
+        ${buckets.length <= 14 ? `<div class="xlab">${buckets.map(b => `<span>${esc(unit === "day" ? date(b).split(" ")[0] : bLabel(b).replace("week of ", ""))}</span>`).join("")}</div>`
+          : `<div class="between small muted" style="margin-top:4px"><span>${esc(bLabel(buckets[0]))}</span><span>${esc(bLabel(buckets[buckets.length - 1]))}</span></div>`}</section>
       <div class="split">
         <section class="card"><h2>Day by day</h2>
           ${days.map(d => `<div style="padding:8px 0;border-bottom:1px dashed var(--line)"><div class="between"><b>${dateY(d)}</b><b>${rs(byDay[d].reduce((t, x) => t + x.v, 0))}</b></div>
