@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Collab report — ShubhKaPrateek</title>
+<meta name="color-scheme" content="light dark">
+<!-- Brand report: shubhkaprateek.com/report/<brand>?k=<key> (make one in Telegram: /report blix).
+     Numbers come live from our analytics through the Telegram bot's worker (data/site.json → site.reportApi). -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/css/styles.css">
+<style>
+  .rp { padding-top: 28px; padding-bottom: 56px; }
+  .kick { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--pink); }
+  .rp h1 { font-family: Fraunces, Georgia, serif; font-size: clamp(30px, 6vw, 48px); line-height: 1.05; margin: 8px 0 6px; letter-spacing: -.02em; }
+  .rp h2 { font-family: Fraunces, Georgia, serif; font-size: 22px; margin: 34px 0 12px; }
+  .muted { color: var(--muted); margin: 0; }
+  .range { display: flex; gap: 6px; flex-wrap: wrap; margin: 18px 0 4px; }
+  .range button { height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; cursor: pointer; }
+  .range button[aria-pressed="true"] { background: var(--pink); color: var(--on-accent); border-color: transparent; }
+  .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 16px; }
+  @media (min-width: 760px) { .tiles { grid-template-columns: repeat(4, 1fr); gap: 14px; } }
+  .tile, .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
+  .tile b { display: block; font-family: Fraunces, Georgia, serif; font-size: clamp(28px, 6vw, 38px); line-height: 1.1; }
+  .tile span { display: block; font-weight: 600; margin-top: 4px; }
+  .tile small { display: block; color: var(--muted); margin-top: 2px; }
+  .prod { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: center; }
+  .prod + .prod { margin-top: 10px; }
+  .prod img { width: 64px; height: 64px; object-fit: contain; border-radius: 12px; background: var(--field); }
+  .prod h3 { margin: 0 0 4px; font-size: 16px; }
+  .nums { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: 14px; }
+  .nums b { color: var(--ink); }
+  .from { margin-top: 6px; font-size: 13px; color: var(--muted); }
+  .reels { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (min-width: 760px) { .reels { grid-template-columns: repeat(4, 1fr); gap: 14px; } }
+  .reel { position: relative; display: block; border-radius: var(--radius); overflow: hidden; aspect-ratio: 9/16; background: var(--media-bg); }
+  .reel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .reel span { position: absolute; left: 8px; right: 8px; bottom: 8px; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; font-weight: 600; padding: 6px 8px; border-radius: 10px; }
+  .note { margin-top: 18px; padding: 12px 14px; border-radius: 12px; background: var(--field); color: var(--muted); font-size: 14px; }
+  .foot { text-align: center; color: var(--muted); font-size: 13px; margin-top: 30px; }
+</style>
+</head>
+<body>
+  <header class="site-head"><div class="wrap"><a class="brand" href="/"><span class="brand-name">ShubhKaPrateek</span></a></div></header>
+  <main class="wrap rp" id="rp"><p class="muted">Loading the report…</p></main>
+<script>
+(async function () {
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const fmt = v => (+v || 0).toLocaleString("en-IN");
+  const main = document.getElementById("rp");
+  const q = new URLSearchParams(location.search), brand = q.get("b") || "", key = q.get("k") || "";
+  if (brand) history.replaceState(null, "", `/report/${encodeURIComponent(brand)}?k=${encodeURIComponent(key)}`);   // keep the nice address
+  const fail = msg => { main.innerHTML = `<p class="muted">${msg}</p>`; };
+  if (!brand || !key) return fail("This report link isn't complete — ask us for the link again 🙂");
+  let api = "";
+  try { api = ((await (await fetch("/data/site.json", { cache: "no-cache" })).json()).site || {}).reportApi || ""; } catch {}
+  if (!api) return fail("Reports aren't set up yet.");
+  let days = 30;
+  async function load() {
+    let r;
+    try { r = await fetch(`${api}/report/api?brand=${encodeURIComponent(brand)}&k=${encodeURIComponent(key)}&days=${days}`); }
+    catch { return fail("Couldn't load the report right now — please try again in a minute."); }
+    if (r.status === 404) return fail("This report link isn't valid — ask us for the link again 🙂");
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.error) return fail("Couldn't load the report right now — please try again in a minute.");
+    render(d);
+  }
+  function render(d) {
+    d.brand = String(d.brand || "").replace(/^./, c => c.toUpperCase());   // "blix" → "Blix"
+    const P = d.products || [], R = d.reels || [];
+    const sum = f => P.reduce((a, p) => a + (+p[f] || 0), 0);
+    const clicks = sum("buy") + sum("go"), views = sum("views") + R.reduce((a, r) => a + (+r.views || 0), 0);
+    const from = {}; P.forEach(p => Object.entries(p.from || {}).forEach(([k, v]) => { from[k] = (from[k] || 0) + v; }));
+    const fromList = Object.entries(from).sort((a, b) => b[1] - a[1]);
+    document.title = `${d.brand} × ShubhKaPrateek — Collab report`;
+    main.innerHTML = `
+      <span class="kick">Collab report</span>
+      <h1>${esc(d.brand)} × ShubhKaPrateek</h1>
+      <p class="muted">How many people we sent to your product${P.length > 1 ? "s" : ""} — live from our analytics.</p>
+      <div class="range" role="group" aria-label="Period">${[7, 30, 90, 365].map(n => `<button type="button" data-days="${n}" aria-pressed="${n === d.days}">${n === 365 ? "Last year" : `Last ${n} days`}</button>`).join("")}</div>
+      <div class="tiles">
+        <div class="tile"><b>${fmt(clicks)}</b><span>Clicks to your store</span><small>buy buttons + our links</small></div>
+        <div class="tile"><b>${fmt(sum("buy"))}</b><span>Buy-button clicks</span><small>on shubhkaprateek.com</small></div>
+        <div class="tile"><b>${fmt(sum("go"))}</b><span>Link clicks</span><small>from our DMs, captions & bio</small></div>
+        <div class="tile"><b>${fmt(views)}</b><span>Page views</span><small>your product & reel pages</small></div>
+      </div>
+      <h2>Your product${P.length > 1 ? "s" : ""}</h2>
+      <div class="card">${P.map(p => `<div class="prod">
+          ${p.image ? `<img src="${esc(/^https?:/.test(p.image) ? p.image : "/" + p.image.replace(/^\//, ""))}" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">` : "<span></span>"}
+          <div><h3>${esc(p.name)}</h3>
+            <div class="nums"><span><b>${fmt((+p.buy || 0) + (+p.go || 0))}</b> clicks to store</span><span><b>${fmt(p.buy)}</b> buy button</span><span><b>${fmt(p.go)}</b> our links</span><span><b>${fmt(p.views)}</b> page views</span></div>
+          </div></div>`).join("") || `<p class="muted">No products in this report yet.</p>`}</div>
+      ${fromList.length ? `<h2>Where link clicks came from</h2><div class="card"><div class="nums">${fromList.map(([k, v]) => `<span><b>${fmt(v)}</b> ${esc(k)}</span>`).join("")}</div></div>` : ""}
+      ${R.length ? `<h2>Reels featuring ${esc(d.brand)}</h2><div class="reels">${R.map(r => `<a class="reel" href="https://www.instagram.com/reel/${esc(r.code)}/" target="_blank" rel="noopener">
+          <img loading="lazy" src="/assets/covers/${encodeURIComponent(r.code)}.jpg" alt="" onerror="this.remove()"><span>${esc(r.title)}</span></a>`).join("")}</div>` : ""}
+      ${d.note ? `<p class="note">ℹ️ ${esc(d.note)}</p>` : ""}
+      <p class="foot">Updated ${esc(new Date(d.updated || Date.now()).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }))} · refreshes every 10 minutes<br>
+        Reel views and likes are on Instagram; these are the visits and clicks on our website.</p>`;
+  }
+  main.addEventListener("click", e => { const b = e.target.closest("[data-days]"); if (b) { days = +b.dataset.days; main.querySelectorAll("[data-days]").forEach(x => x.setAttribute("aria-pressed", x === b)); load(); } });
+  load();
+})();
+</script>
+</body>
+</html>
