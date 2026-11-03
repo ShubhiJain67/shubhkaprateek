@@ -258,5 +258,40 @@ async function run(a, env, h) {
     await h.commitFiles(env, "Featured products (dashboard)", [{ path: "data/site.json", text: h.pretty(site, "featured") }]);
     return load(env, h);
   }
+  // ---- categories: add / rename / change keywords / delete (a deleted one is also taken off its products)
+  if (op === "categories.save") {
+    const clean = (c, top) => {
+      const name = clip(c.name, 60).trim(); if (!name) throw new Error("Every category needs a name");
+      const id = slugOf(c.id || name); if (!id) throw new Error(`"${name}" needs a name with letters or numbers`);
+      const keywords = [...new Set([].concat(c.keywords || []).map(k => clip(k, 40).trim().toLowerCase()).filter(Boolean))];
+      const out = { id, name };
+      if (top && c.emoji) out.emoji = clip(c.emoji, 8).trim();
+      if (top && c.theme) out.theme = true;
+      out.keywords = keywords;
+      if (top && Array.isArray(c.sub) && c.sub.length) out.sub = c.sub.map(x => clean(x, false));
+      return out;
+    };
+    const tree = [].concat(a.categories || []).map(c => clean(c, true));
+    const ids = tree.flatMap(c => [c.id, ...(c.sub || []).map(x => x.id)]);
+    const dup = ids.find((x, i) => ids.indexOf(x) !== i); if (dup) throw new Error(`Two categories have the same name: ${dup}`);
+    if (!tree.length) throw new Error("Keep at least one category");
+    const keep = new Set(ids), files = [{ path: "data/categories.json", text: catsText(tree) }];
+    const { products } = await S(); let changed = 0;
+    for (const p of products) { const before = (p.category || []).length; p.category = (p.category || []).filter(id => keep.has(id)); if (p.category.length !== before) changed++; }
+    if (changed) files.push({ path: "data/products.json", text: h.pretty(products, "category") });
+    await h.commitFiles(env, `Categories updated${changed ? ` (${changed} product${changed === 1 ? "" : "s"} tidied)` : ""} (dashboard)`, files);
+    return load(env, h);
+  }
   throw new Error("Unknown action: " + op);
+}
+
+// categories.json in the same compact shape it's hand-written in: one line per sub-category
+function catsText(tree) {
+  const J = v => JSON.stringify(v);
+  const top = c => {
+    const head = [`"id": ${J(c.id)}`, `"name": ${J(c.name)}`, c.emoji ? `"emoji": ${J(c.emoji)}` : "", c.theme ? `"theme": true` : ""].filter(Boolean).join(", ");
+    if (!c.sub) return `  { ${head},\n    "keywords": ${J(c.keywords)} }`;
+    return `  { ${head}, "sub": [\n${c.sub.map(x => `    { "id": ${J(x.id)}, "name": ${J(x.name)}, "keywords": ${J(x.keywords)} }`).join(",\n")}\n  ]${c.keywords.length ? `, "keywords": ${J(c.keywords)}` : ""} }`;
+  };
+  return "[\n" + tree.map(top).join(",\n") + "\n]\n";
 }

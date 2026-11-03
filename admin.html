@@ -80,6 +80,7 @@
   .vlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
   .vlist li { display: flex; gap: 8px; align-items: baseline; } .vlist .no { color: var(--muted); }
   .pre { white-space: pre-wrap; font: inherit; margin: 0; background: var(--field); border-radius: 10px; padding: 12px; font-size: 14px; }
+  tr.click { cursor: pointer; } tr.click:hover td { background: #f7efe8; } tr.gold.click:hover td { background: #f6e6b8; }
   tr.gold td { background: #fbf1d4; } tr.gold td:first-child { box-shadow: inset 4px 0 0 #d4a62a; }
   .gold-key { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: #fbf1d4; box-shadow: inset 3px 0 0 #d4a62a; vertical-align: -1px; }
   .stats4 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -111,6 +112,7 @@
   .tree summary::-webkit-details-marker { display: none; }
   .tree summary::before { content: "▸"; color: var(--muted, #6b5a52); width: 12px; }
   .tree details[open] > summary::before { content: "▾"; }
+  .tree summary .cbtns { display: flex; gap: 6px; margin-left: 10px; } .tree summary .cbtns button { padding: 4px 10px; min-height: 0; font-size: 13px; }
   .tree summary .n { margin-left: auto; font-size: 13px; color: var(--muted, #6b5a52); font-weight: 600; }
   .tree .leaf { display: flex; gap: 10px; align-items: center; padding: 6px 14px 6px 36px; }
   @media (max-width: 760px) { .tree .leaf { padding-left: 14px; } .tree details details { margin-left: 8px; } }
@@ -481,13 +483,13 @@
       ${editing ? productForm(null) : ""}
       <p class="muted small" style="margin:0"><span class="gold-key"></span> Golden = we got it from a brand collab (didn't pay for it). Newest first.</p>
       <div class="tablebox"><table class="table"><thead><tr><th></th><th>Product</th><th>Brand</th><th>Categories</th><th>Reels</th><th>Featured</th><th></th></tr></thead><tbody>
-      ${list.map(p => `<tr class="${isFreeProduct(p.id) ? "gold" : ""}"><td><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" loading="lazy" referrerpolicy="no-referrer"></td>
+      ${list.map(p => `<tr class="click ${isFreeProduct(p.id) ? "gold" : ""}" data-href="${SITE}/product/${p.id}" title="Open the product page"><td><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" loading="lazy" referrerpolicy="no-referrer"></td>
         <td><b>${esc(p.name)}</b><br><span class="muted small">#${p.id}</span></td>
         <td>${p.brand ? esc(p.brand) : `<span class="muted small">—</span>`}</td>
         <td class="small">${(p.category || []).map(catName).map(esc).join(" · ") || "—"}</td>
         <td>${reelsOf(p.id).length}</td>
         <td><button class="chip ${fav.includes(p.id) ? "on" : ""}" data-fav="${p.id}" aria-label="Featured">${fav.includes(p.id) ? "★" : "☆"}</button></td>
-        <td><div class="row" style="flex-wrap:nowrap"><button data-edit="${p.id}">Edit</button><a class="btn" href="${SITE}/product/${p.id}" target="_blank" rel="noopener">View ↗</a></div></td></tr>`).join("")}
+        <td><button data-edit="${p.id}">Edit</button></td></tr>`).join("")}
       </tbody></table></div>`;
   }
 
@@ -499,10 +501,10 @@
       ${reelEdit ? reelForm() : ""}
       <p class="muted small" style="margin:0"><span class="gold-key"></span> Golden = a brand collab. Newest first.</p>
       <div class="tablebox"><table class="table"><thead><tr><th></th><th>Reel</th><th>Products</th><th></th></tr></thead><tbody>
-      ${list.map(r => `<tr class="${isCollabReel(codeOf(r)) ? "gold" : ""}"><td><img class="cover" src="/assets/covers/${esc(codeOf(r))}.jpg" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></td>
+      ${list.map(r => `<tr class="click ${isCollabReel(codeOf(r)) ? "gold" : ""}" data-href="${SITE}/reel/${esc(codeOf(r))}" title="Open the reel page"><td><img class="cover" src="/assets/covers/${esc(codeOf(r))}.jpg" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></td>
         <td><b>${esc(r.title)}</b><br><span class="muted small">${esc(codeOf(r))}</span></td>
         <td class="small">${(r.products || []).map(prod).filter(Boolean).map(p => esc(p.name)).join(", ")}</td>
-        <td><div class="row" style="flex-wrap:nowrap"><button data-reel="${esc(codeOf(r))}">Edit</button>${(d => d ? `<button data-open="${d.id}" title="Open the deal">🤝 ${esc(d.brand)}</button>` : `<button data-pitch="${esc(codeOf(r))}" title="Start a brand deal from this reel">🎯 Pitch</button>`)(dealOfReel(codeOf(r)))}<a class="btn" href="${SITE}/reel/${esc(codeOf(r))}" target="_blank" rel="noopener">View ↗</a></div></td></tr>`).join("")}
+        <td><div class="row" style="flex-wrap:nowrap"><button data-reel="${esc(codeOf(r))}">Edit</button>${(d => d ? `<button data-open="${d.id}" title="Open the deal">🤝 ${esc(d.brand)}</button>` : `<button data-pitch="${esc(codeOf(r))}" title="Start a brand deal from this reel">🎯 Pitch</button>`)(dealOfReel(codeOf(r)))}</div></td></tr>`).join("")}
       </tbody></table></div>`;
   }
   function reelForm() {
@@ -517,6 +519,13 @@
   }
 
   // ---- Brands
+  // a brand's money: paid deals (agreed price) and barter deals (product worth); declined ones don't count
+  function brandMoney(b) {
+    const live = b.enquiries.filter(e => e.status !== "declined");
+    const paidL = live.filter(e => e.payment !== "Barter" && money(e.price) > 0), barterL = live.filter(e => e.payment === "Barter");
+    return { paid: paidL.reduce((t, e) => t + money(e.price), 0), paidN: paidL.length, barter: barterL.reduce((t, e) => t + money(e.product_value), 0), barterN: barterL.length,
+      pending: paidL.filter(e => !e.paid_on).reduce((t, e) => t + money(e.price), 0) };
+  }
   function brandList() {
     const map = new Map();
     const add = (name, k, x) => { const key = String(name || "").trim().toLowerCase(); if (!key) return; if (!map.has(key)) map.set(key, { name: String(name).trim(), products: [], enquiries: [] }); map.get(key)[k].push(x); };
@@ -604,15 +613,15 @@
       const all = D.products.filter(p => ids.some(id => has(p, id)) && match(p));
       const direct = all.filter(p => !subs.some(x => has(p, x.id)));   // in the tab but in none of its sub-categories
       if (q && !all.length) return "";
-      return `<details ${q ? "open" : ""}><summary><b>${esc(c.emoji || "")} ${esc(c.name)}</b>${c.theme ? `<span class="muted small">theme</span>` : ""}<span class="n">${all.length}</span></summary>
-        ${subs.map(x => { const ps = all.filter(p => has(p, x.id)); return q && !ps.length ? "" : `<details ${q ? "open" : ""}><summary>${esc(x.name)}<span class="n">${ps.length}</span></summary>${ps.map(leaf).join("") || none}</details>`; }).join("")}
+      return `<details ${q ? "open" : ""}><summary><b>${esc(c.emoji || "")} ${esc(c.name)}</b>${c.theme ? `<span class="muted small">theme</span>` : ""}<span class="n">${all.length}</span><span class="cbtns"><button type="button" class="small" data-catedit="${esc(c.id)}">Edit</button><button type="button" class="small" data-catadd="${esc(c.id)}">+ Sub</button></span></summary>
+        ${subs.map(x => { const ps = all.filter(p => has(p, x.id)); return q && !ps.length ? "" : `<details ${q ? "open" : ""}><summary>${esc(x.name)}<span class="n">${ps.length}</span><span class="cbtns"><button type="button" class="small" data-catedit="${esc(x.id)}">Edit</button></span></summary>${ps.map(leaf).join("") || none}</details>`; }).join("")}
         ${direct.length ? (subs.length ? `<details ${q ? "open" : ""}><summary class="muted">No sub-category<span class="n">${direct.length}</span></summary>${direct.map(leaf).join("")}</details>` : direct.map(leaf).join("")) : (!subs.length ? none : "")}
       </details>`;
     }).join("");
     const known = new Set(flatCats().map(c => c.id));
     const orphans = D.products.filter(p => !(p.category || []).some(id => known.has(id)) && match(p));
-    return `<div class="between"><h1>Categories</h1><input id="q" placeholder="Search products…" value="${esc(q)}" style="width:240px"></div>
-      <p class="muted" style="margin:0">Tap a category to open it. Change a product's categories from its Edit.</p>
+    return `<div class="between"><h1>Categories</h1><div class="row"><input id="q" placeholder="Search products…" value="${esc(q)}" style="width:240px"><button class="main" data-catadd="">+ Add category</button></div></div>
+      <p class="muted" style="margin:0">Tap a category to open it. <b>Edit</b> renames it, changes its keywords or deletes it; <b>+ Sub</b> adds a sub-category. Change a product's categories from its Edit.</p>
       <div class="tree" style="display:grid;gap:10px">${tree || `<p class="empty">Nothing matches.</p>`}
       ${orphans.length ? `<details open><summary><b>⚠️ Not in any category</b><span class="n">${orphans.length}</span></summary>${orphans.map(leaf).join("")}</details>` : ""}</div>`;
   }
@@ -620,26 +629,26 @@
   function vBrands() {
     const list = brandList().filter(b => !q || b.name.toLowerCase().includes(q));
     return `<div class="between"><h1>Brands <span class="muted" style="font:500 16px Inter,sans-serif">${list.length}</span></h1><input id="q" placeholder="Search brands…" value="${esc(q)}" style="width:220px"></div>
-      <div class="tablebox"><table class="table"><thead><tr><th>Brand</th><th>Collabs</th><th>Products</th><th>Paid deals</th><th>Brand page</th></tr></thead><tbody>
+      <div class="tablebox"><table class="table"><thead><tr><th>Brand</th><th>Collabs</th><th>Products</th><th>Paid deals</th><th>Barter deals</th><th>Brand page</th></tr></thead><tbody>
       ${list.map(b => `<tr style="cursor:pointer" data-brand="${esc(b.name)}"><td><b>${esc(b.name)}</b></td><td>${b.enquiries.length}</td><td>${b.products.length}</td>
-        <td>₹${b.enquiries.filter(e => e.payment === "Paid" && e.status !== "declined").reduce((s, e) => s + money(e.price), 0).toLocaleString("en-IN")}</td>
+        ${(m => `<td>${m.paidN ? `₹${m.paid.toLocaleString("en-IN")} <span class="muted small">· ${m.paidN}</span>` : `<span class="muted small">—</span>`}</td><td>${m.barterN ? `₹${m.barter.toLocaleString("en-IN")} <span class="muted small">· ${m.barterN}</span>` : `<span class="muted small">—</span>`}</td>`)(brandMoney(b))}
         <td>${brandLink(b.name) ? `<a href="${esc(brandLink(b.name))}" target="_blank" rel="noopener">${esc(brandLink(b.name).replace(/^https:\/\//, ""))}</a>` : `<span class="muted small">after first product</span>`}</td></tr>`).join("")}
       </tbody></table></div>`;
   }
   function vBrand() {
     const b = brandList().find(x => x.name.toLowerCase() === String(openId || "").toLowerCase());
     if (!b) return `<p class="empty">Brand not found. <a href="#brands" data-go="brands">Back</a></p>`;
-    const paid = b.enquiries.filter(e => e.payment === "Paid" && e.status !== "declined").reduce((s, e) => s + money(e.price), 0);
-    const pending = b.enquiries.filter(e => e.payment === "Pending" && e.status !== "declined").reduce((s, e) => s + money(e.price), 0);
+    const m = brandMoney(b);
     const reels = [...new Set(b.products.flatMap(p => reelsOf(p.id)))];
     return `<a href="#brands" data-go="brands" class="small" style="font-weight:600;text-decoration:none">← Brands</a>
       <div class="between"><h1>${esc(b.name)}</h1>${brandLink(b.name) ? `<a class="btn main" href="${esc(brandLink(b.name))}" target="_blank" rel="noopener">Their brand page ↗</a>` : ""}</div>
       <div class="grid2">
         <div class="card"><b style="font:700 26px Fraunces,serif">${b.enquiries.length}</b><br><span class="muted small">Collabs / enquiries</span></div>
-        <div class="card"><b style="font:700 26px Fraunces,serif">₹${paid.toLocaleString("en-IN")}</b><br><span class="muted small">Paid deals${pending ? ` · ₹${pending.toLocaleString("en-IN")} pending` : ""}</span></div>
+        <div class="card"><b style="font:700 26px Fraunces,serif">₹${m.paid.toLocaleString("en-IN")}</b><br><span class="muted small">Paid deals · ${m.paidN}${m.pending ? ` · ₹${m.pending.toLocaleString("en-IN")} not received yet` : ""}</span></div>
+        <div class="card"><b style="font:700 26px Fraunces,serif">₹${m.barter.toLocaleString("en-IN")}</b><br><span class="muted small">Barter deals · ${m.barterN} (product worth)</span></div>
         <div class="card"><b style="font:700 26px Fraunces,serif">${b.products.length}</b><br><span class="muted small">Products · ${reels.length} reel${reels.length === 1 ? "" : "s"}</span></div>
       </div>
-      <section class="card"><h2>Collabs</h2><div class="list">${b.enquiries.map(e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.package || "Collab")}</b> <span class="muted small">· ${esc(e.price || "—")} · ${esc(e.payment || "")}</span><br><span class="muted small">${date(e.created)}</span></span>${pill(e.status)}</button>`).join("") || `<p class="muted" style="margin:0">No enquiries yet.</p>`}</div></section>
+      <section class="card"><h2>Collabs</h2><div class="list">${b.enquiries.map(e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.package || "Collab")}</b> <span class="muted small">· ${e.payment === "Barter" ? `barter${e.product_value ? " · worth " + esc(e.product_value) : ""}` : esc(e.price || "—") + " · " + esc(e.payment || "")}</span><br><span class="muted small">${date(e.created)}</span></span>${pill(e.status)}</button>`).join("") || `<p class="muted" style="margin:0">No enquiries yet.</p>`}</div></section>
       <section class="card"><h2>Products &amp; reels</h2><div class="list">${b.products.map(p => `<div class="row"><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" referrerpolicy="no-referrer"><b>${esc(p.name)}</b><span class="muted small">${reelsOf(p.id).map(r => esc(r.title)).join(" · ")}</span></div>`).join("") || `<p class="muted" style="margin:0">No products yet.</p>`}</div></section>`;
   }
 
@@ -706,6 +715,9 @@
       deal.payment.onchange = upd; deal.paid_on.oninput = upd; deal.paid_on.onchange = upd; }
     root.querySelectorAll("[data-foldall]").forEach(b => b.onclick = () => { const c = b.dataset.foldall === "1", s2 = {};
       root.querySelectorAll("[data-fold]").forEach(sec => { sec.classList.toggle("closed", c); s2[sec.dataset.fold] = c; }); try { localStorage.setItem("skp-fold", JSON.stringify(s2)); } catch {} });
+    root.querySelectorAll("[data-catedit]").forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); openCatDialog(b.dataset.catedit, null); });
+    root.querySelectorAll("[data-catadd]").forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); openCatDialog(null, b.dataset.catadd); });
+    root.querySelectorAll("tr[data-href]").forEach(tr => tr.onclick = ev => { if (ev.target.closest("button, a, input, select, label")) return; window.open(tr.dataset.href, "_blank", "noopener"); });
     root.querySelectorAll("[data-editcard]").forEach(b => b.onclick = () => { editCard.add(b.dataset.editcard); render(); });
     root.querySelectorAll("[data-cancelcard]").forEach(b => b.onclick = () => { editCard.delete(b.dataset.cancelcard); render(); });
     const pst = $("pst"); if (pst) pst.onsubmit = ev => { ev.preventDefault(); act(pst.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch: { pitch_stats: JSON.stringify(Object.fromEntries(new FormData(pst))) } }); editCard.delete("perf"); }, "Numbers saved"); };
@@ -777,6 +789,48 @@
       catch { btn.disabled = false; }
     };
     dlg.showModal(); pickPitch(); f.brand.focus();
+  }
+  // add / edit / delete one category (editId) or add one (parentId = "" for a new tab, or the tab's id for a sub-category)
+  function openCatDialog(editId, parentId) {
+    const tree = JSON.parse(JSON.stringify(D.categories || []));
+    const top = tree.find(c => c.id === editId), parent = top ? null : tree.find(c => (c.sub || []).some(x => x.id === editId));
+    const cur = top || (parent && parent.sub.find(x => x.id === editId)) || null;
+    const isTop = cur ? !!top : !parentId, under = parentId ? tree.find(c => c.id === parentId) : parent;
+    const ids = cur ? [cur.id, ...((top && top.sub) || []).map(x => x.id)] : [];
+    const used = D.products.filter(p => (p.category || []).some(id => ids.includes(id))).length;
+    const dlg = document.createElement("dialog");
+    dlg.style.cssText = "border:0;border-radius:18px;padding:0;width:min(520px,94vw);max-height:90vh;box-shadow:0 20px 60px rgba(43,31,26,.25)";
+    dlg.innerHTML = `<form method="dialog" style="padding:22px;display:grid;gap:12px">
+      <div class="between"><h2 style="margin:0">${cur ? "Edit" : "Add"} ${isTop ? "category" : "sub-category"}${under ? ` <span class="muted small" style="font-weight:500">in ${esc(under.name)}</span>` : ""}</h2><button type="button" data-x aria-label="Close">✕</button></div>
+      <div class="grid2">
+        <label>Name<input name="name" required value="${esc(cur ? cur.name : "")}"></label>
+        ${isTop ? `<label>Emoji<input name="emoji" value="${esc(cur ? cur.emoji || "" : "")}" placeholder="🧸" maxlength="8"></label>` : ""}
+        <label style="grid-column:1/-1">Keywords <span class="muted small" style="font-weight:500">— comma separated; product names with these words get this category automatically</span><textarea name="keywords" rows="3">${esc(cur ? (cur.keywords || []).join(", ") : "")}</textarea></label>
+        ${isTop ? `<label style="grid-column:1/-1;display:flex;gap:8px;align-items:center"><input type="checkbox" name="theme" style="width:auto" ${cur && cur.theme ? "checked" : ""}> Theme (added on top of a product's main category, like Marvel)</label>` : ""}
+      </div>
+      <div class="row"><button class="main" type="submit">Save</button><button type="button" data-x>Cancel</button>
+        ${cur ? `<button type="button" class="danger" data-del style="margin-left:auto">Delete${used ? ` (used by ${used} product${used === 1 ? "" : "s"})` : ""}</button>` : ""}</div>
+      ${cur && isTop && (top.sub || []).length ? `<p class="muted small" style="margin:0">Deleting this also deletes its ${top.sub.length} sub-categories.</p>` : ""}
+      ${cur && used ? `<p class="muted small" style="margin:0">Deleting takes it off those products — they keep their other categories.</p>` : ""}</form>`;
+    document.body.appendChild(dlg);
+    const f = dlg.querySelector("form"), close = () => { dlg.close(); dlg.remove(); };
+    dlg.querySelectorAll("[data-x]").forEach(x => x.onclick = close); dlg.addEventListener("cancel", close);
+    const send = async (btn, next, msg) => { btn.disabled = true; try { await api("categories.save", { categories: next }); close(); toast(msg); render(); } catch { btn.disabled = false; } };
+    f.onsubmit = ev => { ev.preventDefault();
+      const name = f.name.value.trim(); if (!name) return f.name.focus();
+      const kw = f.keywords.value.split(/[,\n]+/).map(k => k.trim()).filter(Boolean);
+      if (cur) { cur.name = name; cur.keywords = kw; if (isTop) { cur.emoji = f.emoji.value.trim(); cur.theme = f.theme.checked; } }
+      else { const id = name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        if (flatCats().some(c => c.id === id)) { toast("There's already a category called that"); return f.name.focus(); }
+        const c = { id, name, keywords: kw };
+        if (isTop) { if (f.emoji.value.trim()) c.emoji = f.emoji.value.trim(); if (f.theme.checked) c.theme = true; tree.push(c); }
+        else (under.sub = under.sub || []).push(c); }
+      send(f.querySelector("button.main"), tree, cur ? "Category saved — live in about a minute" : "Category added — live in about a minute"); };
+    const del = f.querySelector("[data-del]");
+    if (del) del.onclick = () => { if (!confirmTwice(del)) return;
+      const next = isTop ? tree.filter(c => c.id !== cur.id) : tree.map(c => c === parent ? { ...c, sub: c.sub.filter(x => x.id !== cur.id) } : c);
+      send(del, next, "Category deleted"); };
+    dlg.showModal(); f.name.focus();
   }
   // destructive buttons need a second tap
   function confirmTwice(b) { if (b.dataset.sure) return true; b.dataset.sure = "1"; const t = b.textContent; b.textContent = "Tap again to confirm"; setTimeout(() => { delete b.dataset.sure; b.textContent = t; }, 3000); return false; }
