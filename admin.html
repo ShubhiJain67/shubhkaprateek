@@ -93,6 +93,19 @@
   .split { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
   .split > * { flex: 1 1 320px; min-width: 0; }
   .timeline { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+  .hist { display: grid; gap: 2px; font-size: 14px; }
+  .hist .h { display: grid; grid-template-columns: 64px 1fr; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .hist .h b.d { color: var(--ink); font-size: 13px; }
+  .hist .log { color: var(--muted); font-size: 13px; }
+  .hist .due { color: var(--accent-ink, #b8403c); }
+  .hist .late { color: #9b2c2c; font-weight: 600; }
+  .hist .head { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 10px 0 2px; }
+  [data-fold] > :first-child { cursor: pointer; user-select: none; position: relative; padding-right: 30px; }
+  [data-fold] > :first-child::after { content: "▾"; position: absolute; right: 2px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; }
+  [data-fold].closed > :first-child { margin-bottom: 0; }
+  [data-fold].closed > :first-child::after { content: "▸"; }
+  [data-fold].closed > :not(:first-child) { display: none !important; }
+  [data-fold] .hint { font: 500 13px Inter, sans-serif; color: var(--muted); margin-left: 6px; }
   .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--dark); color: #fff; padding: 12px 18px; border-radius: 12px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 9; max-width: 90vw; }
   .toast.on { opacity: 1; }
   .empty { padding: 30px; text-align: center; color: var(--muted); }
@@ -197,6 +210,38 @@
       <span class="tb">${t.link ? `<a class="btn sbtn" href="${esc(t.link)}" target="_blank" rel="noopener" aria-label="Open">↗</a>` : ""}<button type="button" class="sbtn" data-trm aria-label="Remove">✕</button></span></div>`;
   const readTrials = form => JSON.stringify([...form.querySelectorAll(".trow")].map(r => ({ link: r.querySelector('[data-t="link"]').value.trim(), date: r.querySelector('[data-t="date"]').value, note: r.querySelector('[data-t="note"]').value.trim() })).filter(t => t.link || t.note));
   const igUrl = v => !v ? "" : /^https?:/.test(v) ? v : "https://www.instagram.com/" + String(v).replace(/^@/, "").replace(/^\/+/, "") + "/";
+  // ---- history: what actually happened (your dates), what's coming up, and what you did in the dashboard
+  function historyOf(e, ev) {
+    const day = v => String(v || "").slice(0, 10), now = today(), st = statsOf(e);
+    const real = [
+      ["dispatched_on", "📦 Product dispatched"], ["received_on", "📬 Product received"], ["draft_on", "📝 Draft submitted"],
+      ["live_on", "🚀 Reel went live"], ["collab_on", "🤝 Collab added on Instagram"], ["paid_on", "💸 Payment received"],
+    ].filter(([k]) => e[k]).map(([k, t]) => ({ d: day(e[k]), t: k === "paid_on" && e.txn_id ? `${t} · ${e.txn_id}` : t, kind: "real" }));
+    if (e.pitched === "1" && st.date && (st.views || st.likes || st.shares || st.saves)) real.push({ d: day(st.date), t: `📊 Pitched at ${[st.views && st.views + " views", st.shares && st.shares + " shares", st.saves && st.saves + " saves"].filter(Boolean).join(", ") || "numbers noted"}`, kind: "real" });
+    trialsOf(e).filter(t => t.date).forEach(t => real.push({ d: day(t.date), t: `🔁 Trial reel${t.note ? " — " + t.note : ""}`, kind: "real" }));
+    // deadlines: upcoming, or late if the thing hasn't happened
+    const dues = [["shoot_by", "🎬 Shoot by", "live_on"], ["post_by", "📅 Post by", "live_on"], ["payment_due", "⏳ Payment due", "paid_on"]]
+      .filter(([k, , doneK]) => e[k] && !e[doneK] && !["delivered", "declined"].includes(e.status))
+      .map(([k, t]) => ({ d: day(e[k]), t, kind: day(e[k]) < now ? "late" : "due" }));
+    const logs = ev.map(x => ({ d: x.at ? new Date(x.at).toLocaleDateString("en-CA") : "", t: String(x.text).replace(/Status → (\w+)/, (m, s) => "Status → " + (STATUS[s] || s)), kind: "log" }));
+    const row = x => `<div class="h"><b class="d">${date(x.d)}</b><span class="${x.kind}">${esc(x.t)}${x.kind === "late" ? " — late" : ""}${x.kind === "log" ? ` <span class="small">· logged</span>` : ""}</span></div>`;
+    const ahead = dues.filter(x => x.kind === "due").sort((a, b) => a.d.localeCompare(b.d));
+    const past = [...real, ...logs, ...dues.filter(x => x.kind === "late")].sort((a, b) => b.d.localeCompare(a.d) || (a.kind === "log") - (b.kind === "log"));
+    return `<div class="hist">${ahead.length ? `<div class="head">Coming up</div>${ahead.map(row).join("")}<div class="head">So far</div>` : ""}${past.map(row).join("") || "—"}</div>`;
+  }
+  // collapsible cards on an enquiry; what you open/close is remembered on this device
+  const FOLD_DEFAULT_CLOSED = ["brief", "trials", "perf", "products"];
+  const foldState = () => { try { return JSON.parse(localStorage.getItem("skp-fold") || "{}"); } catch { return {}; } };
+  function applyFolds() {
+    const stt = foldState();
+    root.querySelectorAll("[data-fold]").forEach(sec => {
+      const k = sec.dataset.fold, head = sec.firstElementChild;
+      const forced = (k === "products" && editing) || (k === "reel" && reelEdit);
+      sec.classList.toggle("closed", !forced && (k in stt ? stt[k] : FOLD_DEFAULT_CLOSED.includes(k)));
+      head.onclick = ev => { if (ev.target.closest("button, a, input, select, label")) return;
+        const closed = sec.classList.toggle("closed"); const s2 = foldState(); s2[k] = closed; try { localStorage.setItem("skp-fold", JSON.stringify(s2)); } catch {} };
+    });
+  }
   // contacts at a brand: [{ name, role, phone }, …] (older enquiries had one "contact" line → shown as the first)
   const contactsOf = e => { try { const c = JSON.parse(e.contacts || "[]"); if (Array.isArray(c) && c.length) return c; } catch {} return e.contact ? [{ name: e.contact, role: "", phone: "" }] : []; };
   const contactRow = c => `<div class="crow" style="position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;border:1px solid var(--line,#eadfd6);border-radius:12px;padding:12px 44px 12px 12px">
@@ -254,7 +299,8 @@
     const reelUrl = e.reel_code ? `${SITE}/reel/${e.reel_code}` : "";
     const pk = (D.packages || []).find(p => p.name === e.package) || { price: "", payment: "" };   // the package's price + payment type, until you change them
     const mail = `mailto:${encodeURIComponent(e.email)}?subject=${encodeURIComponent("Collab with ShubhKaPrateek — " + e.brand)}&body=${encodeURIComponent(`Hi ${e.brand} team,\n\nThank you for reaching out! We'd love to work with you on ${e.package || "a collab"}.\n\n[your reply]\n\nWarm regards,\nShubhi & Prateek\n@shubhkaprateek | shubhkaprateek.com`)}`;
-    return `<a href="#enquiries" data-go="enquiries" class="small" style="font-weight:600;text-decoration:none">← Enquiries</a>
+    return `<div class="between"><a href="#enquiries" data-go="enquiries" class="small" style="font-weight:600;text-decoration:none">← Enquiries</a>
+      <span class="row small"><button type="button" data-foldall="1">Collapse all</button><button type="button" data-foldall="0">Expand all</button></span></div>
       <div class="between"><h1>${esc(e.brand)} <span class="muted" style="font:500 16px Inter,sans-serif">· ${esc(e.package || "—")}</span></h1>${pill(e.status)}</div>
       ${e.pitched === "1" ? `<p style="margin:0">🎯 Pitched from your reel ${(e.product_ids || []).length ? `<a href="${SITE}/reel/${esc(e.reel_code)}" target="_blank" rel="noopener">${esc(reelTitle(e.reel_code))}</a>` : `<b>${esc(reelTitle(e.reel_code))}</b>`} · <a href="https://www.instagram.com/reel/${esc(e.reel_code)}/" target="_blank" rel="noopener">Instagram ↗</a></p>` : ""}
       <div class="steps">${FLOW.map((s, i) => `<span class="${i < at ? "done" : i === at ? "now" : ""}">${STATUS[s]}${i < at ? " ✓" : ""}</span>`).join("")}</div>
@@ -270,7 +316,7 @@
         <button class="danger" data-act="delEnq" style="margin-left:auto">Delete</button>
       </div>
       <div class="split">
-        <section class="card"><h2>The deal</h2><form id="deal" class="grid2">
+        <section class="card" data-fold="deal"><h2>The deal</h2><form id="deal" class="grid2">
           <label>Brand<input name="brand" value="${esc(e.brand)}"></label>
           <label>Email<input name="email" value="${esc(e.email)}"></label>
           <label>Their Instagram ${e.instagram ? `<a class="small" href="${esc(igUrl(e.instagram))}" target="_blank" rel="noopener">open ↗</a>` : ""}<input name="instagram" value="${esc(e.instagram)}" placeholder="@brand or instagram.com/brand"></label>
@@ -299,31 +345,31 @@
           <label style="grid-column:1/-1">Their message<textarea name="message" rows="2">${esc(e.message)}</textarea></label>
           <label style="grid-column:1/-1">Your notes<textarea name="notes" rows="2">${esc(e.notes)}</textarea></label>
           <div><button class="main">Save deal</button></div></form></section>
-        <section class="card"><h2>History</h2><div class="timeline">${ev.map(x => `<span><b style="color:var(--ink)">${date(x.at)}</b> · ${esc(x.text)}</span>`).join("") || "—"}</div></section>
+        <section class="card" data-fold="history"><h2>History</h2>${historyOf(e, ev)}</section>
       </div>
-      ${e.pitched === "1" ? (() => { const st = statsOf(e); return `<section class="card"><h2>Performance when pitched</h2>
+      ${e.pitched === "1" ? (() => { const st = statsOf(e); return `<section class="card" data-fold="perf"><h2>Performance when pitched</h2>
         <form id="pst" class="grid2">${[["views", "Views"], ["likes", "Likes"], ["comments", "Comments"], ["shares", "Shares"], ["saves", "Saves"]].map(([k, t]) =>
           `<label>${t}<input name="${k}" inputmode="numeric" value="${esc(st[k])}" placeholder="${k === "views" ? "e.g. 2.4M" : ""}"></label>`).join("")}
           <label>As on<input name="date" type="date" value="${esc(st.date || today())}"></label>
           <div><button class="main">Save numbers</button></div></form></section>`; })() : ""}
-      ${(() => { const d = delivOf(e), c = delivCount(d); return `<section class="card"><div class="between"><h2>Deliverables</h2><span class="pill ${c.total && c.done === c.total ? "s-live" : ""}">${c.done} / ${c.total} done</span></div>
+      ${(() => { const d = delivOf(e), c = delivCount(d); return `<section class="card" data-fold="deliv"><div class="between"><h2>Deliverables</h2><span class="pill ${c.total && c.done === c.total ? "s-live" : ""}">${c.done} / ${c.total} done</span></div>
         <form id="dlv"><div class="dlist">${delivRows(d)}</div>
           <div class="row" style="margin-top:12px"><button class="main">Save deliverables</button><button type="button" data-xadd>+ Add another</button><button type="button" data-dreset>Reset to package</button></div></form>
         <p class="muted small" style="margin:8px 0 0">Ticked from ${e.package ? esc(e.package) : "the package"} — untick, add or change the story count as you agree with the brand.</p></section>`; })()}
-      <section class="card"><h2>Reel brief</h2><form id="brief" style="display:grid;gap:12px">
+      <section class="card" data-fold="brief"><h2>Reel brief<span class="hint">${[e.non_negotiables && "non-negotiables", e.script && "script"].filter(Boolean).join(" + ") || "empty"}</span></h2><form id="brief" style="display:grid;gap:12px">
           <label>Brand's non-negotiables<textarea name="non_negotiables" rows="4" placeholder="One per line — e.g.&#10;Show the logo in the first 3 seconds&#10;Say “use code SKP10”&#10;Tag @brand in the caption">${esc(e.non_negotiables)}</textarea></label>
           <label>Script<textarea name="script" rows="8" placeholder="Hook…&#10;Scene 1…">${esc(e.script)}</textarea></label>
           <div><button class="main">Save brief</button></div></form></section>
-      <section class="card"><div class="between"><h2>Their products</h2><button data-act="newProd">+ Add product</button></div>
+      <section class="card" data-fold="products"><div class="between"><h2>Their products<span class="hint">${prods.length}</span></h2><button data-act="newProd">+ Add product</button></div>
         ${prods.length ? `<div class="list">${prods.map(p => `<div class="row"><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" referrerpolicy="no-referrer"><b>${esc(p.name)}</b><span class="muted small">${(p.category || []).map(catName).map(esc).join(" · ")}</span><button data-edit="${p.id}">Edit</button></div>`).join("")}</div>` : `<p class="muted" style="margin:0">Confirm the collab, then add the product they're sending: paste its link and the photo, name and categories fill in.</p>`}
         ${editing ? productForm(e) : ""}
       </section>
-      <section class="card"><h2>Reel</h2>
+      <section class="card" data-fold="reel"><h2>Reel</h2>
         ${e.reel_code ? `<p style="margin:0 0 10px">${e.pitched === "1" && !["live", "delivered"].includes(e.status) ? "Your reel" : "Live"}: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a> · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
         ${prods.length ? `<form id="reelf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 170px">Live date<input name="live_on" type="date" value="${esc(e.live_on || today())}"></label><button class="main">${e.reel_code ? "Update reel" : "Go live →"}</button></form>
           <p class="muted small" style="margin:8px 0 0">Makes the reel page, connects it to their product${prods.length > 1 ? "s" : ""} and publishes the website. Status → Live.</p>` : `<p class="muted" style="margin:0">Add their product first.</p>`}
       </section>
-      <section class="card"><h2>Trial reels <span class="muted small" style="font-weight:500">· just for your record, no page on the website</span></h2>
+      <section class="card" data-fold="trials"><h2>Trial reels <span class="hint">${trialsOf(e).length || ""}</span><span class="muted small" style="font-weight:500">· just for your record, no page on the website</span></h2>
         <form id="trf" style="display:grid;gap:8px"><div class="tlist" style="display:grid;gap:8px">${(trialsOf(e).length ? trialsOf(e) : [{ date: today() }]).map(trialRow).join("")}</div>
           <div class="row"><button class="main">Save trial reels</button><button type="button" data-tadd>+ Add trial reel</button></div></form>
       </section>`;
@@ -459,6 +505,7 @@
     if (!D) return;
     const body = view === "enquiry" ? vEnquiry() : view === "products" ? vProducts() : view === "reels" ? vReels() : view === "brands" ? vBrands() : view === "brand" ? vBrand() : view === "categories" ? vCategories() : vEnquiries();
     shell(body);
+    if (view === "enquiry") applyFolds();
     const qi = $("q"); if (qi) { qi.oninput = () => { q = qi.value.trim().toLowerCase(); const pos = qi.selectionStart; render(); const n = $("q"); n.focus(); n.setSelectionRange(pos, pos); }; }
     wire();
   }
@@ -513,6 +560,8 @@
     if (deal) { const box = deal.querySelector("[data-paidbox]"), was = deal.payment.value,
         upd = () => box.style.display = deal.paid_on.value || deal.txn_id.value || deal.payment_notes.value || (deal.payment.value === "Paid" && was !== "Paid") ? "grid" : "none";
       deal.payment.onchange = upd; deal.paid_on.oninput = upd; deal.paid_on.onchange = upd; }
+    root.querySelectorAll("[data-foldall]").forEach(b => b.onclick = () => { const c = b.dataset.foldall === "1", s2 = {};
+      root.querySelectorAll("[data-fold]").forEach(sec => { sec.classList.toggle("closed", c); s2[sec.dataset.fold] = c; }); try { localStorage.setItem("skp-fold", JSON.stringify(s2)); } catch {} });
     const pst = $("pst"); if (pst) pst.onsubmit = ev => { ev.preventDefault(); act(pst.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch: { pitch_stats: JSON.stringify(Object.fromEntries(new FormData(pst))) } }), "Numbers saved"); };
     root.querySelectorAll("[data-pitch]").forEach(b => b.onclick = () => openAddEnquiry(b.dataset.pitch));
     const dlv = $("dlv"); if (dlv) {
