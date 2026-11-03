@@ -21,6 +21,44 @@
     else if ((m = p.match(/^\/products?\/(\d+)(?:\.html)?\/?$/))) location.replace("/?product=" + m[1] + location.search.replace(/^\?/, "&"));
   })();
 </script>
+<script>
+  // Tracked buy links: shubhkaprateek.com/go/<product id>  (e.g. /go/48, or /go/48?from=autodm)
+  // Counts the visit in Umami (Events → "go: <product name>", with id / store / from) and then opens the
+  // product's buy link (Amazon, Blix…). There's no page for /go/… so GitHub shows this file — no extra files needed.
+  (function () {
+    var m = location.pathname.match(/^\/go\/(\d+)\/?$/); if (!m) return;
+    document.documentElement.className = "going";
+    var id = m[1], q = new URLSearchParams(location.search), done = false;
+    var go = function (url) { if (done) return; done = true; location.replace(url); };
+    var s = document.createElement("script"); s.src = "/assets/js/data.js";
+    s.onerror = function () { go("/product/" + id); };
+    s.onload = function () {
+      var d = window.SKP_SNAPSHOT || {}, site = (d.site && d.site.site) || {};
+      var p = (d.products || []).filter(function (x) { return String(x.id) === id; })[0];
+      var v = p && p.variants && (p.variants[+q.get("v") || 0] || p.variants[0]);
+      if (!v || !v.link) return go("/product/" + id);              // unknown product / no link → its page says so
+      var store = ""; try { var h = new URL(v.link).hostname; store = /amazon|amzn/.test(h) ? "amazon" : h.replace(/^www\./, "").split(".")[0]; } catch (e) {}
+      setTimeout(function () { go(v.link); }, 1500);               // never keep anyone waiting if tracking is slow
+      if (!site.umamiWebsiteId) return go(v.link);
+      var u = document.createElement("script"); u.src = "https://cloud.umami.is/script.js";
+      u.setAttribute("data-website-id", site.umamiWebsiteId); u.setAttribute("data-auto-track", "false");
+      u.setAttribute("data-domains", "shubhkaprateek.com,www.shubhkaprateek.com");
+      u.onerror = function () { go(v.link); };
+      u.onload = function () {
+        try {
+          var t = window.umami.track(("go: " + p.name).slice(0, 50), { id: p.id, product: p.name, store: store, from: (q.get("from") || "").slice(0, 60) || "direct" });
+          (t && t.then ? t : Promise.resolve()).then(function () { go(v.link); }, function () { go(v.link); });
+        } catch (e) { go(v.link); }
+      };
+      document.head.appendChild(u);
+    };
+    document.head.appendChild(s);
+  })();
+</script>
+<style>
+  html.going body > * { display: none !important; }
+  html.going body::after { content: "Taking you to the shop…"; position: fixed; inset: 0; display: grid; place-items: center; font: 600 16px Inter, system-ui, sans-serif; color: #7a6a62; }
+</style>
 <!-- 404.html can be shown at any address, so every link here starts with "/" -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
