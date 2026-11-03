@@ -46,7 +46,7 @@
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
   .pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
   .s-new { background: var(--accent); color: #fff; } .s-replied { background: #e8eefc; color: #1f4fa3; } .s-hold { background: #fdf0d8; color: #8a5a00; }
-  .s-confirmed { background: var(--ok); color: #fff; } .s-product { background: #efe6fb; color: #5b2ea6; } .s-live { background: #e3f3ea; color: #1f6b41; } .s-declined { background: #f1ecea; color: var(--muted); }
+  .s-confirmed { background: var(--ok); color: #fff; } .s-product { background: #efe6fb; color: #5b2ea6; } .s-live { background: #e3f3ea; color: #1f6b41; } .s-delivered { background: #1f6b41; color: #fff; } .s-declined { background: #f1ecea; color: var(--muted); }
   .list { display: grid; gap: 10px; }
   .item { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: center; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-radius: 14px; cursor: pointer; text-align: left; width: 100%; font-weight: 400; }
   .item:hover { border-color: var(--accent); }
@@ -63,6 +63,32 @@
   .cats { display: flex; flex-wrap: wrap; gap: 6px; max-height: 190px; overflow: auto; padding: 4px; background: var(--field); border-radius: 10px; }
   .cats label { display: inline-flex; gap: 6px; align-items: center; font-weight: 500; background: #fff; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); cursor: pointer; }
   .cats input { width: auto; }
+  .drow { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .drow .dl { flex: 1 1 200px; display: flex; gap: 8px; align-items: center; font-weight: 600; }
+  .drow input[type=checkbox] { width: auto; }
+  .drow .cnt { display: flex; gap: 6px; align-items: center; } .drow .cnt input { width: 70px; }
+  .drow .done { display: flex; gap: 6px; align-items: center; }
+  .drow.xrow { flex-wrap: nowrap; } .drow.xrow input[data-xt] { flex: 1 1 auto; min-width: 0; }
+  .sbtn { width: 34px; height: 34px; min-height: 0; padding: 0; border-radius: 8px; line-height: 1; flex: none; display: inline-grid; place-items: center; text-decoration: none; }
+  .trow { position: relative; display: grid; grid-template-columns: 2fr 160px 2fr; gap: 8px; align-items: center; padding-right: 84px; }
+  .trow .tb { position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; gap: 6px; }
+  @media (max-width: 760px) { .trow { grid-template-columns: 1fr; border: 1px solid var(--line); border-radius: 12px; padding: 10px 84px 10px 10px; } .trow .tb { top: 10px; right: 10px; transform: none; } }
+  .ctree { display: grid; gap: 10px; max-height: 320px; overflow: auto; padding: 10px; background: var(--field); border-radius: 10px; }
+  .ctree .grp { display: grid; gap: 6px; }
+  .ctree .kids { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 14px; padding-left: 12px; border-left: 2px solid var(--line); }
+  .ctree label { display: inline-flex; gap: 6px; align-items: center; font-weight: 500; background: #fff; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); cursor: pointer; width: fit-content; }
+  .ctree .top { font-weight: 700; }
+  .ctree input { width: auto; }
+  .tree details { border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+  .tree details details { border: 0; border-left: 2px solid var(--line); border-radius: 0; margin: 0 0 6px 18px; }
+  .tree summary { cursor: pointer; padding: 12px 14px; display: flex; gap: 10px; align-items: center; list-style: none; }
+  .tree summary::-webkit-details-marker { display: none; }
+  .tree summary::before { content: "▸"; color: var(--muted, #6b5a52); width: 12px; }
+  .tree details[open] > summary::before { content: "▾"; }
+  .tree summary .n { margin-left: auto; font-size: 13px; color: var(--muted, #6b5a52); font-weight: 600; }
+  .tree .leaf { display: flex; gap: 10px; align-items: center; padding: 6px 14px 6px 36px; }
+  @media (max-width: 760px) { .tree .leaf { padding-left: 14px; } .tree details details { margin-left: 8px; } }
+  .tree .leaf b { font-weight: 500; flex: 1 1 auto; }
   .photo { width: 150px; height: 150px; border-radius: 14px; object-fit: contain; background: var(--field); border: 2px dashed #d8c6b9; display: grid; place-items: center; text-align: center; font-size: 13px; color: var(--muted); padding: 8px; }
   .split { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
   .split > * { flex: 1 1 320px; min-width: 0; }
@@ -116,8 +142,9 @@
   }
 
   // ---------- helpers on the data
-  const STATUS = { new: "New", replied: "Replied", hold: "On hold", confirmed: "Confirmed", product: "Product added", live: "Live", declined: "Declined" };
-  const FLOW = ["new", "replied", "confirmed", "product", "live"];
+  const STATUS = { new: "New", replied: "Replied", hold: "On hold", confirmed: "Confirmed", product: "Product added", live: "Live", delivered: "Delivered", declined: "Declined" };
+  const FLOW = ["new", "replied", "confirmed", "product", "live", "delivered"];
+  const today = () => new Date().toLocaleDateString("en-CA");   // YYYY-MM-DD in your time zone
   const pill = s => `<span class="pill s-${esc(s)}">${esc(STATUS[s] || s)}</span>`;
   const img = u => !u ? "" : /^https?:/.test(u) ? u : "/" + String(u).replace(/^\//, "");
   const codeOf = r => ((r.reel || "").match(/\/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/) || [])[1] || "";
@@ -127,6 +154,42 @@
   const reelsOf = id => D.reels.filter(r => (r.products || []).includes(+id));
   const brandLink = name => { const b = Object.values(D.brands || {}).find(b => b.name.toLowerCase() === String(name || "").trim().toLowerCase()); return b ? b.link : ""; };
   const date = s => s ? new Date(s).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "";
+  // who started it: "brand" = they reached out to us, "us" = we reached out (older ones came from the website form)
+  const SOURCES = { brand: "They reached out", us: "We reached out" };
+  const srcOf = e => e.source === "us" ? "us" : "brand";
+  const sourceSelect = cur => `<label>Who reached out<select name="source">${Object.entries(SOURCES).map(([k, t]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
+  // ---- deliverables: ticked from the package's list, then yours to change
+  const DELIV = [
+    { k: "reel", t: "Collaborative reel", re: /collaborative reel/i },
+    { k: "mention", t: "Brand mention in the reel", re: /mention in the reel/i },
+    { k: "stories", t: "Instagram stories", re: /instagram stor/i, count: true },
+    { k: "raw", t: "Raw footage (Google Drive)", re: /raw footage/i },
+    { k: "rights", t: "3-month ad usage rights", re: /usage rights/i },
+    { k: "website", t: "Brand on our website", re: /addition on our website/i },
+    { k: "featured", t: "Featured on website (2 weeks)", re: /featured section/i },
+  ];
+  const delivFromPackage = name => { const items = ((D.packages || []).find(p => p.name === name) || {}).items || [];
+    return { items: Object.fromEntries(DELIV.map(d => { const hit = items.find(i => d.re.test(i));
+      return [d.k, { on: !!hit, done: false, ...(d.count ? { count: hit ? +((hit.match(/(\d+)/) || [])[1] || 1) : 1 } : {}) }]; })), extra: [] }; };
+  const delivOf = e => { try { const d = JSON.parse(e.deliverables || ""); if (d && d.items) return d; } catch {} return delivFromPackage(e.package); };
+  const delivRows = d => DELIV.map(x => { const v = d.items[x.k] || { on: false, done: false, count: 1 };
+      return `<div class="drow"><label class="dl"><input type="checkbox" data-on="${x.k}" ${v.on ? "checked" : ""}>${esc(x.t)}</label>
+        ${x.count ? `<label class="small cnt">How many<input type="number" min="0" max="20" data-count="${x.k}" value="${esc(v.count ?? 1)}"></label>` : ""}
+        <label class="small done"><input type="checkbox" data-done="${x.k}" ${v.done ? "checked" : ""}>Done</label></div>`; }).join("")
+    + (d.extra || []).map(extraRow).join("");
+  const extraRow = x => `<div class="drow xrow"><input data-xt value="${esc(x.t)}" placeholder="Other deliverable"><label class="small done"><input type="checkbox" data-xdone ${x.done ? "checked" : ""}>Done</label><button type="button" class="sbtn" data-xrm aria-label="Remove">✕</button></div>`;
+  const readDeliv = form => JSON.stringify({
+    items: Object.fromEntries(DELIV.map(x => [x.k, { on: form.querySelector(`[data-on="${x.k}"]`).checked, done: form.querySelector(`[data-done="${x.k}"]`).checked,
+      ...(x.count ? { count: +form.querySelector(`[data-count="${x.k}"]`).value || 0 } : {}) }])),
+    extra: [...form.querySelectorAll(".xrow")].map(r => ({ t: r.querySelector("[data-xt]").value.trim(), done: r.querySelector("[data-xdone]").checked })).filter(x => x.t) });
+  const delivCount = d => { const on = DELIV.filter(x => (d.items[x.k] || {}).on), ex = d.extra || [];
+    return { total: on.length + ex.length, done: on.filter(x => d.items[x.k].done).length + ex.filter(x => x.done).length }; };
+  // ---- trial reels: links kept for the record only (no reel page on the website)
+  const trialsOf = e => { try { const t = JSON.parse(e.trial_reels || "[]"); return Array.isArray(t) ? t : []; } catch { return []; } };
+  const trialRow = t => `<div class="trow"><input data-t="link" value="${esc(t.link)}" placeholder="https://www.instagram.com/reel/…"><input data-t="date" type="date" value="${esc(t.date)}"><input data-t="note" value="${esc(t.note)}" placeholder="Note — e.g. 18% skip, low shares">
+      <span class="tb">${t.link ? `<a class="btn sbtn" href="${esc(t.link)}" target="_blank" rel="noopener" aria-label="Open">↗</a>` : ""}<button type="button" class="sbtn" data-trm aria-label="Remove">✕</button></span></div>`;
+  const readTrials = form => JSON.stringify([...form.querySelectorAll(".trow")].map(r => ({ link: r.querySelector('[data-t="link"]').value.trim(), date: r.querySelector('[data-t="date"]').value, note: r.querySelector('[data-t="note"]').value.trim() })).filter(t => t.link || t.note));
+  const igUrl = v => !v ? "" : /^https?:/.test(v) ? v : "https://www.instagram.com/" + String(v).replace(/^@/, "").replace(/^\/+/, "") + "/";
   // contacts at a brand: [{ name, role, phone }, …] (older enquiries had one "contact" line → shown as the first)
   const contactsOf = e => { try { const c = JSON.parse(e.contacts || "[]"); if (Array.isArray(c) && c.length) return c; } catch {} return e.contact ? [{ name: e.contact, role: "", phone: "" }] : []; };
   const contactRow = c => `<div class="crow" style="position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;border:1px solid var(--line,#eadfd6);border-radius:12px;padding:12px 44px 12px 12px">
@@ -148,7 +211,7 @@
   const money = v => { const n = +String(v || "").replace(/[^\d.]/g, ""); return n || 0; };
 
   // ---------- views
-  let view = "enquiries", filter = "all", q = "", openId = null, editing = null, reelEdit = null;
+  let view = "enquiries", filter = "all", srcFilter = "all", q = "", openId = null, editing = null, reelEdit = null;
   const go = (v, id = null) => { view = v; openId = id; editing = null; reelEdit = null; location.hash = v + (id != null ? "/" + id : ""); render(); window.scrollTo(0, 0); };
   window.addEventListener("hashchange", () => { const [v, id] = location.hash.slice(1).split("/"); if (v && v !== view + "") { view = v; openId = id || null; render(); } });
 
@@ -156,7 +219,7 @@
     const n = D.enquiries.filter(e => e.status === "new").length;
     root.innerHTML = `<div class="app"><nav aria-label="Dashboard">
       <div class="logo">ShubhKaPrateek</div>
-      ${[["enquiries", "Enquiries", n], ["brands", "Brands"], ["products", "Products"], ["reels", "Reels"]].map(([k, t, c]) =>
+      ${[["enquiries", "Enquiries", n], ["brands", "Brands"], ["products", "Products"], ["categories", "Categories"], ["reels", "Reels"]].map(([k, t, c]) =>
         `<a href="#${k}" data-go="${k}" class="${view === k || (view === "enquiry" && k === "enquiries") || (view === "brand" && k === "brands") ? "on" : ""}">${t}${c ? `<span class="n">${c}</span>` : ""}</a>`).join("")}
       <a href="${SITE}/" target="_blank" rel="noopener">Open website ↗</a>
       <div class="foot">Saves go live on the website in about a minute.</div></nav><main>${body}</main></div>`;
@@ -164,13 +227,15 @@
 
   // ---- Enquiries
   function vEnquiries() {
-    const list = D.enquiries.filter(e => (filter === "all" || e.status === filter) && (!q || (e.brand + " " + e.email).toLowerCase().includes(q)));
+    const list = D.enquiries.filter(e => (filter === "all" || e.status === filter) && (srcFilter === "all" || srcOf(e) === srcFilter) && (!q || (e.brand + " " + e.email).toLowerCase().includes(q)));
     const count = s => D.enquiries.filter(e => e.status === s).length;
     return `<div class="between"><h1>Enquiries</h1><div class="row"><input id="q" placeholder="Search brands…" value="${esc(q)}" style="width:220px"><button class="main" data-act="addEnq">+ Add enquiry</button></div></div>
-      <div class="row">${["all", "new", "replied", "hold", "confirmed", "product", "live", "declined"].map(s =>
+      <div class="row">${["all", "new", "replied", "hold", "confirmed", "product", "live", "delivered", "declined"].map(s =>
         `<button class="chip ${filter === s ? "on" : ""}" data-filter="${s}">${s === "all" ? "All" : STATUS[s]} ${s === "all" ? D.enquiries.length : count(s)}</button>`).join("")}</div>
+      <div class="row">${[["all", "Everyone"], ["brand", "↘ They reached out"], ["us", "↗ We reached out"]].map(([k, t]) =>
+        `<button class="chip ${srcFilter === k ? "on" : ""}" data-src="${k}">${t} ${k === "all" ? D.enquiries.length : D.enquiries.filter(e => srcOf(e) === k).length}</button>`).join("")}</div>
       <div class="list">${list.map(e => `<button class="item" data-open="${e.id}">
-          <span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${esc(e.email)} · ${date(e.created)}${e.payment_due ? ` · payment due ${date(e.payment_due)}` : ""}</span></span>
+          <span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${srcOf(e) === "us" ? "↗ We reached out" : "↘ They reached out"}${e.email ? " · " + esc(e.email) : ""} · ${date(e.created)}${e.payment_due ? ` · payment due ${date(e.payment_due)}` : ""}</span></span>
           ${pill(e.status)}</button>`).join("") || `<p class="empty">No enquiries here yet. When a brand sends the form on your media kit, it shows up here.</p>`}</div>`;
   }
 
@@ -190,7 +255,9 @@
         ${["new", "hold"].includes(e.status) ? `<button data-status="replied">Mark as replied</button>` : ""}
         ${e.status === "replied" ? `<button data-status="new">Not replied yet</button>` : ""}
         ${e.status !== "confirmed" && at < 2 ? `<button class="ok" data-status="confirmed">Confirm</button>` : ""}
-        ${e.status !== "hold" ? `<button data-status="hold">Put on hold</button>` : ""}
+        ${e.status === "live" ? `<button class="ok" data-status="delivered">Mark delivered ✓</button>` : ""}
+        ${e.status === "delivered" ? `<button data-status="live">Reopen (back to Live)</button>` : ""}
+        ${!["hold", "delivered"].includes(e.status) ? `<button data-status="hold">Put on hold</button>` : ""}
         ${e.status !== "declined" ? `<button class="danger" data-status="declined">Decline</button>` : `<button data-status="new">Reopen</button>`}
         <button class="danger" data-act="delEnq" style="margin-left:auto">Delete</button>
       </div>
@@ -198,6 +265,8 @@
         <section class="card"><h2>The deal</h2><form id="deal" class="grid2">
           <label>Brand<input name="brand" value="${esc(e.brand)}"></label>
           <label>Email<input name="email" value="${esc(e.email)}"></label>
+          <label>Their Instagram ${e.instagram ? `<a class="small" href="${esc(igUrl(e.instagram))}" target="_blank" rel="noopener">open ↗</a>` : ""}<input name="instagram" value="${esc(e.instagram)}" placeholder="@brand or instagram.com/brand"></label>
+          ${sourceSelect(srcOf(e))}
           <label>Package<select name="package">${[...new Set([e.package || "", ...(D.packages || []).map(p => p.name)])].map(o => `<option ${o === (e.package || "") ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></label>
           <label>Agreed price<input name="price" value="${esc(e.price || pk.price)}" placeholder="₹3,000"></label>
           <label>Payment<select name="payment">${["Paid", "Barter", "Pending"].map(o => `<option ${o === (e.payment || pk.payment) ? "selected" : ""}>${o}</option>`).join("")}</select></label>
@@ -205,6 +274,17 @@
           <label>Product value<input name="product_value" value="${esc(e.product_value)}" placeholder="₹4,999"></label>
           <label>Shoot by<input name="shoot_by" type="date" value="${esc(e.shoot_by)}"></label>
           <label>Post by<input name="post_by" type="date" value="${esc(e.post_by)}"></label>
+          <b class="small" style="grid-column:1/-1;margin-top:4px">What actually happened</b>
+          <label>Product dispatched<input name="dispatched_on" type="date" value="${esc(e.dispatched_on)}"></label>
+          <label>Product received<input name="received_on" type="date" value="${esc(e.received_on)}"></label>
+          <label>Draft submitted<input name="draft_on" type="date" value="${esc(e.draft_on)}"></label>
+          <label>Draft link<input name="draft_link" value="${esc(e.draft_link)}" placeholder="Drive / video link"></label>
+          <label>Reel went live<input name="live_on" type="date" value="${esc(e.live_on)}"></label>
+          <label>Payment received<input name="paid_on" type="date" value="${esc(e.paid_on)}"></label>
+          <div data-paidbox style="grid-column:1/-1;display:${e.paid_on || e.txn_id || e.payment_notes ? "grid" : "none"};gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px">
+            <b class="small" style="grid-column:1/-1">💸 Payment details</b>
+            <label>Transaction ID<input name="txn_id" value="${esc(e.txn_id)}" placeholder="UPI / bank ref"></label>
+            <label>Other details<textarea name="payment_notes" rows="2" placeholder="Paid to which account, invoice no., TDS…">${esc(e.payment_notes)}</textarea></label></div>
           ${contactsBlock(contactsOf(e))}
           <label>Their product link<input name="product_link" value="${esc(e.product_link)}"></label>
           <label style="grid-column:1/-1">Their message<textarea name="message" rows="2">${esc(e.message)}</textarea></label>
@@ -212,14 +292,26 @@
           <div><button class="main">Save deal</button></div></form></section>
         <section class="card"><h2>History</h2><div class="timeline">${ev.map(x => `<span><b style="color:var(--ink)">${date(x.at)}</b> · ${esc(x.text)}</span>`).join("") || "—"}</div></section>
       </div>
+      ${(() => { const d = delivOf(e), c = delivCount(d); return `<section class="card"><div class="between"><h2>Deliverables</h2><span class="pill ${c.total && c.done === c.total ? "s-live" : ""}">${c.done} / ${c.total} done</span></div>
+        <form id="dlv"><div class="dlist">${delivRows(d)}</div>
+          <div class="row" style="margin-top:12px"><button class="main">Save deliverables</button><button type="button" data-xadd>+ Add another</button><button type="button" data-dreset>Reset to package</button></div></form>
+        <p class="muted small" style="margin:8px 0 0">Ticked from ${e.package ? esc(e.package) : "the package"} — untick, add or change the story count as you agree with the brand.</p></section>`; })()}
+      <section class="card"><h2>Reel brief</h2><form id="brief" style="display:grid;gap:12px">
+          <label>Brand's non-negotiables<textarea name="non_negotiables" rows="4" placeholder="One per line — e.g.&#10;Show the logo in the first 3 seconds&#10;Say “use code SKP10”&#10;Tag @brand in the caption">${esc(e.non_negotiables)}</textarea></label>
+          <label>Script<textarea name="script" rows="8" placeholder="Hook…&#10;Scene 1…">${esc(e.script)}</textarea></label>
+          <div><button class="main">Save brief</button></div></form></section>
       <section class="card"><div class="between"><h2>Their products</h2><button data-act="newProd">+ Add product</button></div>
         ${prods.length ? `<div class="list">${prods.map(p => `<div class="row"><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" referrerpolicy="no-referrer"><b>${esc(p.name)}</b><span class="muted small">${(p.category || []).map(catName).map(esc).join(" · ")}</span><button data-edit="${p.id}">Edit</button></div>`).join("")}</div>` : `<p class="muted" style="margin:0">Confirm the collab, then add the product they're sending: paste its link and the photo, name and categories fill in.</p>`}
         ${editing ? productForm(e) : ""}
       </section>
       <section class="card"><h2>Reel</h2>
         ${e.reel_code ? `<p style="margin:0 0 10px">Live: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a> · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
-        ${prods.length ? `<form id="reelf" class="row"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><button class="main">${e.reel_code ? "Update reel" : "Go live →"}</button></form>
+        ${prods.length ? `<form id="reelf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 170px">Live date<input name="live_on" type="date" value="${esc(e.live_on || today())}"></label><button class="main">${e.reel_code ? "Update reel" : "Go live →"}</button></form>
           <p class="muted small" style="margin:8px 0 0">Makes the reel page, connects it to their product${prods.length > 1 ? "s" : ""} and publishes the website. Status → Live.</p>` : `<p class="muted" style="margin:0">Add their product first.</p>`}
+      </section>
+      <section class="card"><h2>Trial reels <span class="muted small" style="font-weight:500">· just for your record, no page on the website</span></h2>
+        <form id="trf" style="display:grid;gap:8px"><div class="tlist" style="display:grid;gap:8px">${(trialsOf(e).length ? trialsOf(e) : [{ date: today() }]).map(trialRow).join("")}</div>
+          <div class="row"><button class="main">Save trial reels</button><button type="button" data-tadd>+ Add trial reel</button></div></form>
       </section>`;
   }
 
@@ -240,7 +332,8 @@
           <label>Name<input name="name" value="${esc(f.name)}" required></label>
           <label>Brand<input name="brand" value="${esc(f.brand)}" placeholder="e.g. Deciwood"></label>
           <label>Photo link (optional)<input name="image" value="${esc(/^https?:/.test(f.image) ? f.image : "")}" placeholder="https://…jpg"></label>
-          <div><b class="small">Categories</b><div class="cats">${flatCats().map(c => `<label><input type="checkbox" name="cat" value="${esc(c.id)}" ${f.category.includes(c.id) ? "checked" : ""}>${esc(c.name)}</label>`).join("")}</div></div>
+          <div><b class="small">Categories</b><div class="ctree">${(D.categories || []).map(c => { const box = (x, cls = "") => `<label class="${cls}"><input type="checkbox" name="cat" value="${esc(x.id)}" ${f.category.includes(x.id) ? "checked" : ""}>${x.emoji ? esc(x.emoji) + " " : ""}${esc(x.name)}</label>`;
+            return `<div class="grp">${box(c, "top")}${(c.sub || []).length ? `<div class="kids">${c.sub.map(x => box(x)).join("")}</div>` : ""}</div>`; }).join("")}</div></div>
         </div>
       </div>
       <div class="row" style="margin-top:12px"><button class="main">${p ? "Save changes" : "Save product"}</button><button type="button" data-act="cancelEdit">Cancel</button>
@@ -298,6 +391,30 @@
     D.enquiries.forEach(e => add(e.brand, "enquiries", e));
     return [...map.values()].sort((a, b) => (b.enquiries.length + b.products.length) - (a.enquiries.length + a.products.length));
   }
+  // ---- Categories: tab → sub-category → products
+  function vCategories() {
+    const has = (p, id) => (p.category || []).includes(id);
+    const match = p => !q || (p.name + " " + (p.brand || "")).toLowerCase().includes(q);
+    const leaf = p => `<div class="leaf"><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" referrerpolicy="no-referrer"><b>${esc(p.name)}</b><span class="muted small">${esc(p.brand || "")}</span><button data-editp="${p.id}">Edit</button></div>`;
+    const none = `<p class="muted small" style="margin:0;padding:6px 14px 10px 40px">No products yet</p>`;
+    const tree = (D.categories || []).map(c => {
+      const subs = c.sub || [], ids = [c.id, ...subs.map(x => x.id)];
+      const all = D.products.filter(p => ids.some(id => has(p, id)) && match(p));
+      const direct = all.filter(p => !subs.some(x => has(p, x.id)));   // in the tab but in none of its sub-categories
+      if (q && !all.length) return "";
+      return `<details ${q ? "open" : ""}><summary><b>${esc(c.emoji || "")} ${esc(c.name)}</b>${c.theme ? `<span class="muted small">theme</span>` : ""}<span class="n">${all.length}</span></summary>
+        ${subs.map(x => { const ps = all.filter(p => has(p, x.id)); return q && !ps.length ? "" : `<details ${q ? "open" : ""}><summary>${esc(x.name)}<span class="n">${ps.length}</span></summary>${ps.map(leaf).join("") || none}</details>`; }).join("")}
+        ${direct.length ? (subs.length ? `<details ${q ? "open" : ""}><summary class="muted">No sub-category<span class="n">${direct.length}</span></summary>${direct.map(leaf).join("")}</details>` : direct.map(leaf).join("")) : (!subs.length ? none : "")}
+      </details>`;
+    }).join("");
+    const known = new Set(flatCats().map(c => c.id));
+    const orphans = D.products.filter(p => !(p.category || []).some(id => known.has(id)) && match(p));
+    return `<div class="between"><h1>Categories</h1><input id="q" placeholder="Search products…" value="${esc(q)}" style="width:240px"></div>
+      <p class="muted" style="margin:0">Tap a category to open it. Change a product's categories from its Edit.</p>
+      <div class="tree" style="display:grid;gap:10px">${tree || `<p class="empty">Nothing matches.</p>`}
+      ${orphans.length ? `<details open><summary><b>⚠️ Not in any category</b><span class="n">${orphans.length}</span></summary>${orphans.map(leaf).join("")}</details>` : ""}</div>`;
+  }
+
   function vBrands() {
     const list = brandList().filter(b => !q || b.name.toLowerCase().includes(q));
     return `<div class="between"><h1>Brands <span class="muted" style="font:500 16px Inter,sans-serif">${list.length}</span></h1><input id="q" placeholder="Search brands…" value="${esc(q)}" style="width:220px"></div>
@@ -326,7 +443,7 @@
 
   function render() {
     if (!D) return;
-    const body = view === "enquiry" ? vEnquiry() : view === "products" ? vProducts() : view === "reels" ? vReels() : view === "brands" ? vBrands() : view === "brand" ? vBrand() : vEnquiries();
+    const body = view === "enquiry" ? vEnquiry() : view === "products" ? vProducts() : view === "reels" ? vReels() : view === "brands" ? vBrands() : view === "brand" ? vBrand() : view === "categories" ? vCategories() : vEnquiries();
     shell(body);
     const qi = $("q"); if (qi) { qi.oninput = () => { q = qi.value.trim().toLowerCase(); const pos = qi.selectionStart; render(); const n = $("q"); n.focus(); n.setSelectionRange(pos, pos); }; }
     wire();
@@ -339,6 +456,8 @@
   function wire() {
     root.querySelectorAll("[data-go]").forEach(a => a.onclick = e => { e.preventDefault(); q = ""; go(a.dataset.go); });
     root.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { filter = b.dataset.filter; render(); });
+    root.querySelectorAll("[data-src]").forEach(b => b.onclick = () => { srcFilter = b.dataset.src; render(); });
+    root.querySelectorAll("[data-editp]").forEach(b => b.onclick = () => { go("products"); editing = { id: +b.dataset.editp }; render(); $("pf")?.scrollIntoView({ behavior: "smooth" }); });
     root.querySelectorAll("[data-open]").forEach(b => b.onclick = () => go("enquiry", b.dataset.open));
     root.querySelectorAll("[data-brand]").forEach(b => b.onclick = e => { if (e.target.closest("a")) return; go("brand", b.dataset.brand); });
     root.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => { editing = { id: +b.dataset.edit }; render(); $("pf")?.scrollIntoView({ behavior: "smooth" }); });
@@ -376,8 +495,29 @@
     const pf = $("pf"); if (pf) pf.onsubmit = ev => { ev.preventDefault(); readPF(); const f = editing.form, btn = pf.querySelector("button.main");
       act(btn, async () => { const r = await api("product.save", { product: { id: editing.id, ...f, image: /^https?:|^assets\//.test(f.image) ? f.image : "" }, photo: editing.photo || null, enquiryId: view === "enquiry" ? +openId : null }); editing = null; }, "Saved — live in about a minute"); };
     const deal = $("deal"); if (deal) { wireContacts(deal); deal.onsubmit = ev => { ev.preventDefault(); const patch = Object.fromEntries(new FormData(deal)); patch.contacts = readContacts(deal); patch.contact = ""; act(deal.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch }), "Deal saved"); }; }
+    // payment details open once it's paid: a "Payment received" date, or Payment switched to Paid
+    if (deal) { const box = deal.querySelector("[data-paidbox]"), was = deal.payment.value,
+        upd = () => box.style.display = deal.paid_on.value || deal.txn_id.value || deal.payment_notes.value || (deal.payment.value === "Paid" && was !== "Paid") ? "grid" : "none";
+      deal.payment.onchange = upd; deal.paid_on.oninput = upd; deal.paid_on.onchange = upd; }
+    const dlv = $("dlv"); if (dlv) {
+      dlv.addEventListener("click", ev => {
+        if (ev.target.closest("[data-xadd]")) { dlv.querySelector(".dlist").insertAdjacentHTML("beforeend", extraRow({ t: "", done: false })); dlv.querySelector(".xrow:last-child input").focus(); }
+        if (ev.target.closest("[data-xrm]")) ev.target.closest(".xrow").remove();
+        if (ev.target.closest("[data-dreset]")) { const e = D.enquiries.find(x => x.id === +openId); dlv.querySelector(".dlist").innerHTML = delivRows(delivFromPackage(deal ? deal.package.value : e.package)); }
+      });
+      dlv.onsubmit = ev => { ev.preventDefault(); act(dlv.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch: { deliverables: readDeliv(dlv) } }), "Deliverables saved"); };
+    }
+    const trf = $("trf"); if (trf) {
+      trf.addEventListener("click", ev => {
+        if (ev.target.closest("[data-tadd]")) { trf.querySelector(".tlist").insertAdjacentHTML("beforeend", trialRow({ date: today() })); trf.querySelector(".trow:last-child input").focus(); }
+        const rm = ev.target.closest("[data-trm]"); if (rm) { if (trf.querySelectorAll(".trow").length > 1) rm.closest(".trow").remove(); else rm.closest(".trow").querySelectorAll("input").forEach(i => i.value = ""); }
+      });
+      trf.onsubmit = ev => { ev.preventDefault(); act(trf.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch: { trial_reels: readTrials(trf) } }), "Trial reels saved"); };
+    }
+    const brief = $("brief"); if (brief) brief.onsubmit = ev => { ev.preventDefault(); act(brief.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch: Object.fromEntries(new FormData(brief)) }), "Brief saved"); };
     const reelf = $("reelf"); if (reelf) reelf.onsubmit = ev => { ev.preventDefault(); const e = D.enquiries.find(x => x.id === +openId);
-      act(reelf.querySelector("button"), () => api("reel.save", { link: new FormData(reelf).get("link"), products: e.product_ids, enquiryId: e.id }), "Reel is live — the website updates in about a minute 🚀"); };
+      const fd = new FormData(reelf);
+      act(reelf.querySelector("button"), () => api("reel.save", { link: fd.get("link"), liveOn: fd.get("live_on"), products: e.product_ids, enquiryId: e.id }), "Reel is live — the website updates in about a minute 🚀"); };
     const rf = $("rf"); if (rf) rf.onsubmit = ev => { ev.preventDefault(); const fd = new FormData(rf);
       act(rf.querySelector("button.main"), async () => { await api("reel.save", { link: fd.get("link"), title: fd.get("title"), products: fd.getAll("p").map(Number) }); reelEdit = null; }, "Reel saved — live in about a minute"); };
   }
@@ -391,13 +531,15 @@
       <div class="grid2">
         <label>Brand name<input name="brand" required autocomplete="organization"></label>
         <label>Email<input name="email" type="email"></label>
+        ${sourceSelect("us")}
         <label>Package<select name="package"><option value=""></option>${pk.map(p => `<option>${esc(p.name)}</option>`).join("")}<option>Not sure yet</option></select></label>
         <label>Agreed price<input name="price" placeholder="filled from the package"></label>
         <label>Payment<select name="payment"><option></option><option>Paid</option><option>Barter</option><option>Pending</option></select></label>
         <label>Payment deadline<input name="payment_due" type="date"></label>
         <label>Product value<input name="product_value" placeholder="₹4,999"></label>
         ${contactsBlock([])}
-        <label style="grid-column:1/-1">Their product link<input name="product_link" placeholder="https://…"></label>
+        <label>Their Instagram<input name="instagram" placeholder="@brand"></label>
+        <label>Their product link<input name="product_link" placeholder="https://…"></label>
         <label style="grid-column:1/-1">Their message / notes<textarea name="notes" rows="3"></textarea></label>
       </div>
       <div class="row"><button class="main" type="submit">Add enquiry</button><button type="button" data-x>Cancel</button></div></form>`;

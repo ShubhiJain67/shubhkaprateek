@@ -9,10 +9,11 @@
 // Login: the X-Passcode header must equal the ADMIN_PASSCODE secret  (cd bot && npx wrangler secret put ADMIN_PASSCODE)
 // Public: POST /enquiry — the media kit's enquiry form (shubhkaprateek.com/portfolio) saves into the database here.
 
-const STATUSES = ["new", "replied", "hold", "confirmed", "product", "live", "declined"];
-const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes"];
+const STATUSES = ["new", "replied", "hold", "confirmed", "product", "live", "delivered", "declined"];   // delivered = everything done, deal closed
+const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes"];
 const now = () => new Date().toISOString();
 const clip = (v, n = 2000) => String(v ?? "").slice(0, n);
+const LONG = { script: 20000, non_negotiables: 5000, contacts: 5000, deliverables: 5000, trial_reels: 10000 };   // fields allowed to be longer than 2,000 characters
 const slugOf = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 
 let ready = false;
@@ -25,7 +26,7 @@ async function tables(env) {
     env.STATS.prepare("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, enquiry_id INTEGER, at TEXT, text TEXT)")
   ]);
   // columns added later — tables made before them get them here (fails harmlessly once they exist)
-  for (const col of ["payment_due TEXT", "contacts TEXT"]) { try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
+  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT"]) { try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
   ready = true;
 }
 const logEvent = (env, id, text) => env.STATS.prepare("INSERT INTO events (enquiry_id, at, text) VALUES (?, ?, ?)").bind(id, now(), clip(text, 300)).run();
@@ -57,8 +58,8 @@ async function onEnquiry(req, env, h) {
   await tables(env);
   const t = now();
   const d = await packageDefaults(env, h, clip(b.package, 120));
-  const r = await env.STATS.prepare(`INSERT INTO enquiries (created, updated, status, brand, email, package, product_link, message, price, payment, product_ids)
-    VALUES (?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, '[]')`).bind(t, t, brand, email, clip(b.package, 120), clip(b.link, 500), clip(b.message, 2000), d.price, d.payment).run();
+  const r = await env.STATS.prepare(`INSERT INTO enquiries (created, updated, status, brand, email, package, product_link, message, price, payment, product_ids, source)
+    VALUES (?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, '[]', 'brand')`).bind(t, t, brand, email, clip(b.package, 120), clip(b.link, 500), clip(b.message, 2000), d.price, d.payment).run();
   const id = r.meta && r.meta.last_row_id;
   if (id) await logEvent(env, id, "Enquiry received");
   for (const chat of String(env.ALLOWED_CHAT_IDS || "").split(/[\s,]+/).filter(Boolean))   // a ping on your phone
@@ -109,7 +110,7 @@ async function load(env, h) {
   const events = (await env.STATS.prepare("SELECT * FROM events ORDER BY id DESC LIMIT 2000").all()).results || [];
   enquiries.forEach(e => { try { e.product_ids = JSON.parse(e.product_ids || "[]"); } catch { e.product_ids = []; } });
   let kit = {}; try { kit = await h.readJson(env, "data/portfolio.json"); } catch {}
-  const packages = [...(kit.packages || []).map(p => ({ name: p.name, price: p.price || "", payment: "Paid" })), ...(kit.barter && kit.barter.title ? [{ name: kit.barter.title, price: "", payment: "Barter" }] : [])];
+  const packages = [...(kit.packages || []).map(p => ({ name: p.name, price: p.price || "", payment: "Paid", items: p.items || [] })), ...(kit.barter && kit.barter.title ? [{ name: kit.barter.title, price: "", payment: "Barter" }] : [])];
   return { products, reels, categories, featured: (site.site || {}).featured || [], brands, enquiries, events, packages };
 }
 
@@ -131,14 +132,14 @@ async function run(a, env, h) {
       const id = r.meta.last_row_id;
       // everything else filled in the form (price/payment here replace the package's defaults)
       const sets = [], vals = [];
-      for (const k of DEAL_FIELDS) if (!["brand", "email", "package"].includes(k) && clip(p[k]).trim()) { sets.push(`${k} = ?`); vals.push(clip(p[k])); }
+      for (const k of DEAL_FIELDS) if (!["brand", "email", "package"].includes(k) && clip(p[k], LONG[k] || 2000).trim()) { sets.push(`${k} = ?`); vals.push(clip(p[k], LONG[k] || 2000)); }
       if (sets.length) await env.STATS.prepare(`UPDATE enquiries SET ${sets.join(", ")} WHERE id = ?`).bind(...vals, id).run();
       await logEvent(env, id, "Added by you");
       return { ...(await load(env, h)), newId: id };
     }
     const e = await getEnquiry(env, a.id); if (!e) throw new Error("That enquiry is gone");
     const sets = [], vals = [];
-    for (const k of DEAL_FIELDS) if (k in p) { sets.push(`${k} = ?`); vals.push(clip(p[k])); }
+    for (const k of DEAL_FIELDS) if (k in p) { sets.push(`${k} = ?`); vals.push(clip(p[k], LONG[k] || 2000)); }
     if (p.status && STATUSES.includes(p.status) && p.status !== e.status) { sets.push("status = ?"); vals.push(p.status); await logEvent(env, e.id, `Status → ${p.status}`); }
     if (sets.length) await env.STATS.prepare(`UPDATE enquiries SET ${sets.join(", ")}, updated = ? WHERE id = ?`).bind(...vals, now(), e.id).run();
     return load(env, h);
@@ -219,7 +220,9 @@ async function run(a, env, h) {
     files.push({ path: "data/reels.json", text: h.pretty(reels, "products") });
     await h.commitFiles(env, `${isNew ? "Add" : "Update"} reel ${code} (dashboard)`, files);
     if (a.enquiryId) {
-      await env.STATS.prepare("UPDATE enquiries SET reel_code = ?, status = 'live', updated = ? WHERE id = ?").bind(code, now(), a.enquiryId).run();
+      // live date: the one picked in the form, else keep the saved one, else today. A closed (delivered) deal stays closed.
+      const liveOn = /^\d{4}-\d{2}-\d{2}$/.test(a.liveOn || "") ? a.liveOn : null;
+      await env.STATS.prepare("UPDATE enquiries SET reel_code = ?, status = CASE WHEN status = 'delivered' THEN status ELSE 'live' END, live_on = COALESCE(?, live_on, date('now')), updated = ? WHERE id = ?").bind(code, liveOn, now(), a.enquiryId).run();
       await logEvent(env, a.enquiryId, `Reel live: ${code}`);
     }
     return { ...(await load(env, h)), cover: isNew ? files.some(f => f.path.startsWith("assets/covers/")) : true };
