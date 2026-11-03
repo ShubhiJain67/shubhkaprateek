@@ -77,3 +77,15 @@ UPDATE enquiries SET product_value = '₹371', price = '₹629' WHERE lower(repl
 UPDATE enquiries SET status = 'delivered' WHERE brand = 'Play Retro' AND reel_code = 'DemM1ceylf2' AND status = 'live';
 -- Wonderbox is fully paid: payment received = the day they were added as collaborator (change it in the dashboard if it was another day)
 UPDATE enquiries SET paid_on = COALESCE(NULLIF(paid_on, ''), NULLIF(collab_on, ''), NULLIF(live_on, ''), substr(updated, 1, 10)) WHERE lower(replace(brand, ' ', '')) = 'wonderbox';
+
+-- Wonderbox + Storegenie (pitched after the reel was live): the pitch happened on the confirm day,
+-- so their start date and the dashboard log move to that day (confirm day = "Collab added on Instagram",
+-- else "Reel went live", else "Payment received"). Closing stays on the payment day.
+UPDATE enquiries SET created = COALESCE(NULLIF(collab_on, ''), NULLIF(live_on, ''), NULLIF(paid_on, '')) || 'T06:30:00Z'
+  WHERE lower(replace(brand, ' ', '')) IN ('wonderbox', 'storegenie') AND COALESCE(NULLIF(collab_on, ''), NULLIF(live_on, ''), NULLIF(paid_on, '')) IS NOT NULL;
+UPDATE events SET at = (SELECT substr(e.created, 1, 10) FROM enquiries e WHERE e.id = events.enquiry_id) || 'T06:' || substr(at, 15)
+  WHERE enquiry_id IN (SELECT id FROM enquiries WHERE lower(replace(brand, ' ', '')) IN ('wonderbox', 'storegenie') AND created NOT LIKE '2026-11-03%' AND created NOT LIKE '2026-11-04%')
+    AND text NOT LIKE 'Status → delivered%';
+UPDATE events SET at = (SELECT COALESCE(NULLIF(e.paid_on, ''), substr(e.created, 1, 10)) FROM enquiries e WHERE e.id = events.enquiry_id) || 'T06:' || substr(at, 15)
+  WHERE enquiry_id IN (SELECT id FROM enquiries WHERE lower(replace(brand, ' ', '')) IN ('wonderbox', 'storegenie') AND created NOT LIKE '2026-11-03%' AND created NOT LIKE '2026-11-04%')
+    AND text LIKE 'Status → delivered%';
