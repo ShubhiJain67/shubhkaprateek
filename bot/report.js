@@ -126,32 +126,32 @@ export async function reportCommand(cmd, text, env, chat, { say, esc, readJson, 
   if (cmd === "/brands" || cmd === "/reports") {
     const products = await readJson(env, "data/products.json"), by = new Map();
     for (const p of products) if (p.brand) { const s = slugOf(p.brand); by.set(s, [...(by.get(s) || []), p]); }
-    if (!by.size) return say(env, chat, "No brands set yet. Set one: <code>/brand Deciwood 49 50</code>"), true;
+    if (!by.size) return (await say(env, chat, "No brands set yet. Set one: <code>/brand Deciwood 49 50</code>"), true);
     const lines = [];
     for (const [slug, ps] of [...by].sort((a, b) => b[1].length - a[1].length))
       lines.push(`• <b>${esc(ps[0].brand)}</b> (${ps.length}): ${esc(await brandLink(env, slug))}`);
     const none = products.filter(p => !p.brand);
-    return say(env, chat, "🏷 <b>Brands</b>\n" + lines.join("\n") +
-      (none.length ? `\n\n❓ No brand yet (${none.length}): ` + none.map(p => `<code>${p.id}</code> ${esc(p.name)}`).join(", ") + "\nSet one: <code>/brand Name id id…</code>" : "")), true;
+    return (await say(env, chat, "🏷 <b>Brands</b>\n" + lines.join("\n") +
+      (none.length ? `\n\n❓ No brand yet (${none.length}): ` + none.map(p => `<code>${p.id}</code> ${esc(p.name)}`).join(", ") + "\nSet one: <code>/brand Name id id…</code>" : "")), true);
   }
   if (cmd !== "/brand" && cmd !== "/report") return false;
   const parts = text.replace(/^\/\S+\s*/, "").trim().split(/\s+/).filter(Boolean);
   const ids = parts.filter(x => /^\d+$/.test(x)).map(Number), name = parts.filter(x => !/^\d+$/.test(x)).join(" ");
-  if (!name) return say(env, chat, "Send it like: <code>/brand Blix</code> (gets Blix's page) or <code>/brand Deciwood 49 50</code> (sets products 49 + 50 to Deciwood)."), true;
+  if (!name) return (await say(env, chat, "Send it like: <code>/brand Blix</code> (gets Blix's page) or <code>/brand Deciwood 49 50</code> (sets products 49 + 50 to Deciwood)."), true);
   const slug = slugOf(name);
   let products = await readJson(env, "data/products.json");
   if (ids.length) {
     const found = products.filter(p => ids.includes(p.id)), missing = ids.filter(id => !found.some(p => p.id === id));
-    if (!found.length) return say(env, chat, `None of those ids are on the site: ${esc(ids.join(", "))}`), true;
+    if (!found.length) return (await say(env, chat, `None of those ids are on the site: ${esc(ids.join(", "))}`), true);
     found.forEach(p => { p.brand = name; });
     await saveProducts(env, products, `Brand ${name}: products ${found.map(p => p.id).join(", ")} (via Telegram bot)`);
     if (missing.length) await say(env, chat, `ℹ️ Not on the site, skipped: ${esc(missing.join(", "))}`);
   }
   const mine = productsForBrand(slug, products);
-  if (!mine.length) return say(env, chat, `No products have the brand “${esc(name)}” yet. Set them: <code>/brand ${esc(name)} 49 50</code> (product ids — /brands lists the ones without a brand)`), true;
+  if (!mine.length) return (await say(env, chat, `No products have the brand “${esc(name)}” yet. Set them: <code>/brand ${esc(name)} 49 50</code> (product ids — /brands lists the ones without a brand)`), true);
   await ensureReportApi(env);                                 // tells the website where to fetch the numbers (first time only)
   const notes = env.UMAMI_API_KEY ? "" : "\n\n⚠️ Live numbers aren't connected yet: Umami → Settings → API keys → Create key, then in bot/ run <code>npx wrangler secret put UMAMI_API_KEY</code>";
-  return say(env, chat, `🏷 <b>${esc(brandName(slug, products))}</b> — ${mine.length} product${mine.length > 1 ? "s" : ""}:\n` +
+  return (await say(env, chat, `🏷 <b>${esc(brandName(slug, products))}</b> — ${mine.length} product${mine.length > 1 ? "s" : ""}:\n` +
     mine.map(p => `• <code>${p.id}</code> ${esc(p.name)}`).join("\n") +
-    `\n\nTheir page (send them this):\n${esc(await brandLink(env, slug))}${notes}`), true;
+    `\n\nTheir page (send them this):\n${esc(await brandLink(env, slug))}${notes}`), true);
 }
