@@ -46,7 +46,48 @@
     }
   ],
   "brands": [],
-  "brandCollabs": [],
+  "brandCollabs": [
+    {
+      "brand": "Flower Bubble Machine",
+      "code": "DfJSWTLSvaV",
+      "views": ""
+    },
+    {
+      "brand": "Blix",
+      "code": "DfHN_zDSN5X",
+      "views": ""
+    },
+    {
+      "brand": "Clay IceCream Maker",
+      "code": "DfOmcXdST8W",
+      "views": ""
+    },
+    {
+      "brand": "Tipsytap",
+      "code": "De6a84ayKwv",
+      "views": ""
+    },
+    {
+      "brand": "Tipsytap",
+      "code": "De8uBTrSgB9",
+      "views": ""
+    },
+    {
+      "brand": "Eazy Arts",
+      "code": "DV2XLW2EuoN",
+      "views": ""
+    },
+    {
+      "brand": "Superhero Jigsaw Puzzle",
+      "code": "DdxwWwSSS8q",
+      "views": ""
+    },
+    {
+      "brand": "Brickadda",
+      "code": "DdrMH5JSjEz",
+      "views": ""
+    }
+  ],
   "bestReels": [
     {
       "code": "DfJSWTLSvaV",
