@@ -124,6 +124,14 @@ export async function handleUpdate(update, env) {
   const draft = await loadDraft(env, chat);
   const hasLink = /https?:\/\//i.test(text);
   // photo link for a product that's already on the site: img 49 https://…jpg  (or img Flower Bubble Machine https://…)
+  // "1 img https://…" (number first) = the preview's numbering: fix the draft, or — with no draft — don't guess which product
+  const flipped = text.match(/^(\d+)\s+(?:img|image|photo)\s+(https?:\/\/\S+)\s*$/i);
+  if (flipped && draft) return onEdit(draft, `img ${flipped[1]} ${flipped[2]}`, env, chat);
+  if (flipped) {
+    const recent = (await readJson(env, "data/products.json")).slice(-3).reverse();
+    return say(env, chat, "There's no preview open, so I won't guess which product that is. Use the product's <b>id</b>:\n" +
+      recent.map(p => `• <code>img ${p.id} ${esc(flipped[2])}</code> — ${esc(p.name)}`).join("\n"));
+  }
   const imgCmd = text.match(/^(?:img|image|photo)\s+(.+?)\s+(https?:\/\/\S+)\s*$/i);
   if (imgCmd && !(draft && /^\d+$/.test(imgCmd[1]) && draft.products[+imgCmd[1] - 1]?.existingId == null && draft.products[+imgCmd[1] - 1]))
     return setSitePhoto(env, chat, imgCmd[1], { link: imgCmd[2] });
@@ -131,6 +139,10 @@ export async function handleUpdate(update, env) {
   if (!hasLink) return say(env, chat, draft
     ? "I didn't get that 🤔 Reply with a fix like <code>cat 2 mugs</code> or <code>title …</code>, tap ✅ on the preview, or /help."
     : HELP);
+  // only photo links (no reel, no shop link)? That's a photo, not a new product — don't add it as one
+  const urls = text.match(URL_RE) || [];
+  if (urls.length && !/instagram\.com\//i.test(text) && urls.every(u => /\.(jpe?g|png|webp|gif)(\?|$)|media-amazon\.com\/images\/|\/cdn\/shop\/files\//i.test(u)))
+    return say(env, chat, "📷 That looks like a <b>photo</b> link, not a product. To set a product's photo send <code>img 51 " + esc(urls[0]) + "</code> (51 = the product's id), or send the photo itself with the id as the caption.");
   if (draft) await say(env, chat, "🆕 Starting a new draft (the previous one is replaced).");
   return onNewPost(text, env, chat);
 }
