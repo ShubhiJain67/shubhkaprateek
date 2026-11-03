@@ -63,7 +63,7 @@
   .card-mk h3 { margin: 0 0 10px; font-size: 18px; }
   .card-mk ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; }
   .pk { display: grid; gap: 12px; }
-  @media (min-width: 760px) { .pk { grid-template-columns: repeat(2, 1fr); gap: 16px; } }
+  @media (min-width: 760px) { .pk { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
   .pk .price { font-family: Fraunces, Georgia, serif; font-size: 22px; margin: -4px 0 10px; color: var(--pink); }
   .reel-mk .tag { position: absolute; left: 8px; top: 8px; background: var(--pink); color: #fff; font-weight: 700; font-size: 12px; padding: 4px 9px; border-radius: 999px; }
   .brands { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -72,7 +72,7 @@
   .series-covers a { flex: 1; } .series-covers img { width: 100%; aspect-ratio: 9/16; object-fit: cover; border-radius: 10px; display: block; }
   .series h3 { margin-bottom: 4px; } .series-views { font-weight: 700; color: var(--pink); margin: 0 0 4px; }
   .muted { color: var(--muted); margin: 0; }
-  .pk-card { display: flex; flex-direction: column; } .pk-card ul { flex: 1; margin-bottom: 16px; } .pk-card .choose { align-self: flex-start; cursor: pointer; }
+  .pk-card { display: flex; flex-direction: column; } .pk-card ul { flex: 1; margin-bottom: 16px; align-content: start; } .pk-card .choose { align-self: flex-start; cursor: pointer; }
   .pk.barter { margin-top: 12px; } @media (min-width: 760px) { .pk.barter { grid-template-columns: 1fr; } }
   .pk-card.slim { background: var(--field); box-shadow: none; }
   .enquiry h2 { text-align: center; } .enquiry > .muted { text-align: center; margin-bottom: 16px; }
