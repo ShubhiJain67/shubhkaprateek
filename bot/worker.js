@@ -36,6 +36,7 @@ I'll send a preview. Fix anything by replying:
 <code>cat 2 mugs marvel</code>   (list: /cats)
 <code>link 2 https://…</code>
 <code>img 2 https://…photo.jpg</code>
+<code>brand 2 Deciwood</code>
 <code>remove 2</code>
 Send a <b>photo</b> with caption <code>cover</code> (reel cover) or <code>2</code> (product 2's photo).
 📷 Product already on the site? Send its photo with its id or name as the caption (e.g. <code>49</code>), or <code>img 49 https://…jpg</code>.
@@ -53,7 +54,7 @@ I'll show exactly what goes before anything is removed.
 <code>/feature Hulk Comforter</code> (or its id) — add it to the featured tile (up to 2)
 <code>/unfeature Hulk Comforter</code> — take it off · <code>/unfeature all</code> — clear it
 <code>/featured</code> — what's featured now
-📊 <code>/report blix</code> — a live clicks report to send a brand (<code>/report Deciwood 49 50</code> to pick products) · <code>/reports</code> — all report links
+🏷 <code>/brand Blix</code> — the brand's page link (products, reels, live clicks) to send them · <code>/brand Deciwood 49 50</code> — set products 49 + 50 to Deciwood · <code>/brands</code> — all brands
 
 🔗 <code>/link https://www.instagram.com/reel/ABC123/</code> — a tracking link for the reel's CTA (any name works too: <code>?from=queaky</code>)`;
 
@@ -107,7 +108,7 @@ export async function handleUpdate(update, env) {
   if (cmd === "/cancel") { await env.DRAFTS.delete(String(chat)); return say(env, chat, "🗑 Draft dropped."); }
   if (cmd === "/cats") return say(env, chat, await catsHelp(env));
   if (await plannerCommand(cmd, text, env, chat)) return;
-  if (await reportCommand(cmd, text, env, chat, { say, esc, readJson, ensureReportApi })) return;   // /report /reports          // /idea /ideas /plan /shot /edited /uploaded /week /planner …
+  if (await reportCommand(cmd, text, env, chat, { say, esc, readJson, ensureReportApi, saveProducts })) return;   // /brand /brands (/report)          // /idea /ideas /plan /shot /edited /uploaded /week /planner …
   if (cmd === "/delete" || cmd === "/remove") return onDelete(text.replace(/^\/\S+\s*/, "").trim(), env, chat);
   if (cmd === "/featured") return showFeatured(env, chat);
   if (cmd === "/link") {                                   // /link <reel link or code> → that reel's CTA link
@@ -135,7 +136,7 @@ export async function handleUpdate(update, env) {
   const imgCmd = text.match(/^(?:img|image|photo)\s+(.+?)\s+(https?:\/\/\S+)\s*$/i);
   if (imgCmd && !(draft && /^\d+$/.test(imgCmd[1]) && draft.products[+imgCmd[1] - 1]?.existingId == null && draft.products[+imgCmd[1] - 1]))
     return setSitePhoto(env, chat, imgCmd[1], { link: imgCmd[2] });
-  if (draft && /^(title|name|cat|cats|category|link|img|image|photo|remove|delete)\b/i.test(text) && !/instagram\.com\//i.test(text)) return onEdit(draft, text, env, chat);
+  if (draft && /^(title|name|cat|cats|category|brand|link|img|image|photo|remove|delete)\b/i.test(text) && !/instagram\.com\//i.test(text)) return onEdit(draft, text, env, chat);
   if (!hasLink) return say(env, chat, draft
     ? "I didn't get that 🤔 Reply with a fix like <code>cat 2 mugs</code> or <code>title …</code>, tap ✅ on the preview, or /help."
     : HELP);
@@ -231,6 +232,10 @@ export function storeOf(link) {
     return base.charAt(0).toUpperCase() + base.slice(1);
   } catch { return ""; }
 }
+
+// A product's brand = the shop it's sold on, when that's the brand's own website (blix.in → Blix).
+// Marketplaces (Amazon, Flipkart…) sell many brands, so those are left empty — set them with "brand 2 Deciwood".
+export const guessBrand = link => /amazon|amzn|flipkart|myntra|ajio|meesho|nykaa|hamleys/i.test(link || "") ? "" : storeOf(link);
 
 export function extractProduct(html, finalUrl) {
   const isAmazon = /amazon\./i.test(finalUrl);
@@ -424,6 +429,10 @@ async function ensureReportApi(env) {
   await commitFiles(env, "Connect brand reports to the bot (via Telegram bot)", [{ path: "data/site.json", text: pretty(site, "featured") }]);
 }
 
+async function saveProducts(env, products, message) {
+  await commitFiles(env, message, [{ path: "data/products.json", text: pretty(products, "category") }]);
+}
+
 async function loadSite(env) {
   const [products, reels, categories, site] = await Promise.all(["products", "reels", "categories", "site"].map(f => readJson(env, `data/${f}.json`)));
   return { products, reels, categories, cats: flattenCats(categories), site };
@@ -492,6 +501,8 @@ export function previewText(d, cats) {
     lines.push(`${n}. <b>${esc(p.name)}</b> 🆕${p.needsName ? ` — ❓ couldn't read the name, reply <code>name ${n} …</code>` : ""}`);
     if (p.needsName) problems.push(`product ${n} name`);
     lines.push(`   ${cs.length ? esc(cs.join(" · ")) : "❓ no category — reply <code>cat " + n + " …</code> (/cats)"}`);
+    const br = p.brand ?? guessBrand(p.variants[0] && p.variants[0].link);
+    lines.push(`   🏷 ${br ? esc(br) : "no brand — reply <code>brand " + n + " Name</code> (optional)"}`);
     p.variants.forEach(v => {
       const photo = v.photoFile ? "📷 your photo" : v.image ? "📷 ✓" : "📷 ❌ send a photo with caption <code>" + n + "</code>";
       lines.push(`   ${p.variants.length > 1 ? esc(v.name) + ": " : ""}${esc(storeOf(v.link) || "link")} · ${photo}`);
@@ -551,6 +562,8 @@ async function onEdit(d, text, env, chat) {
     await enrichProduct(fresh);
     fresh.category = (p.category && p.category.length) ? p.category : guessCategories(fresh.name + " " + (fresh.pageTitle || ""), cats);
     d.products[n - 1] = fresh;
+  } else if (verb === "brand") {
+    needP(); p.brand = rest;
   } else if (["img", "image", "photo"].includes(verb)) {
     needP();
     const link = (rest.match(URL_RE) || [])[0]; if (!link) throw new Error("Send it like: img 2 https://…jpg — or just send the photo with caption 2");
@@ -662,7 +675,7 @@ export async function publish(d, env) {
       }
       variants.push({ name: v.name || "Default", link: v.link || "", image });
     }
-    S.products.push({ id, name: p.name, category: p.category && p.category.length ? p.category : [], variants });
+    S.products.push({ id, name: p.name, brand: p.brand ?? guessBrand(variants[0] && variants[0].link), category: p.category && p.category.length ? p.category : [], variants });
     ids.push(id); added.push(`${p.name}`);
   }
   let reelLine = "";

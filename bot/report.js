@@ -1,18 +1,19 @@
-// 📊 Brand reports: shubhkaprateek.com/report/<brand>?k=<key>
+// 🏷 Brand pages: shubhkaprateek.com/brand/<brand>?k=<key>   (old /report/<brand> links still work)
 //
-// A page you can send a brand. It shows only THEIR products: buy-button clicks, tracked /go/ link clicks (and where
-// those came from: ?from=autodm …), product + reel page views, and the reels they were in. Numbers come live from
-// Umami through this worker, so the Umami API key stays secret (it's never in the website's code).
+// A page you send a brand. It shows only THEIR products (every product has a "brand" in data/products.json):
+// the products live on our site (photo, categories, buy link), the reels they're in, and live numbers from Umami —
+// buy-button clicks, tracked /go/ link clicks (+ where they came from: ?from=autodm …) and product/reel page views.
+// The numbers come through this worker, so the Umami API key stays secret (it's never in the website's code).
 //
-// Telegram:  /report blix            → products whose buy link is on the brand's store (blix.in) — automatic
-//            /report Deciwood 49 50  → you pick the product ids (needed for Amazon products)
-//            /reports                → every report link you've made
-// Each brand's link has its own key, so one brand can't open another brand's report by changing the name.
+// Telegram:  /brand Blix            → Blix's page link (products whose "brand" is Blix)
+//            /brand Deciwood 49 50  → sets products 49 + 50 to Deciwood (saved in products.json), then the link
+//            /brands                → every brand with its page link       (/report, /reports still work too)
+// Each brand's link has its own key, so one brand can't open another brand's page by changing the name.
 //
 // Setup (once): Umami → Settings → API keys → Create key, then in bot/:  npx wrangler secret put UMAMI_API_KEY
 
 const UMAMI = "https://api.umami.is/v1";
-const slugOf = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+export const slugOf = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 const flat = s => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const REEL_CODE = /instagram\.com\/(?:[\w.]+\/)?(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/;
 
@@ -21,13 +22,15 @@ export async function reportKey(env, slug) {
   return [...new Uint8Array(d)].slice(0, 8).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-// products whose buy link is on the brand's own website, e.g. "blix" → blix.in, "eazy-arts" → eazyarts.in
+// the brand's products: "brand" in products.json; products with no brand set fall back to the shop's website
+// (e.g. "blix" → a buy link on blix.in)
 export function productsForBrand(slug, products) {
   const want = flat(slug);
-  return products.filter(p => (p.variants || []).some(v => {
+  return products.filter(p => p.brand ? slugOf(p.brand) === slug : (p.variants || []).some(v => {
     try { return want.length >= 3 && flat(new URL(v.link).hostname.replace(/^www\./, "").split(".")[0]) === want; } catch { return false; }
   }));
 }
+export const brandName = (slug, products) => (products.find(p => p.brand && slugOf(p.brand) === slug) || {}).brand || slug;
 
 const n = v => +v || 0;
 const pairs = arr => (Array.isArray(arr) ? arr : (arr && arr.data) || []).map(r => [String(r.x ?? r.value ?? r.name ?? ""), n(r.y ?? r.total ?? r.count)]);
@@ -41,18 +44,22 @@ async function umami(env, websiteId, path, params) {
 }
 
 export async function buildReport(env, { readJson }, slug, days) {
-  const raw = await env.DRAFTS.get("report:" + slug);
-  const saved = raw ? JSON.parse(raw) : null;
-  const [products, reels, site] = await Promise.all(["products", "reels", "site"].map(f => readJson(env, `data/${f}.json`)));
-  const mine = saved && saved.ids && saved.ids.length
-    ? products.filter(p => saved.ids.includes(p.id)) : productsForBrand(slug, products);
-  const ids = new Set(mine.map(p => p.id));
+  const [products, reels, site, categories] = await Promise.all(["products", "reels", "site", "categories"].map(f => readJson(env, `data/${f}.json`)));
+  const catName = {};
+  for (const c of categories || []) { catName[c.id] = c.name; for (const s of c.sub || []) catName[s.id] = s.name; }
+  const mine = productsForBrand(slug, products), ids = new Set(mine.map(p => p.id));
   const myReels = reels.filter(r => (r.products || []).some(id => ids.has(id)))
-    .map(r => ({ code: (String(r.reel).match(REEL_CODE) || [])[1] || "", title: r.title || "" })).filter(r => r.code);
+    .map(r => ({ code: (String(r.reel).match(REEL_CODE) || [])[1] || "", title: r.title || "", products: (r.products || []).filter(id => ids.has(id)) })).filter(r => r.code);
+  const siteUrl = env.SITE_URL || "https://shubhkaprateek.com";
   const out = {
-    brand: (saved && saved.name) || slug, days,
-    products: mine.map(p => ({ id: p.id, name: p.name, image: (p.variants || []).map(v => v.image).find(Boolean) || "", buy: 0, go: 0, views: 0, from: {} })),
-    reels: myReels.map(r => ({ ...r, views: 0 })), note: ""
+    brand: brandName(slug, products), days,
+    products: mine.map(p => {
+      const v = (p.variants || [])[0] || {};
+      return { id: p.id, name: p.name, image: (p.variants || []).map(v => v.image).find(Boolean) || "", link: v.link || "",
+        page: `${siteUrl}/product/${p.id}`, categories: [].concat(p.category || []).map(c => catName[c] || c),
+        reels: myReels.filter(r => r.products.includes(p.id)).length, buy: 0, go: 0, views: 0, from: {} };
+    }),
+    reels: myReels.map(({ products, ...r }) => ({ ...r, views: 0 })), note: ""
   };
   const wid = ((site || {}).site || {}).umamiWebsiteId;
   if (!env.UMAMI_API_KEY || !wid) { out.note = "Live numbers aren't connected yet."; return out; }
@@ -76,9 +83,9 @@ export async function buildReport(env, { readJson }, slug, days) {
   return out;
 }
 
-// GET <worker>/report/api?brand=blix&k=…&days=30  (called by shubhkaprateek.com/report/blix)
+// GET <worker>/brand/api?brand=blix&k=…&days=30   (called by shubhkaprateek.com/brand/blix)
 export async function reportHttp(req, env, url, helpers) {
-  if (url.pathname !== "/report/api") return null;
+  if (url.pathname !== "/brand/api" && url.pathname !== "/report/api") return null;
   const cors = { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store", "Content-Type": "application/json", "X-Robots-Tag": "noindex" };
   if (req.method === "OPTIONS") return new Response(null, { headers: { ...cors, "Access-Control-Allow-Methods": "GET" } });
   const slug = slugOf(url.searchParams.get("brand"));
@@ -93,36 +100,43 @@ export async function reportHttp(req, env, url, helpers) {
     return new Response(body, { headers: cors });
   } catch (e) {
     console.error(e);
-    return new Response(JSON.stringify({ error: "Couldn't build the report right now" }), { status: 500, headers: cors });
+    return new Response(JSON.stringify({ error: "Couldn't build the page right now" }), { status: 500, headers: cors });
   }
 }
 
-// /report <brand> [product ids…]   ·   /reports
-export async function reportCommand(cmd, text, env, chat, { say, esc, readJson, ensureReportApi }) {
-  if (cmd === "/reports") {
-    const list = await env.DRAFTS.list({ prefix: "report:" });
-    if (!list.keys.length) return say(env, chat, "No brand reports yet. Make one: <code>/report blix</code>"), true;
+const brandLink = async (env, slug) => `${env.SITE_URL || "https://shubhkaprateek.com"}/brand/${slug}?k=${await reportKey(env, slug)}`;
+
+// /brand <Name> [product ids…]   ·   /brands      (/report and /reports do the same)
+export async function reportCommand(cmd, text, env, chat, { say, esc, readJson, ensureReportApi, saveProducts }) {
+  if (cmd === "/brands" || cmd === "/reports") {
+    const products = await readJson(env, "data/products.json"), by = new Map();
+    for (const p of products) if (p.brand) { const s = slugOf(p.brand); by.set(s, [...(by.get(s) || []), p]); }
+    if (!by.size) return say(env, chat, "No brands set yet. Set one: <code>/brand Deciwood 49 50</code>"), true;
     const lines = [];
-    for (const k of list.keys) { const slug = k.name.slice(7); lines.push(`• ${esc(slug)}: ${esc(await reportLink(env, slug))}`); }
-    return say(env, chat, "📊 <b>Brand reports</b>\n" + lines.join("\n")), true;
+    for (const [slug, ps] of [...by].sort((a, b) => b[1].length - a[1].length))
+      lines.push(`• <b>${esc(ps[0].brand)}</b> (${ps.length}): ${esc(await brandLink(env, slug))}`);
+    const none = products.filter(p => !p.brand);
+    return say(env, chat, "🏷 <b>Brands</b>\n" + lines.join("\n") +
+      (none.length ? `\n\n❓ No brand yet (${none.length}): ` + none.map(p => `<code>${p.id}</code> ${esc(p.name)}`).join(", ") + "\nSet one: <code>/brand Name id id…</code>" : "")), true;
   }
-  if (cmd !== "/report") return false;
+  if (cmd !== "/brand" && cmd !== "/report") return false;
   const parts = text.replace(/^\/\S+\s*/, "").trim().split(/\s+/).filter(Boolean);
   const ids = parts.filter(x => /^\d+$/.test(x)).map(Number), name = parts.filter(x => !/^\d+$/.test(x)).join(" ");
-  if (!name) return say(env, chat, "Send it like: <code>/report blix</code> (products on blix.in) or <code>/report Deciwood 49 50</code> (you pick the product ids)."), true;
-  const slug = slugOf(name), products = await readJson(env, "data/products.json");
-  const mine = ids.length ? products.filter(p => ids.includes(p.id)) : productsForBrand(slug, products);
-  if (!mine.length) return say(env, chat, ids.length
-    ? `None of those ids are on the site: ${esc(ids.join(", "))}`
-    : `I couldn't find products on a “${esc(name)}” website. Add the product ids yourself, e.g. <code>/report ${esc(name)} 49 50</code>`), true;
-  await env.DRAFTS.put("report:" + slug, JSON.stringify({ name, ids: ids.length ? mine.map(p => p.id) : [] }));
+  if (!name) return say(env, chat, "Send it like: <code>/brand Blix</code> (gets Blix's page) or <code>/brand Deciwood 49 50</code> (sets products 49 + 50 to Deciwood)."), true;
+  const slug = slugOf(name);
+  let products = await readJson(env, "data/products.json");
+  if (ids.length) {
+    const found = products.filter(p => ids.includes(p.id)), missing = ids.filter(id => !found.some(p => p.id === id));
+    if (!found.length) return say(env, chat, `None of those ids are on the site: ${esc(ids.join(", "))}`), true;
+    found.forEach(p => { p.brand = name; });
+    await saveProducts(env, products, `Brand ${name}: products ${found.map(p => p.id).join(", ")} (via Telegram bot)`);
+    if (missing.length) await say(env, chat, `ℹ️ Not on the site, skipped: ${esc(missing.join(", "))}`);
+  }
+  const mine = productsForBrand(slug, products);
+  if (!mine.length) return say(env, chat, `No products have the brand “${esc(name)}” yet. Set them: <code>/brand ${esc(name)} 49 50</code> (product ids — /brands lists the ones without a brand)`), true;
   await ensureReportApi(env);                                 // tells the website where to fetch the numbers (first time only)
   const notes = env.UMAMI_API_KEY ? "" : "\n\n⚠️ Live numbers aren't connected yet: Umami → Settings → API keys → Create key, then in bot/ run <code>npx wrangler secret put UMAMI_API_KEY</code>";
-  return say(env, chat, `📊 <b>Report for ${esc(name)}</b> — ${mine.length} product${mine.length > 1 ? "s" : ""}:\n` +
+  return say(env, chat, `🏷 <b>${esc(brandName(slug, products))}</b> — ${mine.length} product${mine.length > 1 ? "s" : ""}:\n` +
     mine.map(p => `• <code>${p.id}</code> ${esc(p.name)}`).join("\n") +
-    `\n\nSend them this link (it only works with the key at the end):\n${esc(await reportLink(env, slug))}${notes}`), true;
-}
-
-async function reportLink(env, slug) {
-  return `${env.SITE_URL || "https://shubhkaprateek.com"}/report/${slug}?k=${await reportKey(env, slug)}`;
+    `\n\nTheir page (send them this — it only works with the key at the end):\n${esc(await brandLink(env, slug))}${notes}`), true;
 }

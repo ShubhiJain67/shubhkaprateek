@@ -2,6 +2,7 @@
   {
     "id": 1,
     "name": "Paint-your-own portrait kit (Eazy Arts)",
+    "brand": "Eazy Arts",
     "category": ["diy"],
     "variants": [
       {
@@ -14,6 +15,7 @@
   {
     "id": 9,
     "name": "Minion Comforter",
+    "brand": "",
     "category": ["bedding"],
     "variants": [
       {
@@ -26,6 +28,7 @@
   {
     "id": 10,
     "name": "Coloring blanket",
+    "brand": "Storegenie",
     "category": ["bedding", "diy"],
     "variants": [
       {
@@ -38,6 +41,7 @@
   {
     "id": 11,
     "name": "Google Eyes Drinking Straws",
+    "brand": "",
     "category": ["mugs"],
     "variants": [
       {
@@ -50,6 +54,7 @@
   {
     "id": 17,
     "name": "Marvel Hoodie",
+    "brand": "The Souled Store",
     "category": ["topwear", "marvel"],
     "variants": [
       {
@@ -62,6 +67,7 @@
   {
     "id": 18,
     "name": "Hulk BrickSet",
+    "brand": "Brickadda",
     "category": ["building-sets", "marvel"],
     "variants": [
       {
@@ -74,6 +80,7 @@
   {
     "id": 19,
     "name": "Deadpool Car Accessory",
+    "brand": "",
     "category": ["car-accessories", "marvel"],
     "variants": [
       {
@@ -86,6 +93,7 @@
   {
     "id": 20,
     "name": "Spider-Man web shooter",
+    "brand": "",
     "category": ["role-play", "marvel"],
     "variants": [
       {
@@ -98,6 +106,7 @@
   {
     "id": 21,
     "name": "Superhero Jigsaw Puzzle",
+    "brand": "Wonderbox",
     "category": ["board-games"],
     "variants": [
       {
@@ -110,6 +119,7 @@
   {
     "id": 22,
     "name": "Iron Man sneakers",
+    "brand": "The Souled Store",
     "category": ["footwear", "marvel"],
     "variants": [
       {
@@ -122,6 +132,7 @@
   {
     "id": 23,
     "name": "Marvel Dobble card game",
+    "brand": "",
     "category": ["board-games", "marvel"],
     "variants": [
       {
@@ -134,6 +145,7 @@
   {
     "id": 24,
     "name": "Arc Reactor hoodie",
+    "brand": "The Souled Store",
     "category": ["topwear", "marvel"],
     "variants": [
       {
@@ -146,6 +158,7 @@
   {
     "id": 25,
     "name": "Gauntlet",
+    "brand": "",
     "category": ["role-play", "marvel"],
     "variants": [
       {
@@ -158,6 +171,7 @@
   {
     "id": 26,
     "name": "Marvel socks",
+    "brand": "Socksxpress",
     "category": ["footwear", "marvel"],
     "variants": [
       {
@@ -170,6 +184,7 @@
   {
     "id": 27,
     "name": "Spider-Man brick set",
+    "brand": "Brickadda",
     "category": ["building-sets", "marvel"],
     "variants": [
       {
@@ -182,6 +197,7 @@
   {
     "id": 28,
     "name": "Hulk T-shirt",
+    "brand": "The Souled Store",
     "category": ["topwear", "marvel"],
     "variants": [
       {
@@ -194,6 +210,7 @@
   {
     "id": 29,
     "name": "Black Panther perfume",
+    "brand": "The Souled Store",
     "category": ["fashion-accessories", "marvel"],
     "variants": [
       {
@@ -206,6 +223,7 @@
   {
     "id": 30,
     "name": "Punisher Sweater",
+    "brand": "The Souled Store",
     "category": ["topwear", "marvel"],
     "variants": [
       {
@@ -218,6 +236,7 @@
   {
     "id": 31,
     "name": "Marvel Jibbitz",
+    "brand": "Funblast",
     "category": ["fashion-accessories", "marvel"],
     "variants": [
       {
@@ -230,6 +249,7 @@
   {
     "id": 32,
     "name": "Crocs",
+    "brand": "Crocs",
     "category": ["footwear"],
     "variants": [
       {
@@ -242,6 +262,7 @@
   {
     "id": 33,
     "name": "Avengers Strike Squad Game",
+    "brand": "",
     "category": ["board-games", "marvel"],
     "variants": [
       {
@@ -254,6 +275,7 @@
   {
     "id": 34,
     "name": "Marvel Go Collection Die Cast",
+    "brand": "",
     "category": ["figures", "marvel"],
     "variants": [
       {
@@ -266,6 +288,7 @@
   {
     "id": 35,
     "name": "Hulk Comforter",
+    "brand": "",
     "category": ["bedding", "marvel"],
     "variants": [
       {
@@ -278,6 +301,7 @@
   {
     "id": 36,
     "name": "Spider-Man T-shirt",
+    "brand": "The Souled Store",
     "category": ["topwear", "marvel"],
     "variants": [
       {
@@ -290,6 +314,7 @@
   {
     "id": 37,
     "name": "Light-up spinning sword",
+    "brand": "",
     "category": ["role-play", "electronics"],
     "variants": [
       {
@@ -302,6 +327,7 @@
   {
     "id": 38,
     "name": "Iron Man building-block figure",
+    "brand": "Brickadda",
     "category": ["building-sets", "marvel"],
     "variants": [
       {
@@ -314,6 +340,7 @@
   {
     "id": 39,
     "name": "Spark & smoke Sword",
+    "brand": "",
     "category": ["role-play", "electronics"],
     "variants": [
       {
@@ -326,6 +353,7 @@
   {
     "id": 40,
     "name": "Thor Mug",
+    "brand": "The 7 Dots",
     "category": ["mugs", "marvel"],
     "variants": [
       {
@@ -338,6 +366,7 @@
   {
     "id": 41,
     "name": "Spider-Man Lower",
+    "brand": "The Souled Store",
     "category": ["bottomwear", "marvel"],
     "variants": [
       {
@@ -350,6 +379,7 @@
   {
     "id": 42,
     "name": "Play Retro — Blast Box",
+    "brand": "Play Retro",
     "category": ["game-gadgets", "electronics"],
     "variants": [
       {
@@ -362,6 +392,7 @@
   {
     "id": 43,
     "name": "Spider-Man mask",
+    "brand": "",
     "category": ["role-play", "marvel"],
     "variants": [
       {
@@ -374,6 +405,7 @@
   {
     "id": 44,
     "name": "Iron Man mug",
+    "brand": "The 7 Dots",
     "category": ["mugs", "marvel"],
     "variants": [
       {
@@ -386,6 +418,7 @@
   {
     "id": 45,
     "name": "Hulk Bobble Head",
+    "brand": "Hamleys",
     "category": ["figures", "marvel"],
     "variants": [
       {
@@ -398,6 +431,7 @@
   {
     "id": 46,
     "name": "Astronaut Light",
+    "brand": "",
     "category": ["lighting", "electronics"],
     "variants": [
       {
@@ -410,6 +444,7 @@
   {
     "id": 47,
     "name": "Automatic card dealer + shuffler",
+    "brand": "Tipsytap",
     "category": ["game-gadgets", "electronics"],
     "variants": [
       {
@@ -422,6 +457,7 @@
   {
     "id": 48,
     "name": "Queaky",
+    "brand": "Blix",
     "category": ["game-gadgets", "electronics"],
     "variants": [
       {
@@ -434,6 +470,7 @@
   {
     "id": 49,
     "name": "Flower Bubble Machine",
+    "brand": "Samvardhan",
     "category": ["toys", "electronics"],
     "variants": [
       {
@@ -446,6 +483,7 @@
   {
     "id": 50,
     "name": "Clay IceCream Maker",
+    "brand": "",
     "category": ["diy"],
     "variants": [
       {
@@ -458,6 +496,7 @@
   {
     "id": 51,
     "name": "Popcorn Maker",
+    "brand": "",
     "category": ["home", "electronics"],
     "variants": [
       {
