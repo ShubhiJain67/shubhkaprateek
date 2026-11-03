@@ -73,6 +73,15 @@
   .trow { position: relative; display: grid; grid-template-columns: 2fr 160px 2fr; gap: 8px; align-items: center; padding-right: 84px; }
   .trow .tb { position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: flex; gap: 6px; }
   @media (max-width: 760px) { .trow { grid-template-columns: 1fr; border: 1px solid var(--line); border-radius: 12px; padding: 10px 84px 10px 10px; } .trow .tb { top: 10px; right: 10px; transform: none; } }
+  .kv { display: grid; grid-template-columns: minmax(120px, max-content) 1fr; gap: 6px 16px; margin: 0; font-size: 14px; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; overflow-wrap: anywhere; }
+  .kv dd .ct { display: block; } .kv .sub { grid-column: 1 / -1; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+  @media (max-width: 760px) { .kv { grid-template-columns: 1fr; gap: 0; } .kv dd { margin-bottom: 8px; } }
+  .vlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+  .vlist li { display: flex; gap: 8px; align-items: baseline; } .vlist .no { color: var(--muted); }
+  .pre { white-space: pre-wrap; font: inherit; margin: 0; background: var(--field); border-radius: 10px; padding: 12px; font-size: 14px; }
+  tr.gold td { background: #fbf1d4; } tr.gold td:first-child { box-shadow: inset 4px 0 0 #d4a62a; }
+  .gold-key { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: #fbf1d4; box-shadow: inset 3px 0 0 #d4a62a; vertical-align: -1px; }
   .stats4 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   @media (max-width: 760px) { .stats4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .stat.big { background: var(--dark); color: #f5ece6; border-color: var(--dark); } .stat.big span { color: #c9b8ad; }
@@ -81,8 +90,8 @@
   .stat span { font-size: 13px; color: var(--muted); }
   .stat.warn b { color: #9b2c2c; }
   .bars { display: flex; align-items: flex-end; gap: 3px; height: 140px; padding: 8px 0 0; border-bottom: 1px solid var(--line); }
-  .bars i { flex: 1 1 0; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; opacity: .9; }
-  .bars i.z { background: var(--line); }
+  .bars .bar { flex: 1 1 0; display: flex; flex-direction: column; min-height: 2px; border-radius: 4px 4px 0 0; overflow: hidden; }
+  .bars .bar i { display: block; min-height: 0; } .bars .bar i.c { background: var(--accent); } .bars .bar i.p { background: #d4a62a; } .bars .bar i.z { flex: 1; background: var(--line); }
   .ctree { display: grid; gap: 10px; max-height: 320px; overflow: auto; padding: 10px; background: var(--field); border-radius: 10px; }
   .ctree .grp { display: grid; gap: 6px; }
   .ctree .kids { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 14px; padding-left: 12px; border-left: 2px solid var(--line); }
@@ -155,8 +164,15 @@
     const j = await r.json().catch(() => ({ error: "No answer from the bot" }));
     if (r.status === 401) { saved.set(""); login(j.error === "no passcode set" ? "No passcode set yet — run <code>npx wrangler secret put ADMIN_PASSCODE</code> in bot/" : "Wrong passcode — try again"); throw new Error("login"); }
     if (!r.ok || j.error) { toast("⚠ " + (j.error || "Something went wrong")); throw new Error(j.error); }
-    if (j.products) D = j;
+    if (j.products) { D = j; sortData(); }
     return j;
+  }
+  // newest first: deals by the latest thing that happened, products + reels by when they were added
+  const lastDate = e => [e.created, e.dispatched_on, e.received_on, e.draft_on, e.live_on, e.collab_on, e.paid_on].map(v => String(v || "").slice(0, 10)).filter(Boolean).sort().pop() || "";
+  function sortData() {
+    D.enquiries.sort((a, b) => lastDate(b).localeCompare(lastDate(a)) || b.id - a.id);
+    D.products.sort((a, b) => b.id - a.id);
+    D.reels.sort((a, b) => (+b.id || 0) - (+a.id || 0));
   }
   // run a save: disables the button while it works, then re-renders
   async function act(btn, fn, done) {
@@ -202,7 +218,16 @@
   const delivOf = e => { try { const d = JSON.parse(e.deliverables || ""); if (d && d.items) return d; } catch {} return delivDefault(e); };
   const statsOf = e => { try { return JSON.parse(e.pitch_stats || "{}") || {}; } catch { return {}; } };
   // reels that already have a brand deal (anything but declined) — no pitching those
-  const dealOfReel = code => D.enquiries.find(e => e.status !== "declined" && String(e.reel_code || "").toLowerCase() === String(code || "").toLowerCase());
+  const reelsOfDeal = e => { let x = []; try { x = JSON.parse(e.reels || "[]"); } catch {} return [e.reel_code, ...(Array.isArray(x) ? x : [])].filter(Boolean).map(c => String(c).toLowerCase()); };
+  const dealOfReel = code => D.enquiries.find(e => e.status !== "declined" && reelsOfDeal(e).includes(String(code || "").toLowerCase()));
+  // golden rows: reels that are a brand collab, and products we got without paying (from a deal, not pitched after buying)
+  const AGREED = ["confirmed", "product", "live", "delivered"];
+  const isCollabReel = code => D.enquiries.some(e => AGREED.includes(e.status) && reelsOfDeal(e).includes(String(code || "").toLowerCase()));
+  const isFreeProduct = id => D.enquiries.some(e => AGREED.includes(e.status) && e.pitched !== "1" && (e.product_ids || []).includes(+id));
+  const dateY = s => s ? new Date(String(s).length === 10 ? s + "T12:00:00" : s).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+  const kv = rows => { const r = rows.filter(([, v]) => v); return r.length ? `<dl class="kv">${r.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>` : `<p class="muted" style="margin:0">Nothing added yet — tap <b>Edit</b>.</p>`; };
+  const link = (u, t) => u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t || u.replace(/^https?:\/\/(www\.)?/, "").slice(0, 60))}</a>` : "";
+  const editBtn = k => editCard.has(k) ? `<button type="button" data-cancelcard="${k}">Cancel</button>` : `<button type="button" data-editcard="${k}">Edit</button>`;
   const reelTitle = code => (D.reels.find(r => codeOf(r).toLowerCase() === String(code || "").toLowerCase()) || {}).title || code;
   const delivRows = d => DELIV.map(x => { const v = d.items[x.k] || { on: false, done: false, count: 1 };
       return `<div class="drow"><label class="dl"><input type="checkbox" data-on="${x.k}" ${v.on ? "checked" : ""}>${esc(x.t)}</label>
@@ -214,6 +239,9 @@
     items: Object.fromEntries(DELIV.map(x => [x.k, { on: form.querySelector(`[data-on="${x.k}"]`).checked, done: form.querySelector(`[data-done="${x.k}"]`).checked,
       ...(x.count ? { count: +form.querySelector(`[data-count="${x.k}"]`).value || 0 } : {}) }])),
     extra: [...form.querySelectorAll(".xrow")].map(r => ({ t: r.querySelector("[data-xt]").value.trim(), done: r.querySelector("[data-xdone]").checked })).filter(x => x.t) });
+  const delivView = d => { const on = DELIV.filter(x => (d.items[x.k] || {}).on), ex = d.extra || [];
+    if (!on.length && !ex.length) return `<p class="muted" style="margin:0">No deliverables ticked — tap <b>Edit</b>.</p>`;
+    return `<ul class="vlist">${on.map(x => { const v = d.items[x.k]; return `<li class="${v.done ? "" : "no"}">${v.done ? "✅" : "⬜"} ${esc(x.t.replace(/ \(tick Done when refunded\)/, ""))}${x.count ? ` × ${esc(v.count ?? 1)}` : ""}</li>`; }).join("")}${ex.map(x => `<li class="${x.done ? "" : "no"}">${x.done ? "✅" : "⬜"} ${esc(x.t)}</li>`).join("")}</ul>`; };
   const delivCount = d => { const on = DELIV.filter(x => (d.items[x.k] || {}).on), ex = d.extra || [];
     return { total: on.length + ex.length, done: on.filter(x => d.items[x.k].done).length + ex.filter(x => x.done).length }; };
   // ---- trial reels: links kept for the record only (no reel page on the website)
@@ -248,7 +276,7 @@
     const stt = foldState();
     root.querySelectorAll("[data-fold]").forEach(sec => {
       const k = sec.dataset.fold, head = sec.firstElementChild;
-      const forced = (k === "products" && editing) || (k === "reel" && reelEdit);
+      const forced = (k === "products" && editing) || (k === "reel" && reelEdit) || editCard.has(k);
       sec.classList.toggle("closed", !forced && (k in stt ? stt[k] : FOLD_DEFAULT_CLOSED.includes(k)));
       head.onclick = ev => { if (ev.target.closest("button, a, input, select, label")) return;
         const closed = sec.classList.toggle("closed"); const s2 = foldState(); s2[k] = closed; try { localStorage.setItem("skp-fold", JSON.stringify(s2)); } catch {} };
@@ -275,8 +303,8 @@
   const money = v => { const n = +String(v || "").replace(/[^\d.]/g, ""); return n || 0; };
 
   // ---------- views
-  let view = "enquiries", filter = "all", srcFilter = "all", moneyRange = "30", q = "", openId = null, editing = null, reelEdit = null;
-  const go = (v, id = null) => { view = v; openId = id; editing = null; reelEdit = null; location.hash = v + (id != null ? "/" + id : ""); render(); window.scrollTo(0, 0); };
+  let view = "enquiries", filter = "all", srcFilter = "all", moneyRange = "30", moneyFrom = "", moneyTo = "", editCard = new Set(), q = "", openId = null, editing = null, reelEdit = null;
+  const go = (v, id = null) => { view = v; openId = id; editing = null; reelEdit = null; editCard = new Set(); location.hash = v + (id != null ? "/" + id : ""); render(); window.scrollTo(0, 0); };
   window.addEventListener("hashchange", () => { const [v, id] = location.hash.slice(1).split("/"); if (v && v !== view + "") { view = v; openId = id || null; render(); } });
 
   function shell(body) {
@@ -309,6 +337,7 @@
     const prods = (e.product_ids || []).map(prod).filter(Boolean);
     const ev = D.events.filter(x => x.enquiry_id === e.id);
     const reelUrl = e.reel_code ? `${SITE}/reel/${e.reel_code}` : "";
+    const moreReels = reelsOfDeal(e).slice(1);
     const pk = (D.packages || []).find(p => p.name === e.package) || { price: "", payment: "" };   // the package's price + payment type, until you change them
     const mail = `mailto:${encodeURIComponent(e.email)}?subject=${encodeURIComponent("Collab with ShubhKaPrateek — " + e.brand)}&body=${encodeURIComponent(`Hi ${e.brand} team,\n\nThank you for reaching out! We'd love to work with you on ${e.package || "a collab"}.\n\n[your reply]\n\nWarm regards,\nShubhi & Prateek\n@shubhkaprateek | shubhkaprateek.com`)}`;
     return `<div class="between"><a href="#enquiries" data-go="enquiries" class="small" style="font-weight:600;text-decoration:none">← Enquiries</a>
@@ -328,7 +357,42 @@
         <button class="danger" data-act="delEnq" style="margin-left:auto">Delete</button>
       </div>
       <div class="split">
-        <section class="card" data-fold="deal"><h2>The deal</h2><form id="deal" class="grid2">
+        <section class="card" data-fold="deal"><div class="between"><h2>The deal</h2>${editBtn("deal")}</div>
+        ${editCard.has("deal") ? dealForm(e, prods, pk) : dealView(e, prods)}</section>
+        <section class="card" data-fold="history"><h2>History</h2>${historyOf(e, ev)}</section>
+      </div>
+      ${e.pitched === "1" ? (() => { const st = statsOf(e); return `<section class="card" data-fold="perf"><div class="between"><h2>Performance when pitched</h2>${editBtn("perf")}</div>
+        ${!editCard.has("perf") ? kv([["Views", esc(st.views)], ["Likes", esc(st.likes)], ["Comments", esc(st.comments)], ["Shares", esc(st.shares)], ["Saves", esc(st.saves)], ["As on", (st.views || st.likes || st.shares || st.saves) ? dateY(st.date) : ""]]) : `<form id="pst" class="grid2">${[["views", "Views"], ["likes", "Likes"], ["comments", "Comments"], ["shares", "Shares"], ["saves", "Saves"]].map(([k, t]) =>
+          `<label>${t}<input name="${k}" inputmode="numeric" value="${esc(st[k])}" placeholder="${k === "views" ? "e.g. 2.4M" : ""}"></label>`).join("")}
+          <label>As on<input name="date" type="date" value="${esc(st.date || today())}"></label>
+          <div><button class="main">Save numbers</button></div></form>`}</section>`; })() : ""}
+      ${(() => { const d = delivOf(e), c = delivCount(d); return `<section class="card" data-fold="deliv"><div class="between"><h2>Deliverables</h2><span class="row" style="flex-wrap:nowrap"><span class="pill ${c.total && c.done === c.total ? "s-live" : ""}">${c.done} / ${c.total} done</span>${editBtn("deliv")}</span></div>
+        ${!editCard.has("deliv") ? delivView(d) : `<form id="dlv"><div class="dlist">${delivRows(d)}</div>
+          <div class="row" style="margin-top:12px"><button class="main">Save deliverables</button><button type="button" data-xadd>+ Add another</button><button type="button" data-dreset>Reset to package</button><button type="button" data-cancelcard="deliv">Cancel</button></div></form>
+        <p class="muted small" style="margin:8px 0 0">Ticked from ${e.package ? esc(e.package) : "the package"} — untick, add or change the story count as you agree with the brand.</p>`}</section>`; })()}
+      <section class="card" data-fold="brief"><h2>Reel brief<span class="hint">${[e.non_negotiables && "non-negotiables", e.script && "script"].filter(Boolean).join(" + ") || "empty"}</span></h2>
+        ${!editCard.has("brief") ? `<div style="display:grid;gap:12px">${e.non_negotiables ? `<div><b class="small">Brand's non-negotiables</b><ul class="vlist" style="margin-top:6px">${e.non_negotiables.split(/\n+/).filter(x => x.trim()).map(x => `<li>☐ ${esc(x)}</li>`).join("")}</ul></div>` : ""}${e.script ? `<div><b class="small">Script</b><pre class="pre" style="margin-top:6px">${esc(e.script)}</pre></div>` : ""}${!e.script && !e.non_negotiables ? `<p class="muted" style="margin:0">Nothing added yet.</p>` : ""}<div>${editBtn("brief")}</div></div>` : `<form id="brief" style="display:grid;gap:12px">
+          <label>Brand's non-negotiables<textarea name="non_negotiables" rows="4" placeholder="One per line — e.g.&#10;Show the logo in the first 3 seconds&#10;Say “use code SKP10”&#10;Tag @brand in the caption">${esc(e.non_negotiables)}</textarea></label>
+          <label>Script<textarea name="script" rows="8" placeholder="Hook…&#10;Scene 1…">${esc(e.script)}</textarea></label>
+          <div class="row"><button class="main">Save brief</button><button type="button" data-cancelcard="brief">Cancel</button></div></form>`}</section>
+      <section class="card" data-fold="products"><div class="between"><h2>Their products<span class="hint">${prods.length}</span></h2><button data-act="newProd">+ Add product</button></div>
+        ${prods.length ? `<div class="list">${prods.map(p => `<div class="row"><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" referrerpolicy="no-referrer"><b>${esc(p.name)}</b><span class="muted small">${(p.category || []).map(catName).map(esc).join(" · ")}</span><button data-edit="${p.id}">Edit</button></div>`).join("")}</div>` : `<p class="muted" style="margin:0">Confirm the collab, then add the product they're sending: paste its link and the photo, name and categories fill in.</p>`}
+        ${editing ? productForm(e) : ""}
+      </section>
+      <section class="card" data-fold="reel"><h2>Reel</h2>
+        ${e.reel_code ? `<p style="margin:0 0 10px">${e.pitched === "1" && !["live", "delivered"].includes(e.status) ? "Your reel" : "Live"}: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a>${moreReels.map(c => ` · <a href="${SITE}/reel/${esc(c)}" target="_blank" rel="noopener">${esc(reelTitle(c))}</a>`).join("")} · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
+        ${prods.length ? `<form id="reelf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 170px">Live date<input name="live_on" type="date" value="${esc(e.live_on || today())}"></label><button class="main">${e.reel_code ? "Update reel" : "Go live →"}</button></form>
+          <p class="muted small" style="margin:8px 0 0">Makes the reel page, connects it to their product${prods.length > 1 ? "s" : ""} and publishes the website. Status → Live.</p>` : `<p class="muted" style="margin:0">Add their product first.</p>`}
+      </section>
+      <section class="card" data-fold="trials"><h2>Trial reels <span class="hint">${trialsOf(e).length || ""}</span><span class="muted small" style="font-weight:500">· just for your record, no page on the website</span></h2>
+        ${!editCard.has("trials") ? `${trialsOf(e).length ? `<ul class="vlist">${trialsOf(e).map(t => `<li><b>${dateY(t.date) || "—"}</b> ${link(t.link)} ${t.note ? `<span class="muted">· ${esc(t.note)}</span>` : ""}</li>`).join("")}</ul>` : `<p class="muted" style="margin:0">No trial reels yet.</p>`}<div style="margin-top:10px">${editBtn("trials")}</div>` : `<form id="trf" style="display:grid;gap:8px"><div class="tlist" style="display:grid;gap:8px">${(trialsOf(e).length ? trialsOf(e) : [{ date: today() }]).map(trialRow).join("")}</div>
+          <div class="row"><button class="main">Save trial reels</button><button type="button" data-tadd>+ Add trial reel</button><button type="button" data-cancelcard="trials">Cancel</button></div></form>`}
+      </section>`;
+  }
+
+  // the deal's full form (only when you tap Edit)
+  function dealForm(e, prods, pk) {
+    return `<form id="deal" class="grid2">
           <label>Brand<input name="brand" value="${esc(e.brand)}"></label>
           <label>Email<input name="email" value="${esc(e.email)}"></label>
           <label>Their Instagram ${e.instagram ? `<a class="small" href="${esc(igUrl(e.instagram))}" target="_blank" rel="noopener">open ↗</a>` : ""}<input name="instagram" value="${esc(e.instagram)}" placeholder="@brand or instagram.com/brand"></label>
@@ -355,37 +419,23 @@
           <label>Their product link ${e.product_link || prods[0] ? `<a class="small" href="${esc(e.product_link || prods[0].variants[0]?.link || "")}" target="_blank" rel="noopener">open ↗</a>` : ""}<input name="product_link" value="${esc(e.product_link || (prods[0] && prods[0].variants[0]?.link) || "")}" placeholder="filled from their product on the website"></label>
           <label style="grid-column:1/-1">Their message<textarea name="message" rows="2">${esc(e.message)}</textarea></label>
           <label style="grid-column:1/-1">Your notes<textarea name="notes" rows="2">${esc(e.notes)}</textarea></label>
-          <div><button class="main">Save deal</button></div></form></section>
-        <section class="card" data-fold="history"><h2>History</h2>${historyOf(e, ev)}</section>
-      </div>
-      ${e.pitched === "1" ? (() => { const st = statsOf(e); return `<section class="card" data-fold="perf"><h2>Performance when pitched</h2>
-        <form id="pst" class="grid2">${[["views", "Views"], ["likes", "Likes"], ["comments", "Comments"], ["shares", "Shares"], ["saves", "Saves"]].map(([k, t]) =>
-          `<label>${t}<input name="${k}" inputmode="numeric" value="${esc(st[k])}" placeholder="${k === "views" ? "e.g. 2.4M" : ""}"></label>`).join("")}
-          <label>As on<input name="date" type="date" value="${esc(st.date || today())}"></label>
-          <div><button class="main">Save numbers</button></div></form></section>`; })() : ""}
-      ${(() => { const d = delivOf(e), c = delivCount(d); return `<section class="card" data-fold="deliv"><div class="between"><h2>Deliverables</h2><span class="pill ${c.total && c.done === c.total ? "s-live" : ""}">${c.done} / ${c.total} done</span></div>
-        <form id="dlv"><div class="dlist">${delivRows(d)}</div>
-          <div class="row" style="margin-top:12px"><button class="main">Save deliverables</button><button type="button" data-xadd>+ Add another</button><button type="button" data-dreset>Reset to package</button></div></form>
-        <p class="muted small" style="margin:8px 0 0">Ticked from ${e.package ? esc(e.package) : "the package"} — untick, add or change the story count as you agree with the brand.</p></section>`; })()}
-      <section class="card" data-fold="brief"><h2>Reel brief<span class="hint">${[e.non_negotiables && "non-negotiables", e.script && "script"].filter(Boolean).join(" + ") || "empty"}</span></h2><form id="brief" style="display:grid;gap:12px">
-          <label>Brand's non-negotiables<textarea name="non_negotiables" rows="4" placeholder="One per line — e.g.&#10;Show the logo in the first 3 seconds&#10;Say “use code SKP10”&#10;Tag @brand in the caption">${esc(e.non_negotiables)}</textarea></label>
-          <label>Script<textarea name="script" rows="8" placeholder="Hook…&#10;Scene 1…">${esc(e.script)}</textarea></label>
-          <div><button class="main">Save brief</button></div></form></section>
-      <section class="card" data-fold="products"><div class="between"><h2>Their products<span class="hint">${prods.length}</span></h2><button data-act="newProd">+ Add product</button></div>
-        ${prods.length ? `<div class="list">${prods.map(p => `<div class="row"><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" referrerpolicy="no-referrer"><b>${esc(p.name)}</b><span class="muted small">${(p.category || []).map(catName).map(esc).join(" · ")}</span><button data-edit="${p.id}">Edit</button></div>`).join("")}</div>` : `<p class="muted" style="margin:0">Confirm the collab, then add the product they're sending: paste its link and the photo, name and categories fill in.</p>`}
-        ${editing ? productForm(e) : ""}
-      </section>
-      <section class="card" data-fold="reel"><h2>Reel</h2>
-        ${e.reel_code ? `<p style="margin:0 0 10px">${e.pitched === "1" && !["live", "delivered"].includes(e.status) ? "Your reel" : "Live"}: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a> · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
-        ${prods.length ? `<form id="reelf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 170px">Live date<input name="live_on" type="date" value="${esc(e.live_on || today())}"></label><button class="main">${e.reel_code ? "Update reel" : "Go live →"}</button></form>
-          <p class="muted small" style="margin:8px 0 0">Makes the reel page, connects it to their product${prods.length > 1 ? "s" : ""} and publishes the website. Status → Live.</p>` : `<p class="muted" style="margin:0">Add their product first.</p>`}
-      </section>
-      <section class="card" data-fold="trials"><h2>Trial reels <span class="hint">${trialsOf(e).length || ""}</span><span class="muted small" style="font-weight:500">· just for your record, no page on the website</span></h2>
-        <form id="trf" style="display:grid;gap:8px"><div class="tlist" style="display:grid;gap:8px">${(trialsOf(e).length ? trialsOf(e) : [{ date: today() }]).map(trialRow).join("")}</div>
-          <div class="row"><button class="main">Save trial reels</button><button type="button" data-tadd>+ Add trial reel</button></div></form>
-      </section>`;
+          <div class="row"><button class="main">Save deal</button><button type="button" data-cancelcard="deal">Cancel</button></div></form>`;
   }
-
+  // the deal as you'd read it: only what's filled in
+  function dealView(e, prods) {
+    const st = statsOf(e), cs = contactsOf(e), pl = e.product_link || (prods[0] && prods[0].variants[0]?.link) || "";
+    return kv([
+      ["Brand", esc(e.brand)], ["Email", e.email ? `<a href="mailto:${esc(e.email)}">${esc(e.email)}</a>` : ""],
+      ["Instagram", e.instagram ? link(igUrl(e.instagram), e.instagram) : ""], ["Who reached out", e.pitched === "1" ? "🎯 We pitched a posted reel" : SOURCES[srcOf(e)]],
+      ["Package", esc(e.package)], ["Agreed price", esc(e.price)], ["Payment", esc(e.payment)], ["Product value", esc(e.product_value)],
+      ["Payment deadline", dateY(e.payment_due)], ["Shoot by", dateY(e.shoot_by)], ["Post by", dateY(e.post_by)],
+      ["Product dispatched", dateY(e.dispatched_on)], ["Product received", dateY(e.received_on)], ["Draft submitted", dateY(e.draft_on)],
+      ["Reel went live", dateY(e.live_on)], ["Collab added", dateY(e.collab_on)], ["Payment received", dateY(e.paid_on)],
+      ["Transaction ID", esc(e.txn_id)], ["Payment details", esc(e.payment_notes)],
+      ["Contacts", cs.map(c => `<span class="ct">${esc([c.name, c.role].filter(Boolean).join(" · "))}${c.phone ? ` · <a href="tel:${esc(c.phone.replace(/\s/g, ""))}">${esc(c.phone)}</a>` : ""}</span>`).join("")],
+      ["Product link", link(pl)], ["Their message", esc(e.message)], ["Your notes", esc(e.notes)],
+    ]);
+  }
   // the product form (used inside an enquiry and on the Products page)
   function productForm(e) {
     const p = editing.id ? prod(editing.id) : null, v = (p && p.variants && p.variants[0]) || {};
@@ -419,8 +469,9 @@
     return `<div class="between"><h1>Products <span class="muted" style="font:500 16px Inter,sans-serif">${D.products.length}</span></h1>
         <div class="row"><input id="q" placeholder="Search products, brands, categories…" value="${esc(q)}" style="width:260px"><button class="main" data-act="newProd">+ New product</button></div></div>
       ${editing ? productForm(null) : ""}
+      <p class="muted small" style="margin:0"><span class="gold-key"></span> Golden = we got it from a brand collab (didn't pay for it). Newest first.</p>
       <div class="tablebox"><table class="table"><thead><tr><th></th><th>Product</th><th>Brand</th><th>Categories</th><th>Reels</th><th>Featured</th><th></th></tr></thead><tbody>
-      ${list.map(p => `<tr><td><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" loading="lazy" referrerpolicy="no-referrer"></td>
+      ${list.map(p => `<tr class="${isFreeProduct(p.id) ? "gold" : ""}"><td><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" loading="lazy" referrerpolicy="no-referrer"></td>
         <td><b>${esc(p.name)}</b><br><span class="muted small">#${p.id}</span></td>
         <td>${p.brand ? esc(p.brand) : `<span class="muted small">—</span>`}</td>
         <td class="small">${(p.category || []).map(catName).map(esc).join(" · ") || "—"}</td>
@@ -432,12 +483,13 @@
 
   // ---- Reels
   function vReels() {
-    const list = D.reels.filter(r => !q || (r.title + " " + codeOf(r)).toLowerCase().includes(q)).slice().reverse();
+    const list = D.reels.filter(r => !q || (r.title + " " + codeOf(r)).toLowerCase().includes(q));
     return `<div class="between"><h1>Reels <span class="muted" style="font:500 16px Inter,sans-serif">${D.reels.length}</span></h1>
         <div class="row"><input id="q" placeholder="Search reels…" value="${esc(q)}" style="width:220px"><button class="main" data-act="newReel">+ New reel</button></div></div>
       ${reelEdit ? reelForm() : ""}
+      <p class="muted small" style="margin:0"><span class="gold-key"></span> Golden = a brand collab. Newest first.</p>
       <div class="tablebox"><table class="table"><thead><tr><th></th><th>Reel</th><th>Products</th><th></th></tr></thead><tbody>
-      ${list.map(r => `<tr><td><img class="cover" src="/assets/covers/${esc(codeOf(r))}.jpg" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></td>
+      ${list.map(r => `<tr class="${isCollabReel(codeOf(r)) ? "gold" : ""}"><td><img class="cover" src="/assets/covers/${esc(codeOf(r))}.jpg" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></td>
         <td><b>${esc(r.title)}</b><br><span class="muted small">${esc(codeOf(r))}</span></td>
         <td class="small">${(r.products || []).map(prod).filter(Boolean).map(p => esc(p.name)).join(", ")}</td>
         <td><div class="row" style="flex-wrap:nowrap"><button data-reel="${esc(codeOf(r))}">Edit</button>${(d => d ? `<button data-open="${d.id}" title="Open the deal">🤝 ${esc(d.brand)}</button>` : `<button data-pitch="${esc(codeOf(r))}" title="Start a brand deal from this reel">🎯 Pitch</button>`)(dealOfReel(codeOf(r)))}<a class="btn" href="${SITE}/reel/${esc(codeOf(r))}" target="_blank" rel="noopener">View ↗</a></div></td></tr>`).join("")}
@@ -460,49 +512,67 @@
     const add = (name, k, x) => { const key = String(name || "").trim().toLowerCase(); if (!key) return; if (!map.has(key)) map.set(key, { name: String(name).trim(), products: [], enquiries: [] }); map.get(key)[k].push(x); };
     D.products.forEach(p => add(p.brand, "products", p));
     D.enquiries.forEach(e => add(e.brand, "enquiries", e));
-    return [...map.values()].sort((a, b) => (b.enquiries.length + b.products.length) - (a.enquiries.length + a.products.length));
+    const latest = b => [...b.enquiries.map(lastDate), ...b.products.map(p => String(p.id).padStart(8, "0"))].sort().pop() || "";
+    const lastDeal = b => b.enquiries.map(lastDate).sort().pop() || "";
+    return [...map.values()].sort((a, b) => lastDeal(b).localeCompare(lastDeal(a)) || Math.max(0, ...b.products.map(p => p.id)) - Math.max(0, ...a.products.map(p => p.id)));
   }
-  // ---- Money: received by day (Payment received date), and what's still due
+  // ---- Money: what came in (money on its Payment received date, products on their Product received date) + what's still due
   function vMoney() {
-    const rs = n => "₹" + Math.round(n).toLocaleString("en-IN");
-    const agreed = D.enquiries.filter(e => ["confirmed", "product", "live", "delivered"].includes(e.status) && e.payment !== "Barter" && money(e.price) > 0);
-    const got = agreed.filter(e => e.paid_on), due = agreed.filter(e => !e.paid_on), now = today();
+    const rs = n => "₹" + Math.round(n).toLocaleString("en-IN"), now = today();
+    const day = v => String(v || "").slice(0, 10);
+    const agreed = D.enquiries.filter(e => AGREED.includes(e.status));
+    const cash = agreed.filter(e => money(e.price) > 0);                        // any deal with an agreed amount (barter + extra payment counts too)
+    const got = cash.filter(e => e.paid_on), due = cash.filter(e => !e.paid_on);
     const late = due.filter(e => e.payment_due && e.payment_due < now);
-    const from = moneyRange === "all" ? "" : moneyRange === "month" ? now.slice(0, 8) + "01" : new Date(Date.now() - 29 * 864e5).toLocaleDateString("en-CA");
-    const inRange = got.filter(e => !from || e.paid_on >= from);
-    const sum = l => l.reduce((t, e) => t + money(e.price), 0);
-    // products you got to keep (barter or paid deals): counted on the "Product received" date, else the reel's live date
-    const pday = e => e.received_on || e.live_on || "";
-    const prods = D.enquiries.filter(e => ["confirmed", "product", "live", "delivered"].includes(e.status) && money(e.product_value) > 0 && pday(e));
-    const prodsIn = prods.filter(e => !from || pday(e) >= from);
-    const psum = l => l.reduce((t, e) => t + money(e.product_value), 0);
-    // per day
-    const byDay = {}; inRange.forEach(e => (byDay[e.paid_on] = byDay[e.paid_on] || []).push(e));
+    // a product counts the day it became yours for free: Product received — or, for a reel pitched after you bought the product, the day they paid you back
+    const pday = e => day(e.pitched === "1" ? (e.paid_on || e.collab_on || e.created) : (e.received_on || e.live_on || e.collab_on || e.paid_on || e.created));
+    const prods = agreed.filter(e => money(e.product_value) > 0);
+    // the range
+    const first = [...got.map(e => e.paid_on), ...prods.map(pday)].filter(Boolean).sort()[0] || now;
+    const back = n => new Date(Date.now() - n * 864e5).toLocaleDateString("en-CA");
+    const [from, to] = moneyRange === "all" ? [first, now] : moneyRange === "month" ? [now.slice(0, 8) + "01", now]
+      : moneyRange === "custom" ? [moneyFrom || first, moneyTo || now] : [back(29), now];
+    const inR = d => d >= from && d <= to;
+    // every earning as one line: money or a product
+    const items = [...got.map(e => ({ d: day(e.paid_on), kind: "cash", v: money(e.price), e })), ...prods.map(e => ({ d: pday(e), kind: "prod", v: money(e.product_value), e }))].filter(x => inR(x.d));
+    const tot = k => items.filter(x => !k || x.kind === k).reduce((t, x) => t + x.v, 0);
+    const allTime = got.reduce((t, e) => t + money(e.price), 0) + prods.reduce((t, e) => t + money(e.product_value), 0);
+    // the graph follows the range: days up to ~2 months, then weeks, then months
+    const span = Math.round((new Date(to) - new Date(from)) / 864e5) + 1;
+    const unit = span <= 62 ? "day" : span <= 190 ? "week" : "month";
+    const bucketOf = d => { if (unit === "day") return d; if (unit === "month") return d.slice(0, 7);
+      const t = new Date(d + "T12:00:00"); t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return t.toLocaleDateString("en-CA"); };
+    const buckets = []; for (let t = new Date(from + "T12:00:00"); t.toLocaleDateString("en-CA") <= to; t.setDate(t.getDate() + 1)) { const b = bucketOf(t.toLocaleDateString("en-CA")); if (buckets[buckets.length - 1] !== b) buckets.push(b); }
+    const val = (b, k) => items.filter(x => bucketOf(x.d) === b && x.kind === k).reduce((t, x) => t + x.v, 0);
+    const top = Math.max(1, ...buckets.map(b => val(b, "cash") + val(b, "prod")));
+    const bLabel = b => unit === "month" ? new Date(b + "-01T12:00:00").toLocaleDateString("en-IN", { month: "short", year: "2-digit" }) : unit === "week" ? "week of " + date(b) : date(b);
+    // day by day
+    const byDay = {}; items.forEach(x => (byDay[x.d] = byDay[x.d] || []).push(x));
     const days = Object.keys(byDay).sort().reverse();
-    const chartDays = [...Array(30)].map((_, i) => new Date(Date.now() - (29 - i) * 864e5).toLocaleDateString("en-CA"));
-    const perDay = d => sum(got.filter(e => e.paid_on === d)), top = Math.max(1, ...chartDays.map(perDay));
+    const lbl = moneyRange === "all" ? "all time" : moneyRange === "month" ? "this month" : moneyRange === "custom" ? `${dateY(from)} – ${dateY(to)}` : "last 30 days";
     const dueRow = e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br>
-        <span class="small ${e.payment_due && e.payment_due < now ? "" : "muted"}" style="${e.payment_due && e.payment_due < now ? "color:#9b2c2c;font-weight:600" : ""}">${e.payment_due ? (e.payment_due < now ? "Late — was due " : "Due ") + date(e.payment_due) : "No deadline set"}</span></span><b>${rs(money(e.price))}</b></button>`;
-    return `<div class="between"><h1>Money</h1><div class="row">${[["30", "Last 30 days"], ["month", "This month"], ["all", "All time"]].map(([k, t]) => `<button class="chip ${moneyRange === k ? "on" : ""}" data-mrange="${k}">${t}</button>`).join("")}</div></div>
+        <span class="small ${e.payment_due && e.payment_due < now ? "" : "muted"}" style="${e.payment_due && e.payment_due < now ? "color:#9b2c2c;font-weight:600" : ""}">${e.payment_due ? (e.payment_due < now ? "Late — was due " : "Due ") + dateY(e.payment_due) : "No deadline set"}</span></span><b>${rs(money(e.price))}</b></button>`;
+    return `<div class="between"><h1>Money</h1><div class="row">${[["30", "Last 30 days"], ["month", "This month"], ["all", "All time"], ["custom", "Custom"]].map(([k, t]) => `<button class="chip ${moneyRange === k ? "on" : ""}" data-mrange="${k}">${t}</button>`).join("")}</div></div>
+      ${moneyRange === "custom" ? `<div class="row" style="align-items:end"><label class="small">From<input type="date" id="mfrom" value="${esc(from)}" max="${esc(now)}"></label><label class="small">To<input type="date" id="mto" value="${esc(to)}" max="${esc(now)}"></label></div>` : ""}
       <div class="stats4">
-        <div class="stat big"><b>${rs(sum(inRange) + psum(prodsIn))}</b><span>Total earned${moneyRange === "all" ? "" : moneyRange === "month" ? " this month" : " in 30 days"} (money + products)</span></div>
-        <div class="stat"><b>${rs(sum(inRange))}</b><span>Received${moneyRange === "all" ? "" : moneyRange === "month" ? " this month" : " in 30 days"} · ${inRange.length} deal${inRange.length === 1 ? "" : "s"}</span></div>
-        <div class="stat"><b>${rs(psum(prodsIn))}</b><span>🎁 Products worth${moneyRange === "all" ? "" : moneyRange === "month" ? " this month" : " in 30 days"} · ${prodsIn.length}</span></div>
-        <div class="stat"><b>${rs(sum(due))}</b><span>Still due · ${due.length} deal${due.length === 1 ? "" : "s"}</span></div>
-        <div class="stat ${late.length ? "warn" : ""}"><b>${rs(sum(late))}</b><span>Late (past deadline) · ${late.length}</span></div>
-        <div class="stat"><b>${rs(sum(got))}</b><span>Received all time</span></div>
+        <div class="stat big"><b>${rs(tot())}</b><span>Total earned · ${esc(lbl)} (money + products)</span></div>
+        <div class="stat"><b>${rs(tot("cash"))}</b><span>💸 Money received · ${items.filter(x => x.kind === "cash").length}</span></div>
+        <div class="stat"><b>${rs(tot("prod"))}</b><span>🎁 Products worth · ${items.filter(x => x.kind === "prod").length}</span></div>
+        <div class="stat"><b>${rs(due.reduce((t, e) => t + money(e.price), 0))}</b><span>Still due now · ${due.length} deal${due.length === 1 ? "" : "s"}</span></div>
+        <div class="stat ${late.length ? "warn" : ""}"><b>${rs(late.reduce((t, e) => t + money(e.price), 0))}</b><span>Late (past deadline) · ${late.length}</span></div>
+        <div class="stat"><b>${rs(allTime)}</b><span>Earned all time (money + products)</span></div>
       </div>
-      <section class="card"><h2>Received per day <span class="muted small" style="font-weight:500">· last 30 days</span></h2>
-        <div class="bars" role="img" aria-label="Money received per day, last 30 days">${chartDays.map(d => { const v = perDay(d); return `<i class="${v ? "" : "z"}" style="height:${v ? Math.max(6, v / top * 100) : 2}%" title="${date(d)}: ${rs(v)}"></i>`; }).join("")}</div>
-        <div class="between small muted" style="margin-top:4px"><span>${date(chartDays[0])}</span><span>Today</span></div></section>
+      <section class="card"><h2>Earned per ${unit} <span class="muted small" style="font-weight:500">· ${esc(lbl)} · <span style="color:var(--accent)">■</span> money <span style="color:#d4a62a">■</span> products</span></h2>
+        <div class="bars" role="img" aria-label="Earned per ${unit}, ${esc(lbl)}">${buckets.map(b => { const c = val(b, "cash"), pr = val(b, "prod"), t = c + pr;
+          return `<span class="bar" title="${esc(bLabel(b))}: ${rs(t)}${t ? ` (money ${rs(c)} · products ${rs(pr)})` : ""}" style="height:${t ? Math.max(6, t / top * 100) : 2}%">${t ? `<i style="flex:${pr}" class="p"></i><i style="flex:${c}" class="c"></i>` : `<i class="z"></i>`}</span>`; }).join("")}</div>
+        <div class="between small muted" style="margin-top:4px"><span>${esc(bLabel(buckets[0]))}</span><span>${esc(bLabel(buckets[buckets.length - 1]))}</span></div></section>
       <div class="split">
         <section class="card"><h2>Day by day</h2>
-          ${days.map(d => `<div class="between" style="padding:8px 0;border-bottom:1px dashed var(--line)"><span><b>${date(d)}</b><br><span class="muted small">${byDay[d].map(e => esc(e.brand) + (e.txn_id ? " · " + esc(e.txn_id) : "")).join(" · ")}</span></span><b>${rs(sum(byDay[d]))}</b></div>`).join("") || `<p class="muted" style="margin:0">Nothing received in this range. A deal counts here once you fill its <b>Payment received</b> date.</p>`}</section>
-        <section class="card"><h2>🎁 Products we got <span class="muted small" style="font-weight:500">· ${rs(psum(prodsIn))}</span></h2>
-          ${prodsIn.sort((a, b) => pday(b).localeCompare(pday(a))).map(e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b><br><span class="muted small">${e.received_on ? "Received " + date(e.received_on) : "Reel live " + date(e.live_on)}${e.payment === "Barter" ? " · barter" : ""}</span></span><b>${rs(money(e.product_value))}</b></button>`).join("") || `<p class="muted" style="margin:0">None in this range. Fill <b>Product value</b> and <b>Product received</b> on a deal.</p>`}</section>
+          ${days.map(d => `<div style="padding:8px 0;border-bottom:1px dashed var(--line)"><div class="between"><b>${dateY(d)}</b><b>${rs(byDay[d].reduce((t, x) => t + x.v, 0))}</b></div>
+            ${byDay[d].map(x => `<div class="between small" style="cursor:pointer" data-open="${x.e.id}"><span class="muted">${x.kind === "cash" ? "💸" : "🎁"} ${esc(x.e.brand)}${x.kind === "cash" && x.e.txn_id ? " · " + esc(x.e.txn_id) : ""}${x.kind === "prod" && x.e.payment === "Barter" ? " · barter" : ""}</span><span>${rs(x.v)}</span></div>`).join("")}</div>`).join("") || `<p class="muted" style="margin:0">Nothing in this range. Money counts on its <b>Payment received</b> date; a product on its <b>Product received</b> date.</p>`}</section>
         <section class="card"><h2>Still due</h2><div class="list">${due.sort((a, b) => (a.payment_due || "9999").localeCompare(b.payment_due || "9999")).map(dueRow).join("") || `<p class="muted" style="margin:0">Nothing due 🎉</p>`}</div></section>
       </div>
-      <p class="muted small" style="margin:0">Counts confirmed, live and delivered deals with an agreed price (barter excluded). Received = has a Payment received date; due = doesn't yet. Products count on their Product received date (or the reel's live date), including barter.</p>`;
+      <p class="muted small" style="margin:0">Counts confirmed, live and delivered deals. Money = Agreed price, counted on its Payment received date (until then it's due). Products = Product value, counted on Product received (or the reel's live date if that's empty); for an after-live pitch, on the day they paid.</p>`;
   }
 
   // ---- Categories: tab → sub-category → products
@@ -572,6 +642,7 @@
     root.querySelectorAll("[data-go]").forEach(a => a.onclick = e => { e.preventDefault(); q = ""; go(a.dataset.go); });
     root.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { filter = b.dataset.filter; render(); });
     root.querySelectorAll("[data-mrange]").forEach(b => b.onclick = () => { moneyRange = b.dataset.mrange; render(); });
+    const mf = $("mfrom"), mt = $("mto"); if (mf && mt) { const upd = () => { moneyFrom = mf.value; moneyTo = mt.value; if (moneyFrom && moneyTo && moneyFrom > moneyTo) [moneyFrom, moneyTo] = [moneyTo, moneyFrom]; render(); }; mf.onchange = upd; mt.onchange = upd; }
     root.querySelectorAll("[data-src]").forEach(b => b.onclick = () => { srcFilter = b.dataset.src; render(); });
     root.querySelectorAll("[data-editp]").forEach(b => b.onclick = () => { go("products"); editing = { id: +b.dataset.editp }; render(); $("pf")?.scrollIntoView({ behavior: "smooth" }); });
     root.querySelectorAll("[data-open]").forEach(b => b.onclick = () => go("enquiry", b.dataset.open));
@@ -610,14 +681,16 @@
     const up = $("up"); if (up) up.onchange = () => { const file = up.files[0]; if (!file) return; readPF(); shrink(file).then(url => { editing.photo = url; render(); }); };
     const pf = $("pf"); if (pf) pf.onsubmit = ev => { ev.preventDefault(); readPF(); const f = editing.form, btn = pf.querySelector("button.main");
       act(btn, async () => { const r = await api("product.save", { product: { id: editing.id, ...f, image: /^https?:|^assets\//.test(f.image) ? f.image : "" }, photo: editing.photo || null, enquiryId: view === "enquiry" ? +openId : null }); editing = null; }, "Saved — live in about a minute"); };
-    const deal = $("deal"); if (deal) { wireContacts(deal); deal.onsubmit = ev => { ev.preventDefault(); const patch = Object.fromEntries(new FormData(deal)); patch.contacts = readContacts(deal); patch.contact = ""; act(deal.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch }), "Deal saved"); }; }
+    const deal = $("deal"); if (deal) { wireContacts(deal); deal.onsubmit = ev => { ev.preventDefault(); const patch = Object.fromEntries(new FormData(deal)); patch.contacts = readContacts(deal); patch.contact = ""; act(deal.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch }); editCard.delete("deal"); }, "Deal saved"); }; }
     // payment details open once it's paid: a "Payment received" date, or Payment switched to Paid
     if (deal) { const box = deal.querySelector("[data-paidbox]"), was = deal.payment.value,
         upd = () => box.style.display = deal.paid_on.value || deal.txn_id.value || deal.payment_notes.value || (deal.payment.value === "Paid" && was !== "Paid") ? "grid" : "none";
       deal.payment.onchange = upd; deal.paid_on.oninput = upd; deal.paid_on.onchange = upd; }
     root.querySelectorAll("[data-foldall]").forEach(b => b.onclick = () => { const c = b.dataset.foldall === "1", s2 = {};
       root.querySelectorAll("[data-fold]").forEach(sec => { sec.classList.toggle("closed", c); s2[sec.dataset.fold] = c; }); try { localStorage.setItem("skp-fold", JSON.stringify(s2)); } catch {} });
-    const pst = $("pst"); if (pst) pst.onsubmit = ev => { ev.preventDefault(); act(pst.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch: { pitch_stats: JSON.stringify(Object.fromEntries(new FormData(pst))) } }), "Numbers saved"); };
+    root.querySelectorAll("[data-editcard]").forEach(b => b.onclick = () => { editCard.add(b.dataset.editcard); render(); });
+    root.querySelectorAll("[data-cancelcard]").forEach(b => b.onclick = () => { editCard.delete(b.dataset.cancelcard); render(); });
+    const pst = $("pst"); if (pst) pst.onsubmit = ev => { ev.preventDefault(); act(pst.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch: { pitch_stats: JSON.stringify(Object.fromEntries(new FormData(pst))) } }); editCard.delete("perf"); }, "Numbers saved"); };
     root.querySelectorAll("[data-pitch]").forEach(b => b.onclick = () => openAddEnquiry(b.dataset.pitch));
     const dlv = $("dlv"); if (dlv) {
       dlv.addEventListener("click", ev => {
@@ -625,16 +698,16 @@
         if (ev.target.closest("[data-xrm]")) ev.target.closest(".xrow").remove();
         if (ev.target.closest("[data-dreset]")) { const e = D.enquiries.find(x => x.id === +openId); dlv.querySelector(".dlist").innerHTML = delivRows(delivDefault(e, deal ? deal.package.value : e.package)); }
       });
-      dlv.onsubmit = ev => { ev.preventDefault(); act(dlv.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch: { deliverables: readDeliv(dlv) } }), "Deliverables saved"); };
+      dlv.onsubmit = ev => { ev.preventDefault(); act(dlv.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch: { deliverables: readDeliv(dlv) } }); editCard.delete("deliv"); }, "Deliverables saved"); };
     }
     const trf = $("trf"); if (trf) {
       trf.addEventListener("click", ev => {
         if (ev.target.closest("[data-tadd]")) { trf.querySelector(".tlist").insertAdjacentHTML("beforeend", trialRow({ date: today() })); trf.querySelector(".trow:last-child input").focus(); }
         const rm = ev.target.closest("[data-trm]"); if (rm) { if (trf.querySelectorAll(".trow").length > 1) rm.closest(".trow").remove(); else rm.closest(".trow").querySelectorAll("input").forEach(i => i.value = ""); }
       });
-      trf.onsubmit = ev => { ev.preventDefault(); act(trf.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch: { trial_reels: readTrials(trf) } }), "Trial reels saved"); };
+      trf.onsubmit = ev => { ev.preventDefault(); act(trf.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch: { trial_reels: readTrials(trf) } }); editCard.delete("trials"); }, "Trial reels saved"); };
     }
-    const brief = $("brief"); if (brief) brief.onsubmit = ev => { ev.preventDefault(); act(brief.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch: Object.fromEntries(new FormData(brief)) }), "Brief saved"); };
+    const brief = $("brief"); if (brief) brief.onsubmit = ev => { ev.preventDefault(); act(brief.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch: Object.fromEntries(new FormData(brief)) }); editCard.delete("brief"); }, "Brief saved"); };
     const reelf = $("reelf"); if (reelf) reelf.onsubmit = ev => { ev.preventDefault(); const e = D.enquiries.find(x => x.id === +openId);
       const fd = new FormData(reelf);
       act(reelf.querySelector("button"), () => api("reel.save", { link: fd.get("link"), liveOn: fd.get("live_on"), products: e.product_ids, enquiryId: e.id }), "Reel is live — the website updates in about a minute 🚀"); };
@@ -650,7 +723,7 @@
       <div class="between"><h2 style="margin:0">${pitchCode ? "Pitch this reel to a brand" : "Add an enquiry"}</h2><button type="button" data-x aria-label="Close">✕</button></div>
       <div class="grid2">
         <div style="grid-column:1/-1;display:grid;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px">
-          <label>🎯 Pitching a reel you already posted? <span class="muted small" style="font-weight:500">(optional)</span><select name="reel_pick"><option value="">— No, a new collab —</option>${D.reels.slice().reverse().filter(r => codeOf(r) === pitchCode || !dealOfReel(codeOf(r))).map(r => `<option value="${esc(codeOf(r))}" ${codeOf(r) === pitchCode ? "selected" : ""}>${esc(r.title || codeOf(r))}</option>`).join("")}</select></label>
+          <label>🎯 Pitching a reel you already posted? <span class="muted small" style="font-weight:500">(optional)</span><select name="reel_pick"><option value="">— No, a new collab —</option>${D.reels.filter(r => codeOf(r) === pitchCode || !dealOfReel(codeOf(r))).map(r => `<option value="${esc(codeOf(r))}" ${codeOf(r) === pitchCode ? "selected" : ""}>${esc(r.title || codeOf(r))}</option>`).join("")}</select></label>
           <label class="small">…or paste its Instagram link<input name="reel_paste" placeholder="https://www.instagram.com/reel/…"></label></div>
         <label>Brand name<input name="brand" required autocomplete="organization"></label>
         <label>Email<input name="email" type="email"></label>

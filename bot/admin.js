@@ -10,7 +10,7 @@
 // Public: POST /enquiry — the media kit's enquiry form (shubhkaprateek.com/portfolio) saves into the database here.
 
 const STATUSES = ["new", "replied", "hold", "confirmed", "product", "live", "delivered", "declined"];   // delivered = everything done, deal closed
-const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on"];
+const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels"];
 const now = () => new Date().toISOString();
 const clip = (v, n = 2000) => String(v ?? "").slice(0, n);
 const LONG = { script: 20000, non_negotiables: 5000, contacts: 5000, deliverables: 5000, trial_reels: 10000 };   // fields allowed to be longer than 2,000 characters
@@ -26,7 +26,7 @@ async function tables(env) {
     env.STATS.prepare("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, enquiry_id INTEGER, at TEXT, text TEXT)")
   ]);
   // columns added later — tables made before them get them here (fails harmlessly once they exist)
-  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT"]) { try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
+  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT"]) { try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
   ready = true;
 }
 const logEvent = (env, id, text) => env.STATS.prepare("INSERT INTO events (enquiry_id, at, text) VALUES (?, ?, ?)").bind(id, now(), clip(text, 300)).run();
