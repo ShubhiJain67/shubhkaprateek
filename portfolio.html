@@ -65,9 +65,24 @@
   .pk { display: grid; gap: 12px; }
   @media (min-width: 760px) { .pk { grid-template-columns: repeat(2, 1fr); gap: 16px; } }
   .pk .price { font-family: Fraunces, Georgia, serif; font-size: 22px; margin: -4px 0 10px; color: var(--pink); }
-  .contact-mk { text-align: center; }
-  .contact-mk p { color: var(--muted); margin: 0 0 16px; }
-  .contact-mk .hero-btns { justify-content: center; }
+  .reel-mk .tag { position: absolute; left: 8px; top: 8px; background: var(--pink); color: #fff; font-weight: 700; font-size: 12px; padding: 4px 9px; border-radius: 999px; }
+  .brands { display: flex; flex-wrap: wrap; gap: 8px; }
+  .brand-chip { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-weight: 700; color: var(--ink); text-decoration: none; }
+  .series-covers { display: flex; gap: 6px; margin-bottom: 12px; }
+  .series-covers a { flex: 1; } .series-covers img { width: 100%; aspect-ratio: 9/16; object-fit: cover; border-radius: 10px; display: block; }
+  .series h3 { margin-bottom: 4px; } .series-views { font-weight: 700; color: var(--pink); margin: 0 0 4px; }
+  .muted { color: var(--muted); margin: 0; }
+  .pk-card { display: flex; flex-direction: column; } .pk-card ul { flex: 1; margin-bottom: 16px; } .pk-card .choose { align-self: flex-start; cursor: pointer; }
+  .pk.barter { margin-top: 12px; } @media (min-width: 760px) { .pk.barter { grid-template-columns: 1fr; } }
+  .pk-card.slim { background: var(--field); box-shadow: none; }
+  .enquiry h2 { text-align: center; } .enquiry > .muted { text-align: center; margin-bottom: 16px; }
+  #enq { display: grid; gap: 12px; max-width: 520px; margin: 0 auto; }
+  #enq label { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
+  #enq input, #enq select, #enq textarea { font: inherit; color: var(--ink); background: var(--field); border: 1px solid transparent; border-radius: 12px; padding: 12px; width: 100%; }
+  #enq input:focus, #enq select:focus, #enq textarea:focus { outline: none; border-color: var(--pink); background: var(--surface); }
+  #enq button { justify-self: start; cursor: pointer; }
+  .enq-status { margin: 0; font-weight: 600; } .enq-status.ok { color: #2e8b57; } .enq-status.bad { color: var(--pink); }
+  .enquiry .or { text-align: center; margin: 20px 0 0; } .enquiry .hero-btns { justify-content: center; } .enquiry .mail { text-align: center; }
   .upd { text-align: center; color: var(--muted); font-size: 13px; margin-top: 28px; }
 </style>
 </head>
@@ -95,6 +110,20 @@
   const stats = (k.stats || []).filter(s => has(s.value));
   const why = k.why || {};
   const whyCard = w => w && (w.points || []).length ? `<div class="card-mk"><h3>${esc(w.title)}</h3><ul>${w.points.map(p => `<li>${esc(p)}</li>`).join("")}</ul></div>` : "";
+  const section = (kick, title, body) => `<section><span class="kick">${kick}</span><h2>${title}</h2>${body}</section>`;
+  // a swipeable row of reels (arrows on bigger screens); each item: { code, views, label }
+  const carousel = items => `<div class="car-mk"><button class="car-arrow prev" type="button" aria-label="Previous" data-dir="-1">‹</button>
+      <div class="reels-mk">${items.map(r => `<a class="reel-mk" href="https://www.instagram.com/reel/${esc(r.code)}/" target="_blank" rel="noopener">
+        <img loading="lazy" src="${cover(r.code)}" alt="Reel" onerror="this.remove()">${has(r.label) ? `<span class="tag">${esc(r.label)}</span>` : ""}${has(r.views) ? `<span class="views">▶ ${esc(r.views)} views</span>` : ""}</a>`).join("")}</div>
+      <button class="car-arrow next" type="button" aria-label="Next" data-dir="1">›</button></div>`;
+  const brands = (k.brands || []).filter(b => has(b.name));
+  const collabs = (k.brandCollabs || []).filter(b => has(b.code)).map(b => ({ ...b, label: b.brand }));
+  const series = (k.series || []).filter(x => has(x.title));
+  const packages = [...(k.packages || [])], barter = k.barter && has(k.barter.title) ? k.barter : null;
+  const choices = [...packages.map(p => p.name), ...(barter ? [barter.title] : []), "Not sure yet"];
+  const pkCard = (p, extra = "") => `<div class="card-mk pk-card${extra}"><h3>${esc(p.name || p.title)}</h3><div class="price">${has(p.price) ? esc(p.price) : "Price on request"}</div>
+        <ul>${(p.items || []).map(i => `<li>${esc(i)}</li>`).join("")}</ul>
+        <button class="btn-mk main choose" type="button" data-pick="${esc(p.name || p.title)}">Choose this →</button></div>`;
   main.innerHTML = `
     <div class="hero-mk">
       <div>
@@ -106,25 +135,67 @@
       </div>
       ${reels.length >= 3 ? `<div class="fan" aria-hidden="true">${reels.slice(0, 3).map(r => `<img src="${cover(r.code)}" alt="">`).join("")}</div>` : ""}
     </div>
-    ${stats.length ? `<section><span class="kick">In numbers</span><h2>Our reach</h2>
-      <div class="stats">${stats.map(s => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span>${has(s.note) ? `<small>${esc(s.note)}</small>` : ""}</div>`).join("")}</div></section>` : ""}
-    ${reels.length ? `<section><span class="kick">Our work</span><h2>Reels people loved</h2>
-      <div class="car-mk"><button class="car-arrow prev" type="button" aria-label="Previous" data-dir="-1">‹</button>
-      <div class="reels-mk" id="reels-mk">${reels.map(r => `<a class="reel-mk" href="https://www.instagram.com/reel/${esc(r.code)}/" target="_blank" rel="noopener">
-        <img loading="lazy" src="${cover(r.code)}" alt="Reel">${has(r.views) ? `<span class="views">▶ ${esc(r.views)} views</span>` : ""}</a>`).join("")}</div><button class="car-arrow next" type="button" aria-label="Next" data-dir="1">›</button></div></section>` : ""}
-    ${whyCard(why.collab) || whyCard(why.ugc) ? `<section><span class="kick">Why choose us?</span><h2>UGC or Collab — your pick</h2>
-      <div class="two">${whyCard(why.collab)}${whyCard(why.ugc)}</div></section>` : ""}
-    ${(k.packages || []).length ? `<section><span class="kick">Work with us</span><h2>Collaboration packages</h2>
-      <div class="pk">${k.packages.map(p => `<div class="card-mk"><h3>${esc(p.name)}</h3><div class="price">${has(p.price) ? esc(p.price) : "Price on request"}</div>
-        <ul>${(p.items || []).map(i => `<li>${esc(i)}</li>`).join("")}</ul></div>`).join("")}</div></section>` : ""}
-    ${(k.guidelines || []).length ? `<section><span class="kick">How we work</span><h2>Content guidelines</h2>
-      <div class="card-mk guide"><ul>${k.guidelines.map(g => `<li>${esc(g)}</li>`).join("")}</ul></div></section>` : ""}
-    <section class="contact-mk card-mk"><h2>Let's make something together</h2><p>${esc(c.note || "")}</p>${btns}
-      ${has(c.email) ? `<p class="mail">✉️ <a href="mailto:${esc(c.email)}">${esc(c.email)}</a></p>` : ""}</section>
+    ${stats.length ? section("In numbers", "Our reach",
+      `<div class="stats">${stats.map(s => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span>${has(s.note) ? `<small>${esc(s.note)}</small>` : ""}</div>`).join("")}</div>`) : ""}
+    ${brands.length ? section("Trusted by", "Brands we've worked with",
+      `<div class="brands">${brands.map(b => has(b.link) ? `<a class="brand-chip" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<span class="brand-chip">${esc(b.name)}</span>`).join("")}</div>`) : ""}
+    ${collabs.length ? section("Brand collabs", "Top performing brand collabs", carousel(collabs)) : ""}
+    ${reels.length ? section("Our work", "Top performing posts", carousel(reels)) : ""}
+    ${series.length ? section("Series", "Top performing series", `<div class="two">${series.map(x => `<div class="card-mk series">
+        ${(x.codes || []).length ? `<div class="series-covers">${x.codes.slice(0, 3).map(code => `<a href="https://www.instagram.com/reel/${esc(code)}/" target="_blank" rel="noopener"><img loading="lazy" src="${cover(code)}" alt="" onerror="this.parentNode.remove()"></a>`).join("")}</div>` : ""}
+        <h3>${esc(x.title)}</h3>${has(x.views) ? `<p class="series-views">▶ ${esc(x.views)} views</p>` : ""}<p class="muted">${esc(x.description || "")}</p></div>`).join("")}</div>`) : ""}
+    ${whyCard(why.collab) || whyCard(why.ugc) ? section("Why choose us?", "UGC or Collab — your pick", `<div class="two">${whyCard(why.collab)}${whyCard(why.ugc)}</div>`) : ""}
+    ${packages.length ? section("Work with us", "Collaboration packages",
+      `<div class="pk">${packages.map(p => pkCard(p)).join("")}</div>${barter ? `<div class="pk barter">${pkCard(barter, " slim")}</div>` : ""}`) : ""}
+    ${(k.guidelines || []).length ? section("How we work", "Content guidelines",
+      `<div class="card-mk guide"><ul>${k.guidelines.map(g => `<li>${esc(g)}</li>`).join("")}</ul></div>`) : ""}
+    <section class="card-mk enquiry" id="enquire">
+      <h2>Let's make something together</h2>
+      <p class="muted">${esc(c.note || "")} Pick a package and tell us about your product.</p>
+      <form id="enq" novalidate>
+        <label>Package<select id="enq-pkg">${choices.map(x => `<option>${esc(x)}</option>`).join("")}</select></label>
+        <label>Brand name<input id="enq-brand" required autocomplete="organization"></label>
+        <label>Your email<input id="enq-email" type="email" required autocomplete="email"></label>
+        <label>Product link<input id="enq-link" type="url" placeholder="https://…"></label>
+        <label>Anything else? <span class="muted">(timeline, product value, ideas)</span><textarea id="enq-msg" rows="3"></textarea></label>
+        <input type="checkbox" id="enq-bot" tabindex="-1" autocomplete="off" hidden>
+        <button class="btn-mk main" id="enq-send" type="submit">Send enquiry →</button>
+        <p class="enq-status" id="enq-status" role="status"></p>
+      </form>
+      <p class="muted or">or reach us directly</p>${btns}
+      ${has(c.email) ? `<p class="mail">✉️ <a href="mailto:${esc(c.email)}">${esc(c.email)}</a></p>` : ""}
+    </section>
     ${has(k.updated) ? `<p class="upd">Updated ${esc(k.updated)}</p>` : ""}`;
+
   document.addEventListener("click", e => {
-    const b = e.target.closest(".car-arrow"); if (!b) return;
-    const t = document.getElementById("reels-mk"); t.scrollBy({ left: +b.dataset.dir * t.clientWidth * 0.75, behavior: "smooth" });
+    const a = e.target.closest(".car-arrow");
+    if (a) { const t = a.parentNode.querySelector(".reels-mk"); t.scrollBy({ left: +a.dataset.dir * t.clientWidth * 0.75, behavior: "smooth" }); return; }
+    const pick = e.target.closest(".choose");
+    if (pick) { document.getElementById("enq-pkg").value = pick.dataset.pick; document.getElementById("enquire").scrollIntoView({ behavior: "smooth" });
+      setTimeout(() => document.getElementById("enq-brand").focus({ preventScroll: true }), 500); }
+  });
+
+  // Enquiry → sent to our inbox through the same form service as the shop page's "Can't find something?" box
+  // (key in data/site.json → contact.formKey). If that fails, it opens an email instead.
+  let formKey = "";
+  fetch("/data/site.json").then(r => r.json()).then(j => { formKey = (j.contact || {}).formKey || ""; }).catch(() => {});
+  const $ = id => document.getElementById(id), status = (t, ok) => { $("enq-status").textContent = t; $("enq-status").className = "enq-status " + (ok ? "ok" : "bad"); };
+  $("enq").addEventListener("submit", async e => {
+    e.preventDefault();
+    const pkg = $("enq-pkg").value, brand = $("enq-brand").value.trim(), email = $("enq-email").value.trim(), link = $("enq-link").value.trim(), msg = $("enq-msg").value.trim();
+    if (!brand) { status("Please add your brand name.", false); $("enq-brand").focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { status("Please add a valid email so we can reply.", false); $("enq-email").focus(); return; }
+    const text = `Package: ${pkg}\nBrand: ${brand}\nEmail: ${email}\nProduct: ${link || "—"}\n\n${msg}`;
+    const mailto = () => { if (has(c.email)) location.href = `mailto:${c.email}?subject=${encodeURIComponent("Collab enquiry: " + brand + " — " + pkg)}&body=${encodeURIComponent(text)}`; };
+    if (!formKey) return mailto();
+    $("enq-send").disabled = true;
+    try {
+      const r = await fetch("https://api.web3forms.com/submit", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ access_key: formKey, botcheck: $("enq-bot").checked, subject: `Collab enquiry: ${brand} — ${pkg}`, from_name: brand, replyto: email, message: text }) });
+      const j = await r.json(); if (!j.success) throw new Error(j.message);
+      status("Sent ✓ Thank you! We'll reply to " + email + " within a day.", true); $("enq").reset();
+    } catch (err) { console.error(err); status("Couldn't send — opening your email app instead…", false); mailto(); }
+    $("enq-send").disabled = false;
   });
 })();
 </script>

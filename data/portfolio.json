@@ -1,18 +1,28 @@
 {
-  "_help": "Media kit at shubhkaprateek.com/portfolio (not linked anywhere on the site). Anything left empty (\"\") is hidden on the page.",
+  "_help": "Media kit at shubhkaprateek.com/portfolio (not linked anywhere on the site). Anything left empty (\"\" or []) is hidden on the page. brands: [{\"name\": \"Deciwood\", \"link\": \"https://…\"}]  ·  brandCollabs: [{\"brand\": \"Deciwood\", \"code\": \"<reel code>\", \"views\": \"1.2M\"}]  ·  bestReels / series codes = the part after instagram.com/reel/ (needs a cover in assets/covers)",
   "updated": "November 2026",
   "tagline": "20M+ Reach | Couple Content | Gifting & Surprises",
   "intro": "We're Shubhi & Prateek — a married couple posting a reel every day about our life, games, and gifting each other everything from Marvel merch to the weirdest gadgets on the internet.",
   "stats": [
     {
-      "label": "Reach",
+      "label": "Views in last 30 Days",
       "value": "20M+",
       "note": ""
     },
     {
-      "label": "Views on one reel",
-      "value": "6.1M",
-      "note": "in under 24 hours"
+      "label": "Views in 24 hours",
+      "value": "9M+",
+      "note": "on 2 ree₹ls"
+    },
+    {
+      "label": "Average reach",
+      "value": "",
+      "note": "last 10 posts"
+    },
+    {
+      "label": "Engagement rate",
+      "value": "",
+      "note": "last 10 posts"
     },
     {
       "label": "Audience",
@@ -20,12 +30,12 @@
       "note": "men and women"
     },
     {
-      "label": "Instagram followers",
+      "label": "Brands collaborated with",
       "value": "",
       "note": ""
     },
     {
-      "label": "Average views per reel",
+      "label": "Instagram followers",
       "value": "",
       "note": ""
     },
@@ -35,6 +45,8 @@
       "note": "for months, without a break"
     }
   ],
+  "brands": [],
+  "brandCollabs": [],
   "bestReels": [
     {
       "code": "DfHN_zDSN5X",
@@ -66,6 +78,24 @@
     },
     {
       "code": "De4VkzLS1tE",
+      "views": ""
+    }
+  ],
+  "series": [
+    {
+      "title": "29 gifts in 29 days — Marvel birthday month",
+      "description": "A Marvel gift every day for 29 days, counting down to Prateek's 29th birthday.",
+      "codes": [
+        "DdrMH5JSjEz",
+        "DeUe3x2S-w9",
+        "De4VkzLS1tE"
+      ],
+      "views": ""
+    },
+    {
+      "title": "Game Night Wars",
+      "description": "A 30-day couple game challenge — one game a night, scores carried day to day.",
+      "codes": [],
       "views": ""
     }
   ],
@@ -115,11 +145,20 @@
       ]
     }
   ],
+  "barter": {
+    "title": "Barter",
+    "price": "Product only",
+    "items": [
+      "Only for products worth ₹6,000 or more",
+      "Deliverables discussed based on the product"
+    ]
+  },
   "guidelines": [
     "All content will be subtle, organic, and naturally integrated into our couple-content format.",
     "No loud or overly promotional messaging.",
     "Content will focus on authentic couple moments, gifting, and surprises.",
     "Product gifting is separate from the collaboration fee.",
+    "Barter collaborations are considered only for products worth ₹6,000 or more.",
     "Advertising usage rights are valid for 3 months from the date of content delivery.",
     "Any additional deliverables or extended usage rights can be discussed separately."
   ],
