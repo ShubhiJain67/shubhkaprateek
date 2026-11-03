@@ -1,6 +1,8 @@
 # Cloudflare Worker settings for the Telegram bot. setup.sh fills in the KV id.
 name = "shubhkaprateek-bot"
 main = "worker.js"
+# the Cloudflare account the bot lives on (jainshubhi67@gmail.com) — deploys always go here
+account_id = "02444c1df471cf35375ccc29d2ee0be0"
 compatibility_date = "2025-06-01"
 
 # lets worker.js import planner.html (the private planner page) as text

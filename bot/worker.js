@@ -12,7 +12,7 @@
 
 import { plannerCommand, plannerButton, plannerHttp } from "./planner.js";
 import PLANNER_PAGE from "./planner.html";   // the private planner page (see planner.js)
-import { reportHttp, reportCommand } from "./report.js";   // 📊 brand reports: shubhkaprateek.com/report/<brand>
+import { reportHttp, reportCommand, brandLink, slugOf } from "./report.js";   // 🏷 brand pages: shubhkaprateek.com/brand/<brand>
 import { DATA_FILES, dataJs } from "../tools/data.mjs"; // builds assets/js/data.js — same code `make ship` uses
 
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
@@ -704,6 +704,8 @@ export async function publish(d, env) {
     d.reel ? `🔗 Reel page: ${esc(siteUrl(env))}/reel/${esc(d.reel.code)}` : "",
     reelLine ? `🎬 Tracking link for this reel's CTA (opens the home page, counts visits from this reel):\n${esc(reelLine)}` : "",
     added.length ? `🆕 ${esc(added.join(", "))}` : "",
+    ...(await Promise.all([...new Set(S.products.filter(p => ids.includes(p.id) && p.brand).map(p => p.brand))]
+      .map(async b => `🏷 ${esc(b)}'s page (send it to them): ${esc(await brandLink(env, slugOf(b)))}`))),
     notes.length ? `ℹ️ ${esc(notes.join("; "))}` : "",
     `\n💻 On your laptop, run <code>git pull</code> before editing the site files.`
   ].filter(Boolean).join("\n");

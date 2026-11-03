@@ -1,4 +1,4 @@
-// 🏷 Brand pages: shubhkaprateek.com/brand/<brand>?k=<key>   (old /report/<brand> links still work)
+// 🏷 Brand pages: shubhkaprateek.com/brand/<5-digit number>   (older /brand/<name>?k=… and /report/… links still work)
 //
 // A page you send a brand. It shows only THEIR products (every product has a "brand" in data/products.json):
 // the products live on our site (photo, categories, buy link), the reels they're in, and live numbers from Umami —
@@ -8,7 +8,7 @@
 // Telegram:  /brand Blix            → Blix's page link (products whose "brand" is Blix)
 //            /brand Deciwood 49 50  → sets products 49 + 50 to Deciwood (saved in products.json), then the link
 //            /brands                → every brand with its page link       (/report, /reports still work too)
-// Each brand's link has its own key, so one brand can't open another brand's page by changing the name.
+// Each brand's page is opened by its own 5-digit number (shubhkaprateek.com/brand/48213), so it can't be guessed from the name.
 //
 // Setup (once): Umami → Settings → API keys → Create key, then in bot/:  npx wrangler secret put UMAMI_API_KEY
 
@@ -16,6 +16,18 @@ const UMAMI = "https://api.umami.is/v1";
 export const slugOf = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 const flat = s => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const REEL_CODE = /instagram\.com\/(?:[\w.]+\/)?(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/;
+
+// Each brand's page has its own 5-digit number: shubhkaprateek.com/brand/48213. It's worked out from the bot's
+// secret, so it never changes and can't be guessed from the brand's name.
+export async function brandId(env, slug) {
+  const d = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("brandid:" + slug + ":" + env.WEBHOOK_SECRET)));
+  return String(((d[0] << 24 >>> 0) + (d[1] << 16) + (d[2] << 8) + d[3]) % 90000 + 10000);
+}
+async function slugForId(env, id, readJson) {
+  const products = await readJson(env, "data/products.json");
+  for (const slug of new Set(products.filter(p => p.brand).map(p => slugOf(p.brand)))) if (await brandId(env, slug) === id) return slug;
+  return "";
+}
 
 export async function reportKey(env, slug) {
   const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("report:" + slug + ":" + env.WEBHOOK_SECRET));
@@ -88,9 +100,12 @@ export async function reportHttp(req, env, url, helpers) {
   if (url.pathname !== "/brand/api" && url.pathname !== "/report/api") return null;
   const cors = { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store", "Content-Type": "application/json", "X-Robots-Tag": "noindex" };
   if (req.method === "OPTIONS") return new Response(null, { headers: { ...cors, "Access-Control-Allow-Methods": "GET" } });
-  const slug = slugOf(url.searchParams.get("brand"));
+  const asked = String(url.searchParams.get("brand") || "");
   const days = [7, 30, 90, 365].includes(+url.searchParams.get("days")) ? +url.searchParams.get("days") : 30;
-  if (!slug || url.searchParams.get("k") !== await reportKey(env, slug)) return new Response('{"error":"not found"}', { status: 404, headers: cors });
+  // /brand/48213 (the brand's number) — or the older /brand/blix?k=<key> links
+  const slug = /^\d{5}$/.test(asked) ? await slugForId(env, asked, helpers.readJson)
+    : (url.searchParams.get("k") === await reportKey(env, slugOf(asked)) ? slugOf(asked) : "");
+  if (!slug) return new Response('{"error":"not found"}', { status: 404, headers: cors });
   const cacheKey = `reportcache:${slug}:${days}`;
   const hit = await env.DRAFTS.get(cacheKey);
   if (hit) return new Response(hit, { headers: cors });
@@ -104,7 +119,7 @@ export async function reportHttp(req, env, url, helpers) {
   }
 }
 
-const brandLink = async (env, slug) => `${env.SITE_URL || "https://shubhkaprateek.com"}/brand/${slug}?k=${await reportKey(env, slug)}`;
+export const brandLink = async (env, slug) => `${env.SITE_URL || "https://shubhkaprateek.com"}/brand/${await brandId(env, slug)}`;
 
 // /brand <Name> [product ids…]   ·   /brands      (/report and /reports do the same)
 export async function reportCommand(cmd, text, env, chat, { say, esc, readJson, ensureReportApi, saveProducts }) {
@@ -138,5 +153,5 @@ export async function reportCommand(cmd, text, env, chat, { say, esc, readJson, 
   const notes = env.UMAMI_API_KEY ? "" : "\n\n⚠️ Live numbers aren't connected yet: Umami → Settings → API keys → Create key, then in bot/ run <code>npx wrangler secret put UMAMI_API_KEY</code>";
   return say(env, chat, `🏷 <b>${esc(brandName(slug, products))}</b> — ${mine.length} product${mine.length > 1 ? "s" : ""}:\n` +
     mine.map(p => `• <code>${p.id}</code> ${esc(p.name)}`).join("\n") +
-    `\n\nTheir page (send them this — it only works with the key at the end):\n${esc(await brandLink(env, slug))}${notes}`), true;
+    `\n\nTheir page (send them this):\n${esc(await brandLink(env, slug))}${notes}`), true;
 }
