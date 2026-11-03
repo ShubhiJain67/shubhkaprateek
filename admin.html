@@ -352,7 +352,7 @@
             <label>Transaction ID<input name="txn_id" value="${esc(e.txn_id)}" placeholder="UPI / bank ref"></label>
             <label>Other details<textarea name="payment_notes" rows="2" placeholder="Paid to which account, invoice no., TDS…">${esc(e.payment_notes)}</textarea></label></div>
           ${contactsBlock(contactsOf(e))}
-          <label>Their product link<input name="product_link" value="${esc(e.product_link)}"></label>
+          <label>Their product link ${e.product_link || prods[0] ? `<a class="small" href="${esc(e.product_link || prods[0].variants[0]?.link || "")}" target="_blank" rel="noopener">open ↗</a>` : ""}<input name="product_link" value="${esc(e.product_link || (prods[0] && prods[0].variants[0]?.link) || "")}" placeholder="filled from their product on the website"></label>
           <label style="grid-column:1/-1">Their message<textarea name="message" rows="2">${esc(e.message)}</textarea></label>
           <label style="grid-column:1/-1">Your notes<textarea name="notes" rows="2">${esc(e.notes)}</textarea></label>
           <div><button class="main">Save deal</button></div></form></section>
