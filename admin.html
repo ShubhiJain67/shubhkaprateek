@@ -166,7 +166,11 @@
     { k: "raw", t: "Raw footage (Google Drive)", re: /raw footage/i },
     { k: "rights", t: "3-month ad usage rights", re: /usage rights/i },
     { k: "website", t: "Brand on our website", re: /addition on our website/i },
-    { k: "featured", t: "Featured on website (2 weeks)", re: /featured section/i },
+    { k: "featured", t: "Featured on website", re: /featured section/i },
+    { k: "collab", t: "Added brand as collaborator", re: /collaborator/i },
+    { k: "links", t: "Links changed to their product", re: /change links/i },
+    { k: "repush", t: "Repushed as trial reels", re: /trial reels/i },
+    { k: "refund", t: "Brand refunds the product (tick Done when refunded)", re: /refund/i },
   ];
   const delivFromPackage = name => { const items = ((D.packages || []).find(p => p.name === name) || {}).items || [];
     return { items: Object.fromEntries(DELIV.map(d => { const hit = items.find(i => d.re.test(i));
@@ -272,7 +276,7 @@
           <label>Their Instagram ${e.instagram ? `<a class="small" href="${esc(igUrl(e.instagram))}" target="_blank" rel="noopener">open ↗</a>` : ""}<input name="instagram" value="${esc(e.instagram)}" placeholder="@brand or instagram.com/brand"></label>
           ${sourceSelect(srcOf(e))}
           <label>Package<select name="package">${[...new Set([e.package || "", ...(D.packages || []).map(p => p.name)])].map(o => `<option ${o === (e.package || "") ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></label>
-          <label>Agreed price<input name="price" value="${esc(e.price || pk.price)}" placeholder="₹3,000"></label>
+          <label>Agreed price${pk.private ? ` <span class="muted small" style="font-weight:500">— extra payment only, the refund is in Deliverables</span>` : ""}<input name="price" value="${esc(e.price || pk.price)}" placeholder="${pk.private ? "₹0 if it's only the refund" : "₹3,000"}"></label>
           <label>Payment<select name="payment">${["Paid", "Barter", "Pending"].map(o => `<option ${o === (e.payment || pk.payment) ? "selected" : ""}>${o}</option>`).join("")}</select></label>
           <label>Payment deadline<input name="payment_due" type="date" value="${esc(e.payment_due)}"></label>
           <label>Product value<input name="product_value" value="${esc(e.product_value)}" placeholder="₹4,999"></label>
@@ -547,7 +551,7 @@
         <label>Brand name<input name="brand" required autocomplete="organization"></label>
         <label>Email<input name="email" type="email"></label>
         ${sourceSelect("us")}
-        <label>Package<select name="package"><option value=""></option>${pk.map(p => `<option>${esc(p.name)}</option>`).join("")}<option>Not sure yet</option></select></label>
+        <label>Package<select name="package"><option value=""></option>${pk.map(p => `<option value="${esc(p.name)}">${esc(p.name)}${p.private ? " (private)" : ""}</option>`).join("")}<option>Not sure yet</option></select></label>
         <label>Agreed price<input name="price" placeholder="filled from the package"></label>
         <label>Payment<select name="payment"><option></option><option>Paid</option><option>Barter</option><option>Pending</option></select></label>
         <label>Payment deadline<input name="payment_due" type="date"></label>
@@ -563,6 +567,9 @@
     dlg.querySelectorAll("[data-x]").forEach(x => x.onclick = close);
     dlg.addEventListener("cancel", close);
     wireContacts(f);
+    const pitchPk = pk.find(p => p.private && /after-live/i.test(p.name));
+    const pickPitch = () => { if ((f.reel_pick.value || f.reel_paste.value.trim()) && !f.package.value && pitchPk) { f.package.value = pitchPk.name; f.package.onchange(); } };
+    f.reel_pick.onchange = pickPitch; f.reel_paste.oninput = pickPitch;
     f.package.onchange = () => { const p = pk.find(x => x.name === f.package.value); if (p) { f.price.value = p.price; f.payment.value = p.payment; } };
     f.onsubmit = async ev => {
       ev.preventDefault();
@@ -574,7 +581,7 @@
       try { const r = await api("enquiry.add", { patch, reel }); close(); toast("Enquiry added"); if (r.newId) go("enquiry", r.newId); else render(); }
       catch { btn.disabled = false; }
     };
-    dlg.showModal(); f.brand.focus();
+    dlg.showModal(); pickPitch(); f.brand.focus();
   }
   // destructive buttons need a second tap
   function confirmTwice(b) { if (b.dataset.sure) return true; b.dataset.sure = "1"; const t = b.textContent; b.textContent = "Tap again to confirm"; setTimeout(() => { delete b.dataset.sure; b.textContent = t; }, 3000); return false; }

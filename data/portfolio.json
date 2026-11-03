@@ -195,6 +195,20 @@
       ]
     }
   ],
+  "privatePackages": [
+    {
+      "name": "After-live pitch",
+      "price": "",
+      "items": [
+        "Add brand as collaborator on the reel",
+        "Change links to the brand's product",
+        "Repush as trial reels",
+        "Brand addition on our website",
+        "Featured section on our website",
+        "Product cost refunded by the brand"
+      ]
+    }
+  ],
   "barter": {
     "title": "Barter",
     "price": "Product only",

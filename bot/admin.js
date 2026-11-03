@@ -42,7 +42,7 @@ const json = (env, body, status = 200) => new Response(JSON.stringify(body), { s
 // the barter card → Barter. Used to pre-fill a new enquiry's deal — you can change them in the dashboard.
 async function packageDefaults(env, h, name) {
   let k = {}; try { k = await h.readJson(env, "data/portfolio.json"); } catch {}
-  const p = (k.packages || []).find(x => x.name === name);
+  const p = [...(k.packages || []), ...(k.privatePackages || [])].find(x => x.name === name);
   if (p) return { price: p.price || "", payment: "Paid" };
   if (k.barter && k.barter.title && k.barter.title === name) return { price: "", payment: "Barter" };
   return { price: "", payment: "" };
@@ -110,7 +110,7 @@ async function load(env, h) {
   const events = (await env.STATS.prepare("SELECT * FROM events ORDER BY id DESC LIMIT 2000").all()).results || [];
   enquiries.forEach(e => { try { e.product_ids = JSON.parse(e.product_ids || "[]"); } catch { e.product_ids = []; } });
   let kit = {}; try { kit = await h.readJson(env, "data/portfolio.json"); } catch {}
-  const packages = [...(kit.packages || []).map(p => ({ name: p.name, price: p.price || "", payment: "Paid", items: p.items || [] })), ...(kit.barter && kit.barter.title ? [{ name: kit.barter.title, price: "", payment: "Barter" }] : [])];
+  const packages = [...[...(kit.packages || []), ...(kit.privatePackages || []).map(p => ({ ...p, private: true }))].map(p => ({ name: p.name, price: p.price || "", payment: "Paid", items: p.items || [], private: !!p.private })), ...(kit.barter && kit.barter.title ? [{ name: kit.barter.title, price: "", payment: "Barter" }] : [])];
   return { products, reels, categories, featured: (site.site || {}).featured || [], brands, enquiries, events, packages };
 }
 
