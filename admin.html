@@ -171,7 +171,10 @@
   const delivFromPackage = name => { const items = ((D.packages || []).find(p => p.name === name) || {}).items || [];
     return { items: Object.fromEntries(DELIV.map(d => { const hit = items.find(i => d.re.test(i));
       return [d.k, { on: !!hit, done: false, ...(d.count ? { count: hit ? +((hit.match(/(\d+)/) || [])[1] || 1) : 1 } : {}) }]; })), extra: [] }; };
-  const delivOf = e => { try { const d = JSON.parse(e.deliverables || ""); if (d && d.items) return d; } catch {} return delivFromPackage(e.package); };
+  const delivDefault = (e, pkg) => { const d = delivFromPackage(pkg ?? e.package); if (e.pitched === "1") d.items.reel = { on: true, done: true }; return d; };   // pitched: the reel is already up
+  const delivOf = e => { try { const d = JSON.parse(e.deliverables || ""); if (d && d.items) return d; } catch {} return delivDefault(e); };
+  const statsOf = e => { try { return JSON.parse(e.pitch_stats || "{}") || {}; } catch { return {}; } };
+  const reelTitle = code => (D.reels.find(r => codeOf(r).toLowerCase() === String(code || "").toLowerCase()) || {}).title || code;
   const delivRows = d => DELIV.map(x => { const v = d.items[x.k] || { on: false, done: false, count: 1 };
       return `<div class="drow"><label class="dl"><input type="checkbox" data-on="${x.k}" ${v.on ? "checked" : ""}>${esc(x.t)}</label>
         ${x.count ? `<label class="small cnt">How many<input type="number" min="0" max="20" data-count="${x.k}" value="${esc(v.count ?? 1)}"></label>` : ""}
@@ -235,7 +238,7 @@
       <div class="row">${[["all", "Everyone"], ["brand", "↘ They reached out"], ["us", "↗ We reached out"]].map(([k, t]) =>
         `<button class="chip ${srcFilter === k ? "on" : ""}" data-src="${k}">${t} ${k === "all" ? D.enquiries.length : D.enquiries.filter(e => srcOf(e) === k).length}</button>`).join("")}</div>
       <div class="list">${list.map(e => `<button class="item" data-open="${e.id}">
-          <span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${srcOf(e) === "us" ? "↗ We reached out" : "↘ They reached out"}${e.email ? " · " + esc(e.email) : ""} · ${date(e.created)}${e.payment_due ? ` · payment due ${date(e.payment_due)}` : ""}</span></span>
+          <span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${e.pitched === "1" ? "🎯 Pitched a posted reel" : srcOf(e) === "us" ? "↗ We reached out" : "↘ They reached out"}${e.email ? " · " + esc(e.email) : ""} · ${date(e.created)}${e.payment_due ? ` · payment due ${date(e.payment_due)}` : ""}</span></span>
           ${pill(e.status)}</button>`).join("") || `<p class="empty">No enquiries here yet. When a brand sends the form on your media kit, it shows up here.</p>`}</div>`;
   }
 
@@ -249,12 +252,13 @@
     const mail = `mailto:${encodeURIComponent(e.email)}?subject=${encodeURIComponent("Collab with ShubhKaPrateek — " + e.brand)}&body=${encodeURIComponent(`Hi ${e.brand} team,\n\nThank you for reaching out! We'd love to work with you on ${e.package || "a collab"}.\n\n[your reply]\n\nWarm regards,\nShubhi & Prateek\n@shubhkaprateek | shubhkaprateek.com`)}`;
     return `<a href="#enquiries" data-go="enquiries" class="small" style="font-weight:600;text-decoration:none">← Enquiries</a>
       <div class="between"><h1>${esc(e.brand)} <span class="muted" style="font:500 16px Inter,sans-serif">· ${esc(e.package || "—")}</span></h1>${pill(e.status)}</div>
+      ${e.pitched === "1" ? `<p style="margin:0">🎯 Pitched from your reel ${(e.product_ids || []).length ? `<a href="${SITE}/reel/${esc(e.reel_code)}" target="_blank" rel="noopener">${esc(reelTitle(e.reel_code))}</a>` : `<b>${esc(reelTitle(e.reel_code))}</b>`} · <a href="https://www.instagram.com/reel/${esc(e.reel_code)}/" target="_blank" rel="noopener">Instagram ↗</a></p>` : ""}
       <div class="steps">${FLOW.map((s, i) => `<span class="${i < at ? "done" : i === at ? "now" : ""}">${STATUS[s]}${i < at ? " ✓" : ""}</span>`).join("")}</div>
       <div class="row">
         <a class="btn" href="${mail}">Reply by email</a>
         ${["new", "hold"].includes(e.status) ? `<button data-status="replied">Mark as replied</button>` : ""}
         ${e.status === "replied" ? `<button data-status="new">Not replied yet</button>` : ""}
-        ${e.status !== "confirmed" && at < 2 ? `<button class="ok" data-status="confirmed">Confirm</button>` : ""}
+        ${e.status !== "confirmed" && at < 2 ? `<button class="ok" data-status="confirmed">${e.pitched === "1" && e.reel_code ? "Confirm (reel is already live)" : "Confirm"}</button>` : ""}
         ${e.status === "live" ? `<button class="ok" data-status="delivered">Mark delivered ✓</button>` : ""}
         ${e.status === "delivered" ? `<button data-status="live">Reopen (back to Live)</button>` : ""}
         ${!["hold", "delivered"].includes(e.status) ? `<button data-status="hold">Put on hold</button>` : ""}
@@ -280,6 +284,7 @@
           <label>Draft submitted<input name="draft_on" type="date" value="${esc(e.draft_on)}"></label>
           <label>Draft link<input name="draft_link" value="${esc(e.draft_link)}" placeholder="Drive / video link"></label>
           <label>Reel went live<input name="live_on" type="date" value="${esc(e.live_on)}"></label>
+          <label>Collab added on Instagram<input name="collab_on" type="date" value="${esc(e.collab_on)}"></label>
           <label>Payment received<input name="paid_on" type="date" value="${esc(e.paid_on)}"></label>
           <div data-paidbox style="grid-column:1/-1;display:${e.paid_on || e.txn_id || e.payment_notes ? "grid" : "none"};gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px">
             <b class="small" style="grid-column:1/-1">💸 Payment details</b>
@@ -292,6 +297,11 @@
           <div><button class="main">Save deal</button></div></form></section>
         <section class="card"><h2>History</h2><div class="timeline">${ev.map(x => `<span><b style="color:var(--ink)">${date(x.at)}</b> · ${esc(x.text)}</span>`).join("") || "—"}</div></section>
       </div>
+      ${e.pitched === "1" ? (() => { const st = statsOf(e); return `<section class="card"><h2>Performance when pitched</h2>
+        <form id="pst" class="grid2">${[["views", "Views"], ["likes", "Likes"], ["comments", "Comments"], ["shares", "Shares"], ["saves", "Saves"]].map(([k, t]) =>
+          `<label>${t}<input name="${k}" inputmode="numeric" value="${esc(st[k])}" placeholder="${k === "views" ? "e.g. 2.4M" : ""}"></label>`).join("")}
+          <label>As on<input name="date" type="date" value="${esc(st.date || today())}"></label>
+          <div><button class="main">Save numbers</button></div></form></section>`; })() : ""}
       ${(() => { const d = delivOf(e), c = delivCount(d); return `<section class="card"><div class="between"><h2>Deliverables</h2><span class="pill ${c.total && c.done === c.total ? "s-live" : ""}">${c.done} / ${c.total} done</span></div>
         <form id="dlv"><div class="dlist">${delivRows(d)}</div>
           <div class="row" style="margin-top:12px"><button class="main">Save deliverables</button><button type="button" data-xadd>+ Add another</button><button type="button" data-dreset>Reset to package</button></div></form>
@@ -305,7 +315,7 @@
         ${editing ? productForm(e) : ""}
       </section>
       <section class="card"><h2>Reel</h2>
-        ${e.reel_code ? `<p style="margin:0 0 10px">Live: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a> · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
+        ${e.reel_code ? `<p style="margin:0 0 10px">${e.pitched === "1" && !["live", "delivered"].includes(e.status) ? "Your reel" : "Live"}: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a> · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
         ${prods.length ? `<form id="reelf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 170px">Live date<input name="live_on" type="date" value="${esc(e.live_on || today())}"></label><button class="main">${e.reel_code ? "Update reel" : "Go live →"}</button></form>
           <p class="muted small" style="margin:8px 0 0">Makes the reel page, connects it to their product${prods.length > 1 ? "s" : ""} and publishes the website. Status → Live.</p>` : `<p class="muted" style="margin:0">Add their product first.</p>`}
       </section>
@@ -369,7 +379,7 @@
       ${list.map(r => `<tr><td><img class="cover" src="/assets/covers/${esc(codeOf(r))}.jpg" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></td>
         <td><b>${esc(r.title)}</b><br><span class="muted small">${esc(codeOf(r))}</span></td>
         <td class="small">${(r.products || []).map(prod).filter(Boolean).map(p => esc(p.name)).join(", ")}</td>
-        <td><div class="row" style="flex-wrap:nowrap"><button data-reel="${esc(codeOf(r))}">Edit</button><a class="btn" href="${SITE}/reel/${esc(codeOf(r))}" target="_blank" rel="noopener">View ↗</a></div></td></tr>`).join("")}
+        <td><div class="row" style="flex-wrap:nowrap"><button data-reel="${esc(codeOf(r))}">Edit</button><button data-pitch="${esc(codeOf(r))}" title="Start a brand deal from this reel">🎯 Pitch</button><a class="btn" href="${SITE}/reel/${esc(codeOf(r))}" target="_blank" rel="noopener">View ↗</a></div></td></tr>`).join("")}
       </tbody></table></div>`;
   }
   function reelForm() {
@@ -499,11 +509,13 @@
     if (deal) { const box = deal.querySelector("[data-paidbox]"), was = deal.payment.value,
         upd = () => box.style.display = deal.paid_on.value || deal.txn_id.value || deal.payment_notes.value || (deal.payment.value === "Paid" && was !== "Paid") ? "grid" : "none";
       deal.payment.onchange = upd; deal.paid_on.oninput = upd; deal.paid_on.onchange = upd; }
+    const pst = $("pst"); if (pst) pst.onsubmit = ev => { ev.preventDefault(); act(pst.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch: { pitch_stats: JSON.stringify(Object.fromEntries(new FormData(pst))) } }), "Numbers saved"); };
+    root.querySelectorAll("[data-pitch]").forEach(b => b.onclick = () => openAddEnquiry(b.dataset.pitch));
     const dlv = $("dlv"); if (dlv) {
       dlv.addEventListener("click", ev => {
         if (ev.target.closest("[data-xadd]")) { dlv.querySelector(".dlist").insertAdjacentHTML("beforeend", extraRow({ t: "", done: false })); dlv.querySelector(".xrow:last-child input").focus(); }
         if (ev.target.closest("[data-xrm]")) ev.target.closest(".xrow").remove();
-        if (ev.target.closest("[data-dreset]")) { const e = D.enquiries.find(x => x.id === +openId); dlv.querySelector(".dlist").innerHTML = delivRows(delivFromPackage(deal ? deal.package.value : e.package)); }
+        if (ev.target.closest("[data-dreset]")) { const e = D.enquiries.find(x => x.id === +openId); dlv.querySelector(".dlist").innerHTML = delivRows(delivDefault(e, deal ? deal.package.value : e.package)); }
       });
       dlv.onsubmit = ev => { ev.preventDefault(); act(dlv.querySelector("button.main"), () => api("enquiry.update", { id: +openId, patch: { deliverables: readDeliv(dlv) } }), "Deliverables saved"); };
     }
@@ -522,13 +534,16 @@
       act(rf.querySelector("button.main"), async () => { await api("reel.save", { link: fd.get("link"), title: fd.get("title"), products: fd.getAll("p").map(Number) }); reelEdit = null; }, "Reel saved — live in about a minute"); };
   }
   // ---- "+ Add enquiry": one form in a pop-up (for brands that DM'd or emailed you)
-  function openAddEnquiry() {
+  function openAddEnquiry(pitchCode = "") {
     const pk = D.packages || [];
     const dlg = document.createElement("dialog");
     dlg.style.cssText = "border:0;border-radius:18px;padding:0;width:min(560px,94vw);max-height:90vh;box-shadow:0 20px 60px rgba(43,31,26,.25)";
     dlg.innerHTML = `<form id="addf" method="dialog" style="padding:22px;display:grid;gap:12px">
-      <div class="between"><h2 style="margin:0">Add an enquiry</h2><button type="button" data-x aria-label="Close">✕</button></div>
+      <div class="between"><h2 style="margin:0">${pitchCode ? "Pitch this reel to a brand" : "Add an enquiry"}</h2><button type="button" data-x aria-label="Close">✕</button></div>
       <div class="grid2">
+        <div style="grid-column:1/-1;display:grid;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px">
+          <label>🎯 Pitching a reel you already posted? <span class="muted small" style="font-weight:500">(optional)</span><select name="reel_pick"><option value="">— No, a new collab —</option>${D.reels.slice().reverse().map(r => `<option value="${esc(codeOf(r))}" ${codeOf(r) === pitchCode ? "selected" : ""}>${esc(r.title || codeOf(r))}</option>`).join("")}</select></label>
+          <label class="small">…or paste its Instagram link<input name="reel_paste" placeholder="https://www.instagram.com/reel/…"></label></div>
         <label>Brand name<input name="brand" required autocomplete="organization"></label>
         <label>Email<input name="email" type="email"></label>
         ${sourceSelect("us")}
@@ -554,7 +569,9 @@
       const patch = Object.fromEntries(new FormData(f)); patch.contacts = readContacts(f);
       if (!patch.brand.trim()) return f.brand.focus();
       const btn = f.querySelector("button.main"); btn.disabled = true;
-      try { const r = await api("enquiry.add", { patch }); close(); toast("Enquiry added"); if (r.newId) go("enquiry", r.newId); else render(); }
+      const reel = (patch.reel_pick || patch.reel_paste || "").trim(); delete patch.reel_pick; delete patch.reel_paste;
+      if (reel) patch.source = "us";
+      try { const r = await api("enquiry.add", { patch, reel }); close(); toast("Enquiry added"); if (r.newId) go("enquiry", r.newId); else render(); }
       catch { btn.disabled = false; }
     };
     dlg.showModal(); f.brand.focus();
