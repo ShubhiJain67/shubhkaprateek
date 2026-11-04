@@ -158,6 +158,17 @@
   const cell = (p, key) => { const it = (p.items || []).find(i => keyOf(i) === key); if (!it) return `<td class="no">—</td>`; const n = (String(it).match(/^(\d+)\s/) || [])[1]; return `<td class="yes">${n || "✓"}</td>`; };
   const compare = `<div class="cmp-wrap"><table class="cmp"><thead><tr><th></th>${packages.map(p => `<th>${esc(String(p.name).replace(/^Option\s*\d+\s*[—–-]\s*/i, "").replace(/\s*(Brand\s+)?Collaboration$/i, ""))}<b>${has(p.price) ? esc(p.price) : "On request"}</b></th>`).join("")}</tr></thead>
       <tbody>${rows.map(r => `<tr><td>${esc(r.label)}</td>${packages.map(p => cell(p, r.key)).join("")}</tr>`).join("")}</tbody></table></div>`;
+  // the enquiry form (only on /collab — the pitch link just has the reach-out buttons)
+  const enqForm = `<form id="enq" novalidate>
+        ${RATES ? `<label>Package<select id="enq-pkg">${choices.map(x => `<option>${esc(x)}</option>`).join("")}</select></label>` : ""}
+        <label>Brand name<input id="enq-brand" required autocomplete="organization"></label>
+        <label>Your email<input id="enq-email" type="email" required autocomplete="email"></label>
+        <label>Product link<input id="enq-link" type="url" placeholder="https://…"></label>
+        <label>Anything else? <span class="muted">(timeline, product value, ideas)</span><textarea id="enq-msg" rows="3"></textarea></label>
+        <input type="checkbox" id="enq-bot" tabindex="-1" autocomplete="off" hidden>
+        <button class="btn-mk main" id="enq-send" type="submit">Send enquiry →</button>
+        <p class="enq-status" id="enq-status" role="status"></p>
+      </form>`;
   const pkCard = (p, extra = "") => `<div class="card-mk pk-card${extra}"><h3>${esc(p.name || p.title)}</h3><div class="price">${has(p.price) ? esc(p.price) : "Price on request"}</div>
         <ul>${(p.items || []).map(i => `<li>${esc(i)}</li>`).join("")}</ul>
         <button class="btn-mk main choose" type="button" data-pick="${esc(p.name || p.title)}">Choose this →</button></div>`;
@@ -181,27 +192,17 @@
         ${(x.codes || []).length ? `<div class="series-covers">${x.codes.slice(0, 3).map(code => `<a href="https://www.instagram.com/reel/${esc(code)}/" target="_blank" rel="noopener"><img loading="lazy" src="${cover(code)}" alt="" onerror="this.parentNode.remove()"></a>`).join("")}</div>` : ""}
         <h3>${esc(x.title)}</h3>${has(x.views) ? `<p class="series-views">▶ ${esc(x.views)} views</p>` : ""}<p class="muted">${esc(x.description || "")}</p></div>`).join("")}</div>`) : ""}
     ${!RATES && (whyCard(why.collab) || whyCard(why.ugc)) ? section("Why choose us?", "UGC or Collab — your pick", `<div class="two">${whyCard(why.collab)}${whyCard(why.ugc)}</div>`) : ""}
-    ${RATES && packages.length > 1 ? section("Side by side", "What's in each package", compare) : ""}
-    ${packages.length ? section(RATES ? "Pick one" : "Work with us", "Collaboration packages",
+    ${packages.length ? section("Work with us", "Collaboration packages",
       `<div class="pk">${packages.map(p => pkCard(p)).join("")}</div>${barter ? `<div class="pk barter">${pkCard(barter, " slim")}</div>` : ""}`) : ""}
     ${RATES && terms.length ? section("How it works", "Payment & timeline", `<div class="terms">${terms.map(t => `<div class="card-mk"><h3>${esc(t.title)}</h3><p>${esc(t.text)}</p></div>`).join("")}</div>`) : ""}
     ${guides.length ? section("How we work", "Content guidelines",
       `<div class="card-mk guide"><ul>${guides.map(g => `<li>${esc(g)}</li>`).join("")}</ul></div>`) : ""}
     <section class="card-mk enquiry" id="enquire">
       <h2>Let's make something together</h2>
-      <p class="muted">${esc(c.note || "")} ${RATES ? "Pick a package and tell us about your product." : "Tell us about your product and what you have in mind."}</p>
-      <form id="enq" novalidate>
-        ${RATES ? `<label>Package<select id="enq-pkg">${choices.map(x => `<option>${esc(x)}</option>`).join("")}</select></label>` : ""}
-        <label>Brand name<input id="enq-brand" required autocomplete="organization"></label>
-        <label>Your email<input id="enq-email" type="email" required autocomplete="email"></label>
-        <label>Product link<input id="enq-link" type="url" placeholder="https://…"></label>
-        <label>Anything else? <span class="muted">(timeline, product value, ideas)</span><textarea id="enq-msg" rows="3"></textarea></label>
-        <input type="checkbox" id="enq-bot" tabindex="-1" autocomplete="off" hidden>
-        <button class="btn-mk main" id="enq-send" type="submit">Send enquiry →</button>
-        <p class="enq-status" id="enq-status" role="status"></p>
-      </form>
-      <p class="muted or">or reach us directly</p>${btns}
-      ${has(c.email) ? `<p class="mail">✉️ <a href="mailto:${esc(c.email)}">${esc(c.email)}</a></p>` : ""}
+      ${RATES ? `<p class="muted">${esc(c.note || "")} Pick a package and tell us about your product.</p>` : ""}
+      ${RATES ? enqForm : ""}
+      ${RATES ? `<p class="muted or">or reach us directly</p>` : ""}${btns}
+      ${RATES && has(c.email) ? `<p class="mail">✉️ <a href="mailto:${esc(c.email)}">${esc(c.email)}</a></p>` : ""}
     </section>
     ${RATES ? `<p class="to-kit"><a href="/mediakit">See our full media kit →</a></p>` : ""}
     ${has(k.updated) ? `<p class="upd">Updated ${esc(k.updated)}</p>` : ""}`;
@@ -220,7 +221,7 @@
   let formKey = "", bot = "";
   fetch("/data/site.json").then(r => r.json()).then(j => { formKey = (j.contact || {}).formKey || ""; bot = (j.site || {}).reportApi || ""; }).catch(() => {});
   const $ = id => document.getElementById(id), status = (t, ok) => { $("enq-status").textContent = t; $("enq-status").className = "enq-status " + (ok ? "ok" : "bad"); };
-  $("enq").addEventListener("submit", async e => {
+  if ($("enq")) $("enq").addEventListener("submit", async e => {
     e.preventDefault();
     const pkg = RATES ? $("enq-pkg").value : "", via = RATES ? "collab" : "mediakit", brand = $("enq-brand").value.trim(), email = $("enq-email").value.trim(), link = $("enq-link").value.trim(), msg = $("enq-msg").value.trim();
     if (!brand) { status("Please add your brand name.", false); $("enq-brand").focus(); return; }
