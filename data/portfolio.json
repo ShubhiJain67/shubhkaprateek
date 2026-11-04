@@ -1,8 +1,9 @@
 {
   "_help": "Media kit at shubhkaprateek.com/mediakit (for pitching, no prices) and /collab (with packages + prices) — not linked anywhere on the site. Anything left empty (\"\" or []) is hidden on the page. brands + brandCollabs are filled automatically from the dashboard (Live/Delivered deals with a reel; untick \"Show on media kit\" on a deal to hide it) — don't edit them here  ·  bestReels / series codes = the part after instagram.com/reel/ (needs a cover in assets/covers)",
   "updated": "November 2026",
-  "tagline": "24M+ Reach | Couple Content | Gifting & Surprises",
+  "tagline": "24M+ Organic Reach | Couple Content | Gifting & Surprises",
   "intro": "We're Shubhi & Prateek — a married couple posting a reel every day about our life, games, and gifting each other everything from Marvel merch to the weirdest gadgets on the internet.",
+  "organic": "100% organic — no paid boosts, no ads, no giveaways.",
   "stats": [
     {
       "label": "Reach",

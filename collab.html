@@ -103,6 +103,7 @@
   .terms { display: grid; gap: 12px; } @media (min-width: 760px) { .terms { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
   .terms .card-mk p { margin: 0; color: var(--muted); }
   .to-kit { text-align: center; margin-top: 24px; font-weight: 700; } .to-kit a { color: var(--pink); }
+  .organic { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-weight: 700; font-size: 14px; color: #2e8b57; }
   .upd { text-align: center; color: var(--muted); font-size: 13px; margin-top: 28px; }
 </style>
 </head>
@@ -147,10 +148,11 @@
   const packages = RATES ? [...(k.packages || [])] : [], barter = RATES && k.barter && has(k.barter.title) ? k.barter : null;
   const guides = (k.guidelines || []).filter(g => RATES || !/barter|₹/i.test(g));   // money talk only on /collab
   const choices = [...packages.map(p => p.name), ...(barter ? [barter.title] : []), "Not sure yet"];
+  const organic = has(k.organic) ? `<p class="organic">🌱 ${esc(k.organic)}</p>` : "";   // "all our reach is organic" — under the numbers
   // /collab: a short header with 3 headline numbers (the full story is on /mediakit)
   const rateHead = `<div class="rc-head"><div><span class="kick">Collab packages · Shubhi &amp; Prateek</span><h1>Let's work together</h1>
       <p class="muted">Our packages, what's in each one, and how it works. Pick one below or tell us what you have in mind.</p></div>
-      ${stats.length ? `<div class="rc-stats">${stats.slice(0, 3).map(s => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`).join("")}</div>` : ""}</div>`;
+      ${stats.length ? `<div class="rc-stats">${stats.slice(0, 3).map(s => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`).join("")}</div>${organic}` : ""}</div>`;
   const terms = (k.terms || []).filter(t => has(t.title) && has(t.text));
   // every package's items lined up: one row per kind of deliverable ("2 Instagram Stories" → 2 in the Stories row)
   const keyOf = i => String(i).replace(/^\d+\s+/, "").replace(/\bstories\b/i, "Story").replace(/\s*\(.*?\)\s*/g, " ").trim().toLowerCase();
@@ -184,7 +186,7 @@
       ${reels.length >= 3 ? `<div class="fan" aria-hidden="true">${reels.slice(0, 3).map(r => `<img src="${cover(r.code)}" alt="">`).join("")}</div>` : ""}
     </div>`}
     ${!RATES && stats.length ? section("In numbers", "Our reach",
-      `<div class="stats">${stats.map(s => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span>${has(s.note) ? `<small>${esc(s.note)}</small>` : ""}</div>`).join("")}</div>`) : ""}
+      `<div class="stats">${stats.map(s => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span>${has(s.note) ? `<small>${esc(s.note)}</small>` : ""}</div>`).join("")}</div>${organic}`) : ""}
     ${!RATES && brands.length ? section("Trusted by", "Brands we've worked with",
       `<div class="brands">${brands.map(b => has(b.link) ? `<a class="brand-chip" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<span class="brand-chip">${esc(b.name)}</span>`).join("")}</div>`) : ""}
     ${!RATES && collabs.length ? section("Brand collabs", "Top performing brand collabs", carousel(collabs)) : ""}
