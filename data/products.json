@@ -616,5 +616,18 @@
         "image": "https://m.media-amazon.com/images/I/61lELikd+hL._SY879_.jpg"
       }
     ]
+  },
+  {
+    "id": 52,
+    "name": "Credit Card - Magic Wand",
+    "brand": "",
+    "category": [],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0bi5p4rv",
+        "image": "https://m.media-amazon.com/images/I/912O6KV6rTL._SL1500_.jpg"
+      }
+    ]
   }
 ]
