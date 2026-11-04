@@ -45,7 +45,40 @@
       "note": "for months, without a break"
     }
   ],
-  "brands": [],
+  "brands": [
+    {
+      "name": "Samvardhan Mart",
+      "link": ""
+    },
+    {
+      "name": "Blix",
+      "link": ""
+    },
+    {
+      "name": "Tipsytap",
+      "link": ""
+    },
+    {
+      "name": "Play Retro",
+      "link": "https://www.instagram.com/playretro.bachpan/"
+    },
+    {
+      "name": "Brickadda",
+      "link": "https://www.instagram.com/brickadda/"
+    },
+    {
+      "name": "WonderBox",
+      "link": "https://www.instagram.com/thewondrbox/"
+    },
+    {
+      "name": "Storegenie",
+      "link": "https://www.instagram.com/storegenie.trends/"
+    },
+    {
+      "name": "Eazy Arts",
+      "link": ""
+    }
+  ],
   "brandCollabs": [
     {
       "brand": "Samvardhan Mart",
@@ -83,7 +116,7 @@
       "views": ""
     },
     {
-      "brand": "Wonderbox",
+      "brand": "WonderBox",
       "code": "DdxwWwSSS8q",
       "views": ""
     },
