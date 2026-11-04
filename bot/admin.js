@@ -265,7 +265,7 @@ async function run(a, env, h) {
     await store.writeReels(env, reels);
     if (a.enquiryId) {
       // live date: the one picked in the form, else keep the saved one, else today. A closed (delivered) deal stays closed.
-      const liveOn = /^\d{4}-\d{2}-\d{2}$/.test(a.liveOn || "") ? a.liveOn : null;
+      const liveOn = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(a.liveOn || "") ? a.liveOn : null;   // date, or date + time
       await env.STATS.prepare("UPDATE enquiries SET reel_code = ?, status = CASE WHEN status = 'delivered' THEN status ELSE 'live' END, live_on = COALESCE(?, live_on, date('now')), updated = ? WHERE id = ?").bind(code, liveOn, now(), a.enquiryId).run();
       await logEvent(env, a.enquiryId, `Reel live: ${code}`);
     }

@@ -134,8 +134,8 @@
   .split > * { flex: 1 1 320px; min-width: 0; }
   .timeline { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
   .hist { display: grid; gap: 2px; font-size: 14px; }
-  .hist .h { display: grid; grid-template-columns: 64px 1fr; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
-  .hist .h b.d { color: var(--ink); font-size: 13px; }
+  .hist .h { display: grid; grid-template-columns: 70px 1fr; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .hist .h b.d { color: var(--ink); font-size: 13px; } .hist .h b.d .tm { display: block; font-weight: 500; color: var(--muted); font-size: 11.5px; }
   .hist .log { color: var(--muted); font-size: 13px; }
   .hist .due { color: var(--accent-ink, #b8403c); }
   .hist .late { color: #9b2c2c; font-weight: 600; }
@@ -205,6 +205,13 @@
   const STATUS = { new: "New", hold: "On hold", confirmed: "Confirmed", product: "Product added", live: "Ongoing", delivered: "Delivered", declined: "Declined" };
   const FLOW = ["new", "confirmed", "product", "live", "delivered"];
   const today = () => new Date().toLocaleDateString("en-CA");   // YYYY-MM-DD in your time zone
+  // date + time, in your time zone: "YYYY-MM-DDTHH:MM" (what the date-and-time boxes use)
+  const nowLocal = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16); };
+  const hasTime = v => /T\d\d:\d\d/.test(String(v || ""));
+  // anything with a date → a moment in time: a plain date counts as midday, a logged time (UTC) as itself
+  const ms = v => { v = String(v || ""); if (!v) return 0; return new Date(v.length === 10 ? v + "T12:00:00" : /Z$|[+-]\d\d:\d\d$/.test(v) ? v : v.length === 16 ? v + ":00" : v).getTime(); };
+  const timeOf = v => hasTime(v) ? new Date(ms(v)).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }) : "";
+  const dtVal = v => !v ? "" : String(v).length === 10 ? v + "T12:00" : String(v).slice(0, 16);   // old date-only values show as midday
   const pill = s => `<span class="pill s-${esc(s)}">${esc(STATUS[s] || s)}</span>`;
   const img = u => !u ? "" : /^https?:/.test(u) ? u : "/" + String(u).replace(/^\//, "");
   const codeOf = r => ((r.reel || "").match(/\/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/) || [])[1] || "";
@@ -248,7 +255,7 @@
   const AGREED = ["confirmed", "product", "live", "delivered"];
   const isCollabReel = code => D.enquiries.some(e => AGREED.includes(e.status) && reelsOfDeal(e).includes(String(code || "").toLowerCase()));
   const isFreeProduct = id => D.enquiries.some(e => AGREED.includes(e.status) && e.pitched !== "1" && e.return_product !== "1" && (e.product_ids || []).includes(+id));
-  const dateY = s => s ? new Date(String(s).length === 10 ? s + "T12:00:00" : s).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+  const dateY = s => s ? new Date(ms(s)).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) + (timeOf(s) ? ", " + timeOf(s) : "") : "";
   const kv = rows => { const r = rows.filter(([, v]) => v); return r.length ? `<dl class="kv">${r.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>` : `<p class="muted" style="margin:0">Nothing added yet — tap <b>Edit</b>.</p>`; };
   const link = (u, t) => u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t || u.replace(/^https?:\/\/(www\.)?/, "").slice(0, 60))}</a>` : "";
   const editBtn = k => editCard.has(k) ? `<button type="button" data-cancelcard="${k}">Cancel</button>` : `<button type="button" data-editcard="${k}">Edit</button>`;
@@ -280,17 +287,19 @@
     const real = [
       ["dispatched_on", "📦 Product dispatched"], ["received_on", "📬 Product received"], ["draft_on", "📝 Draft submitted"],
       ["live_on", "🚀 Reel went live"], ["collab_on", "🤝 Collab added on Instagram"], ["paid_on", "💸 Payment received"], ["returned_on", "↩ Product sent back to the brand"],
-    ].filter(([k]) => e[k]).map(([k, t]) => ({ d: day(e[k]), t: k === "paid_on" && e.txn_id ? `${t} · ${e.txn_id}` : t, kind: "real" }));
+    ].filter(([k]) => e[k]).map(([k, t]) => ({ d: day(e[k]), at: e[k], t: k === "paid_on" && e.txn_id ? `${t} · ${e.txn_id}` : t, kind: "real" }));
     if (e.pitched === "1" && st.date && (st.views || st.likes || st.shares || st.saves)) real.push({ d: day(st.date), t: `📊 Pitched at ${[st.views && st.views + " views", st.shares && st.shares + " shares", st.saves && st.saves + " saves"].filter(Boolean).join(", ") || "numbers noted"}`, kind: "real" });
     trialsOf(e).filter(t => t.date).forEach(t => real.push({ d: day(t.date), t: `🔁 Trial reel${t.note ? " — " + t.note : ""}`, kind: "real" }));
     // deadlines: upcoming, or late if the thing hasn't happened
     const dues = [["shoot_by", "🎬 Shoot by", "live_on"], ["post_by", "📅 Post by", "live_on"], ["payment_due", "⏳ Payment due", "paid_on"]]
       .filter(([k, , doneK]) => e[k] && !e[doneK] && !["delivered", "declined"].includes(e.status))
       .map(([k, t]) => ({ d: day(e[k]), t, kind: day(e[k]) < now ? "late" : "due" }));
-    const logs = ev.map(x => ({ d: x.at ? new Date(x.at).toLocaleDateString("en-CA") : "", t: String(x.text).replace(/Status → (\w+)/, (m, s) => "Status → " + (STATUS[s] || s)), kind: "log" }));
-    const row = x => `<div class="h"><b class="d">${date(x.d)}</b><span class="${x.kind}">${esc(x.t)}${x.kind === "late" ? " — late" : ""}${x.kind === "log" ? ` <span class="small">· logged</span>` : ""}</span></div>`;
+    const logs = ev.map(x => ({ d: x.at ? new Date(x.at).toLocaleDateString("en-CA") : "", at: x.at, t: String(x.text).replace(/Status → (\w+)/, (m, s) => "Status → " + (STATUS[s] || s)), kind: "log" }));
+    const row = x => `<div class="h"><b class="d">${date(x.d)}${timeOf(x.at) ? `<small class="tm">${timeOf(x.at)}</small>` : ""}</b><span class="${x.kind}">${esc(x.t)}${x.kind === "late" ? " — late" : ""}${x.kind === "log" ? ` <span class="small">· logged</span>` : ""}</span></div>`;
     const ahead = dues.filter(x => x.kind === "due").sort((a, b) => a.d.localeCompare(b.d));
-    const past = [...real, ...logs, ...dues.filter(x => x.kind === "late")].sort((a, b) => b.d.localeCompare(a.d) || (a.kind === "log") - (b.kind === "log"));
+    // newest first, by the exact moment (a plain date counts as midday); same moment → what happened before what was logged
+    const when = x => ms(x.at || x.d);
+    const past = [...real, ...logs, ...dues.filter(x => x.kind === "late")].sort((a, b) => when(b) - when(a) || (a.kind === "log") - (b.kind === "log"));
     return `<div class="hist">${ahead.length ? `<div class="head">Coming up</div>${ahead.map(row).join("")}<div class="head">So far</div>` : ""}${past.map(row).join("") || "—"}</div>`;
   }
   // collapsible cards on an enquiry; what you open/close is remembered on this device
@@ -378,6 +387,7 @@
       <div class="row">
         <a class="btn" href="${mail}">Reply by email</a>
         ${e.status !== "confirmed" && at < 2 ? `<button class="ok" data-status="confirmed">${e.pitched === "1" && e.reel_code ? "Confirm (reel is already live)" : "Confirm"}</button>` : ""}
+        ${!e.received_on && e.pitched !== "1" && ["confirmed", "product", "live", "hold"].includes(e.status) ? `<button data-recv>📬 Product received</button>` : ""}
         ${e.status === "live" ? `<button class="ok" data-status="delivered">Mark delivered ✓</button>` : ""}
         ${e.status === "delivered" ? `<button data-status="live">Reopen (back to Ongoing)</button>` : ""}
         ${!["hold", "delivered"].includes(e.status) ? `<button data-status="hold">Put on hold</button>` : ""}
@@ -409,7 +419,7 @@
       </section>
       <section class="card" data-fold="reel"><h2>Reel</h2>
         ${e.reel_code ? `<p style="margin:0 0 10px">${e.pitched === "1" && !["live", "delivered"].includes(e.status) ? "Your reel" : "Reel"}: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a>${moreReels.map(c => ` · <a href="${SITE}/reel/${esc(c)}" target="_blank" rel="noopener">${esc(reelTitle(c))}</a>`).join("")} · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
-        ${prods.length ? `<form id="reelf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 170px">Live date<input name="live_on" type="date" value="${esc(e.live_on || today())}"></label><button class="main">${e.reel_code ? "Update reel" : "Go live →"}</button></form>
+        ${prods.length ? `<form id="reelf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 210px">Live date &amp; time<input name="live_on" type="datetime-local" value="${esc(dtVal(e.live_on) || nowLocal())}"></label><button class="main">${e.reel_code ? "Update reel" : "Go live →"}</button></form>
           <p class="muted small" style="margin:8px 0 0">Makes the reel page, connects it to their product${prods.length > 1 ? "s" : ""} and publishes the website. Status → Ongoing.</p>` : `<p class="muted" style="margin:0">Add their product first.</p>`}
       </section>
       <section class="card" data-fold="trials"><h2>Trial reels <span class="hint">${trialsOf(e).length || ""}</span><span class="muted small" style="font-weight:500">· just for your record, no page on the website</span></h2>
@@ -433,17 +443,17 @@
           <label>Shoot by<input name="shoot_by" type="date" value="${esc(e.shoot_by)}"></label>
           <label>Post by<input name="post_by" type="date" value="${esc(e.post_by)}"></label>
           <b class="small" style="grid-column:1/-1;margin-top:4px">What actually happened</b>
-          <label>Product dispatched<input name="dispatched_on" type="date" value="${esc(e.dispatched_on)}"></label>
-          <label>Product received<input name="received_on" type="date" value="${esc(e.received_on)}"></label>
-          <label>Draft submitted<input name="draft_on" type="date" value="${esc(e.draft_on)}"></label>
-          <label>Reel went live<input name="live_on" type="date" value="${esc(e.live_on)}"></label>
-          <label>Collab added on Instagram<input name="collab_on" type="date" value="${esc(e.collab_on)}"></label>
+          <label>Product dispatched<input name="dispatched_on" type="datetime-local" value="${esc(dtVal(e.dispatched_on))}"></label>
+          <label>Product received<input name="received_on" type="datetime-local" value="${esc(dtVal(e.received_on))}"></label>
+          <label>Draft submitted<input name="draft_on" type="datetime-local" value="${esc(dtVal(e.draft_on))}"></label>
+          <label>Reel went live<input name="live_on" type="datetime-local" value="${esc(dtVal(e.live_on))}"></label>
+          <label>Collab added on Instagram<input name="collab_on" type="datetime-local" value="${esc(dtVal(e.collab_on))}"></label>
           <label style="display:flex;gap:8px;align-items:center"><input type="hidden" name="return_product" value="0"><input type="checkbox" name="return_product" value="1" style="width:auto" ${e.return_product === "1" ? "checked" : ""}> Product goes back to the brand <span class="muted small" style="font-weight:500">(not ours to keep — not counted in Earnings)</span></label>
-          <label>Sent back on<input name="returned_on" type="date" value="${esc(e.returned_on)}"></label>
+          <label>Sent back on<input name="returned_on" type="datetime-local" value="${esc(dtVal(e.returned_on))}"></label>
           <b class="small" style="grid-column:1/-1;margin-top:4px">Media kit</b>
           <label style="display:flex;gap:8px;align-items:center"><input type="hidden" name="show_kit" value="0"><input type="checkbox" name="show_kit" value="1" style="width:auto" ${e.show_kit === "0" ? "" : "checked"}> Show this reel on the media kit <span class="muted small" style="font-weight:500">(once it's Ongoing)</span></label>
           <label>Views to show <span class="muted small" style="font-weight:500">(optional)</span><input name="kit_views" value="${esc(e.kit_views)}" placeholder="e.g. 1.2M"></label>
-          <label>Payment received<input name="paid_on" type="date" value="${esc(e.paid_on)}"></label>
+          <label>Payment received<input name="paid_on" type="datetime-local" value="${esc(dtVal(e.paid_on))}"></label>
           <div data-paidbox style="grid-column:1/-1;display:${e.paid_on || e.txn_id || e.payment_notes ? "grid" : "none"};gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px">
             <b class="small" style="grid-column:1/-1">💸 Payment details</b>
             <label>Transaction ID<input name="txn_id" value="${esc(e.txn_id)}" placeholder="UPI / bank ref"></label>
@@ -733,7 +743,9 @@
     const up = $("up"); if (up) up.onchange = () => { const file = up.files[0]; if (!file) return; readPF(); shrink(file).then(url => { editing.photo = url; render(); }); };
     const pf = $("pf"); if (pf) pf.onsubmit = ev => { ev.preventDefault(); readPF(); const f = editing.form, btn = pf.querySelector("button.main");
       act(btn, async () => { const r = await api("product.save", { product: { id: editing.id, ...f, image: /^https?:|^assets\//.test(f.image) ? f.image : "" }, photo: editing.photo || null, enquiryId: view === "enquiry" ? +openId : null }); editing = null; }, "Saved — on the website in a few seconds"); };
-    const deal = $("deal"); if (deal) { wireContacts(deal); deal.onsubmit = ev => { ev.preventDefault(); const patch = Object.fromEntries(new FormData(deal)); patch.contacts = readContacts(deal); patch.contact = ""; act(deal.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch }); editCard.delete("deal"); }, "Deal saved"); }; }
+    const deal = $("deal"); if (deal) { wireContacts(deal); deal.onsubmit = ev => { ev.preventDefault(); const patch = Object.fromEntries(new FormData(deal)); patch.contacts = readContacts(deal); patch.contact = "";
+      { const e0 = D.enquiries.find(x => x.id === +openId) || {};   // an old date-only value you didn't touch stays date-only (no made-up 12:00)
+        for (const k of ["dispatched_on", "received_on", "draft_on", "live_on", "collab_on", "returned_on", "paid_on"]) if (String(e0[k] || "").length === 10 && patch[k] === e0[k] + "T12:00") patch[k] = e0[k]; } act(deal.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch }); editCard.delete("deal"); }, "Deal saved"); }; }
     // payment details open once it's paid: a "Payment received" date, or Payment switched to Paid
     if (deal) { const box = deal.querySelector("[data-paidbox]"), was = deal.payment.value,
         upd = () => box.style.display = deal.paid_on.value || deal.txn_id.value || deal.payment_notes.value || (deal.payment.value === "Paid" && was !== "Paid") ? "grid" : "none";
@@ -744,6 +756,7 @@
     root.querySelectorAll("[data-catedit]").forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); openCatDialog(b.dataset.catedit, null); });
     root.querySelectorAll("[data-catadd]").forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); openCatDialog(null, b.dataset.catadd); });
     root.querySelectorAll("tr[data-href]").forEach(tr => tr.onclick = ev => { if (ev.target.closest("button, a, input, select, label")) return; window.open(tr.dataset.href, "_blank", "noopener"); });
+    root.querySelectorAll("[data-recv]").forEach(b => b.onclick = () => act(b, () => api("enquiry.update", { id: +openId, patch: { received_on: nowLocal() } }), "📬 Product received — noted with today's date & time"));
     root.querySelectorAll("[data-editcard]").forEach(b => b.onclick = () => { editCard.add(b.dataset.editcard); render(); });
     root.querySelectorAll("[data-cancelcard]").forEach(b => b.onclick = () => { editCard.delete(b.dataset.cancelcard); render(); });
     const pst = $("pst"); if (pst) pst.onsubmit = ev => { ev.preventDefault(); act(pst.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch: { pitch_stats: JSON.stringify(Object.fromEntries(new FormData(pst))) } }); editCard.delete("perf"); }, "Numbers saved"); };
