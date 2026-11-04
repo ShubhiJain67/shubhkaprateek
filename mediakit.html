@@ -87,6 +87,22 @@
   #enq button { justify-self: start; cursor: pointer; }
   .enq-status { margin: 0; font-weight: 600; } .enq-status.ok { color: #2e8b57; } .enq-status.bad { color: var(--pink); }
   .enquiry .or { text-align: center; margin: 20px 0 0; } .enquiry .hero-btns { justify-content: center; } .enquiry .mail { text-align: center; }
+  /* /collab — the rate card */
+  .rc-head { display: grid; gap: 14px; }
+  .rc-head h1 { font-family: Fraunces, Georgia, serif; font-size: clamp(32px, 6vw, 52px); line-height: 1.05; margin: 6px 0 4px; letter-spacing: -.02em; }
+  .rc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .rc-stats .stat { padding: 12px; } .rc-stats .stat b { font-size: clamp(20px, 4.5vw, 30px); } .rc-stats .stat span { font-size: 13px; }
+  .cmp { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; font-size: 14px; }
+  .cmp th, .cmp td { padding: 11px 12px; text-align: center; border-bottom: 1px solid var(--line); }
+  .cmp tr:last-child td { border-bottom: 0; }
+  .cmp th:first-child, .cmp td:first-child { text-align: left; font-weight: 600; }
+  .cmp thead th { background: var(--field); font-size: 13px; vertical-align: bottom; } .cmp thead th b { display: block; font-family: Fraunces, Georgia, serif; font-size: 18px; color: var(--pink); margin-top: 2px; }
+  .cmp .yes { color: #2e8b57; font-weight: 800; } .cmp .no { color: var(--muted); }
+  .cmp-wrap { overflow-x: auto; }
+  @media (max-width: 759px) { .cmp { font-size: 12.5px; table-layout: fixed; } .cmp th, .cmp td { padding: 9px 6px; } .cmp th:first-child, .cmp td:first-child { width: 40%; } .cmp thead th b { font-size: 15px; } }
+  .terms { display: grid; gap: 12px; } @media (min-width: 760px) { .terms { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+  .terms .card-mk p { margin: 0; color: var(--muted); }
+  .to-kit { text-align: center; margin-top: 24px; font-weight: 700; } .to-kit a { color: var(--pink); }
   .upd { text-align: center; color: var(--muted); font-size: 13px; margin-top: 28px; }
 </style>
 </head>
@@ -131,11 +147,22 @@
   const packages = RATES ? [...(k.packages || [])] : [], barter = RATES && k.barter && has(k.barter.title) ? k.barter : null;
   const guides = (k.guidelines || []).filter(g => RATES || !/barter|₹/i.test(g));   // money talk only on /collab
   const choices = [...packages.map(p => p.name), ...(barter ? [barter.title] : []), "Not sure yet"];
+  // /collab: a short header with 3 headline numbers (the full story is on /mediakit)
+  const rateHead = `<div class="rc-head"><div><span class="kick">Collab packages · Shubhi &amp; Prateek</span><h1>Let's work together</h1>
+      <p class="muted">Our packages, what's in each one, and how it works. Pick one below or tell us what you have in mind.</p></div>
+      ${stats.length ? `<div class="rc-stats">${stats.slice(0, 3).map(s => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`).join("")}</div>` : ""}</div>`;
+  const terms = (k.terms || []).filter(t => has(t.title) && has(t.text));
+  // every package's items lined up: one row per kind of deliverable ("2 Instagram Stories" → 2 in the Stories row)
+  const keyOf = i => String(i).replace(/^\d+\s+/, "").replace(/\bstories\b/i, "Story").replace(/\s*\(.*?\)\s*/g, " ").trim().toLowerCase();
+  const rows = []; packages.forEach(p => (p.items || []).forEach(i => { const key = keyOf(i); if (!rows.some(r => r.key === key)) rows.push({ key, label: String(i).replace(/^\d+\s+/, "").replace(/\s*\(.*?\)\s*/g, " ").replace(/\bStory\b/, "Stories").trim() }); }));
+  const cell = (p, key) => { const it = (p.items || []).find(i => keyOf(i) === key); if (!it) return `<td class="no">—</td>`; const n = (String(it).match(/^(\d+)\s/) || [])[1]; return `<td class="yes">${n || "✓"}</td>`; };
+  const compare = `<div class="cmp-wrap"><table class="cmp"><thead><tr><th></th>${packages.map(p => `<th>${esc(String(p.name).replace(/^Option\s*\d+\s*[—–-]\s*/i, "").replace(/\s*(Brand\s+)?Collaboration$/i, ""))}<b>${has(p.price) ? esc(p.price) : "On request"}</b></th>`).join("")}</tr></thead>
+      <tbody>${rows.map(r => `<tr><td>${esc(r.label)}</td>${packages.map(p => cell(p, r.key)).join("")}</tr>`).join("")}</tbody></table></div>`;
   const pkCard = (p, extra = "") => `<div class="card-mk pk-card${extra}"><h3>${esc(p.name || p.title)}</h3><div class="price">${has(p.price) ? esc(p.price) : "Price on request"}</div>
         <ul>${(p.items || []).map(i => `<li>${esc(i)}</li>`).join("")}</ul>
         <button class="btn-mk main choose" type="button" data-pick="${esc(p.name || p.title)}">Choose this →</button></div>`;
   main.innerHTML = `
-    <div class="hero-mk">
+    ${RATES ? rateHead : `<div class="hero-mk">
       <div>
         <span class="kick">${RATES ? "Collab packages" : "Media kit"} · Couple creators</span>
         <h1>Shubhi &amp; Prateek</h1>
@@ -144,18 +171,20 @@
         ${btns}
       </div>
       ${reels.length >= 3 ? `<div class="fan" aria-hidden="true">${reels.slice(0, 3).map(r => `<img src="${cover(r.code)}" alt="">`).join("")}</div>` : ""}
-    </div>
-    ${stats.length ? section("In numbers", "Our reach",
+    </div>`}
+    ${!RATES && stats.length ? section("In numbers", "Our reach",
       `<div class="stats">${stats.map(s => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span>${has(s.note) ? `<small>${esc(s.note)}</small>` : ""}</div>`).join("")}</div>`) : ""}
-    ${brands.length ? section("Trusted by", "Brands we've worked with",
+    ${!RATES && brands.length ? section("Trusted by", "Brands we've worked with",
       `<div class="brands">${brands.map(b => has(b.link) ? `<a class="brand-chip" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<span class="brand-chip">${esc(b.name)}</span>`).join("")}</div>`) : ""}
-    ${collabs.length ? section("Brand collabs", "Top performing brand collabs", carousel(collabs)) : ""}
-    ${series.length ? section("Series", "Top performing series", `<div class="two">${series.map(x => `<div class="card-mk series">
+    ${!RATES && collabs.length ? section("Brand collabs", "Top performing brand collabs", carousel(collabs)) : ""}
+    ${!RATES && series.length ? section("Series", "Top performing series", `<div class="two">${series.map(x => `<div class="card-mk series">
         ${(x.codes || []).length ? `<div class="series-covers">${x.codes.slice(0, 3).map(code => `<a href="https://www.instagram.com/reel/${esc(code)}/" target="_blank" rel="noopener"><img loading="lazy" src="${cover(code)}" alt="" onerror="this.parentNode.remove()"></a>`).join("")}</div>` : ""}
         <h3>${esc(x.title)}</h3>${has(x.views) ? `<p class="series-views">▶ ${esc(x.views)} views</p>` : ""}<p class="muted">${esc(x.description || "")}</p></div>`).join("")}</div>`) : ""}
-    ${whyCard(why.collab) || whyCard(why.ugc) ? section("Why choose us?", "UGC or Collab — your pick", `<div class="two">${whyCard(why.collab)}${whyCard(why.ugc)}</div>`) : ""}
-    ${packages.length ? section("Work with us", "Collaboration packages",
+    ${!RATES && (whyCard(why.collab) || whyCard(why.ugc)) ? section("Why choose us?", "UGC or Collab — your pick", `<div class="two">${whyCard(why.collab)}${whyCard(why.ugc)}</div>`) : ""}
+    ${RATES && packages.length > 1 ? section("Side by side", "What's in each package", compare) : ""}
+    ${packages.length ? section(RATES ? "Pick one" : "Work with us", "Collaboration packages",
       `<div class="pk">${packages.map(p => pkCard(p)).join("")}</div>${barter ? `<div class="pk barter">${pkCard(barter, " slim")}</div>` : ""}`) : ""}
+    ${RATES && terms.length ? section("How it works", "Payment & timeline", `<div class="terms">${terms.map(t => `<div class="card-mk"><h3>${esc(t.title)}</h3><p>${esc(t.text)}</p></div>`).join("")}</div>`) : ""}
     ${guides.length ? section("How we work", "Content guidelines",
       `<div class="card-mk guide"><ul>${guides.map(g => `<li>${esc(g)}</li>`).join("")}</ul></div>`) : ""}
     <section class="card-mk enquiry" id="enquire">
@@ -174,6 +203,7 @@
       <p class="muted or">or reach us directly</p>${btns}
       ${has(c.email) ? `<p class="mail">✉️ <a href="mailto:${esc(c.email)}">${esc(c.email)}</a></p>` : ""}
     </section>
+    ${RATES ? `<p class="to-kit"><a href="/mediakit">See our full media kit →</a></p>` : ""}
     ${has(k.updated) ? `<p class="upd">Updated ${esc(k.updated)}</p>` : ""}`;
 
   document.addEventListener("click", e => {
