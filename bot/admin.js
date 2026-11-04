@@ -1,13 +1,14 @@
 // 🗂 The dashboard's back end: shubhkaprateek.com/admin talks to <worker>/admin/api.
 //
-// Where things live:
-//   • enquiries + deals + their history → your Cloudflare database (D1, binding STATS: tables "enquiries", "events")
-//   • products, reels, categories, featured → data/*.json in GitHub (what the website is built from); every save
-//     here commits them, rebuilds assets/js/data.js and the site goes live in about a minute
-//   • brand page numbers → bot/brands.json (new brands get a number the moment a product gets that brand)
+// Where things live — all in your Cloudflare database (D1, binding STATS), nothing is committed to GitHub:
+//   • enquiries + deals + their history → tables "enquiries", "events"
+//   • products, brands (with their fixed 5-digit page numbers), reels, categories, featured, photos → bot/store.js
+//     Every save is on the website within seconds (it reads GET /data live) — no deployment.
 //
 // Login: the X-Passcode header must equal the ADMIN_PASSCODE secret  (cd bot && npx wrangler secret put ADMIN_PASSCODE)
 // Public: POST /enquiry — the media kit's enquiry form (shubhkaprateek.com/mediakit and /collab) saves into the database here.
+
+import * as store from "./store.js";
 
 const STATUSES = ["new", "hold", "confirmed", "product", "live", "delivered", "declined"];   // delivered = everything done, deal closed
 const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels", "show_kit", "kit_views"];
@@ -70,21 +71,6 @@ async function onEnquiry(req, env, h) {
 }
 
 // ---------------------------------------------------------------- brand page numbers (bot/brands.json)
-async function withBrandNumbers(env, h, products, files) {
-  let B; try { B = await h.readJson(env, "bot/brands.json"); } catch { B = { brands: {} }; }
-  B.brands = B.brands || {};
-  const used = new Set(Object.values(B.brands).map(b => b.id)); let changed = false;
-  for (const p of products) {
-    const s = slugOf(p.brand); if (!s || B.brands[s]) continue;
-    let id; do { id = String(10000 + Math.floor(Math.random() * 90000)); } while (used.has(id));
-    used.add(id); B.brands[s] = { name: String(p.brand).trim(), id, link: `${env.SITE_URL || "https://shubhkaprateek.com"}/brand/${id}` }; changed = true;
-  }
-  if (changed) {
-    B.brands = Object.fromEntries(Object.entries(B.brands).sort());
-    files.push({ path: "bot/brands.json", text: JSON.stringify(B, null, 2) + "\n" });
-  }
-  return B;
-}
 
 // ---------------------------------------------------------------- the dashboard's API
 export async function adminHttp(req, env, url, h) {
@@ -106,36 +92,36 @@ export async function adminHttp(req, env, url, h) {
 }
 
 async function load(env, h) {
-  const [products, reels, categories, site] = await Promise.all(["products", "reels", "categories", "site"].map(f => h.readJson(env, `data/${f}.json`)));
-  let brands = {}; try { brands = (await h.readJson(env, "bot/brands.json")).brands || {}; } catch {}
+  await store.ensure(env, h);
+  const [products, reels, categories, featured, brands] = await Promise.all([store.readProducts(env), store.readReels(env), store.readCategories(env), store.getFeatured(env), store.readBrands(env)]);
   const enquiries = (await env.STATS.prepare("SELECT * FROM enquiries ORDER BY id DESC").all()).results || [];
   const events = (await env.STATS.prepare("SELECT * FROM events ORDER BY id DESC LIMIT 2000").all()).results || [];
   enquiries.forEach(e => { try { e.product_ids = JSON.parse(e.product_ids || "[]"); } catch { e.product_ids = []; } });
   let kit = {}; try { kit = await h.readJson(env, "data/portfolio.json"); } catch {}
   const packages = [...[...(kit.packages || []), ...(kit.privatePackages || []).map(p => ({ ...p, private: true }))].map(p => ({ name: p.name, price: p.price || "", payment: "Paid", items: p.items || [], private: !!p.private })), ...(kit.barter && kit.barter.title ? [{ name: kit.barter.title, price: "", payment: "Barter" }] : [])];
-  await syncKit(env, h, kit, reels, enquiries);
-  return { products, reels, categories, featured: (site.site || {}).featured || [], brands, enquiries, events, packages };
+  await syncKit(env, h, reels, enquiries);
+  return { products, reels, categories, featured, brands, enquiries, events, packages };
 }
 
 // ---------------------------------------------------------------- the media kit's brand lists, from your deals
-// data/portfolio.json → brandCollabs (the reels carousel) + brands ("Brands we've worked with") are rebuilt from the
-// dashboard: every Live or Delivered deal with a reel on the website, unless you untick "Show on media kit".
-// Runs whenever the dashboard loads or saves; it only commits when something actually changed.
-async function syncKit(env, h, kit, reels, enquiries) {
-  if (!kit || !Array.isArray(reels)) return;
+// The media kit's brandCollabs (the reels carousel) + brands ("Brands we've worked with") come from your deals:
+// every Live or Delivered deal with a reel on the website, unless you untick "Show on media kit".
+// Worked out whenever the dashboard loads or saves; the media kit reads them live at GET /kit.
+async function syncKit(env, h, reels, enquiries) {
+  if (!Array.isArray(reels)) return;
   const codeOf = r => ((r.reel || "").match(h.REEL_RE) || [])[1] || "";
-  const order = new Map(reels.map(r => [codeOf(r).toLowerCase(), { id: +r.id || 0, code: codeOf(r) }]));
+  const order = new Map(reels.map(r => [codeOf(r).toLowerCase(), { id: +r.id || 0, code: codeOf(r), cover: r.cover || "" }]));
   const shown = enquiries.filter(e => ["live", "delivered"].includes(e.status) && e.show_kit !== "0");
   const collabs = [], seen = new Set();
   for (const e of shown) {
     let more = []; try { more = JSON.parse(e.reels || "[]"); } catch {}
     [e.reel_code, ...(Array.isArray(more) ? more : [])].filter(Boolean).forEach((c, i) => {
       const r = order.get(String(c).toLowerCase()); if (!r || seen.has(r.code)) return;   // only reels that are on the website (they have a cover)
-      seen.add(r.code); collabs.push({ id: r.id, brand: String(e.brand || "").trim(), code: r.code, views: i === 0 ? String(e.kit_views || "").trim() : "" });
+      seen.add(r.code); collabs.push({ id: r.id, brand: String(e.brand || "").trim(), code: r.code, cover: r.cover || "", views: i === 0 ? String(e.kit_views || "").trim() : "" });
     });
   }
   collabs.sort((a, b) => b.id - a.id);
-  const brandCollabs = collabs.map(({ brand, code, views }) => ({ brand, code, views }));
+  const brandCollabs = collabs.map(({ brand, code, cover, views }) => ({ brand, code, views, ...(cover ? { cover } : {}) }));
   const ig = v => !v ? "" : /^https?:/.test(v) ? v : "https://www.instagram.com/" + String(v).replace(/^@/, "") + "/";
   const brandsSeen = new Map();
   for (const c of collabs) if (!brandsSeen.has(c.brand.toLowerCase())) {
@@ -143,15 +129,14 @@ async function syncKit(env, h, kit, reels, enquiries) {
     brandsSeen.set(c.brand.toLowerCase(), { name: c.brand, link: e ? ig(e.instagram) : "" });
   }
   const brandsList = [...brandsSeen.values()];
-  if (JSON.stringify(kit.brandCollabs || []) === JSON.stringify(brandCollabs) && JSON.stringify(kit.brands || []) === JSON.stringify(brandsList)) return;
-  kit.brandCollabs = brandCollabs; kit.brands = brandsList;
-  try { await h.commitFiles(env, "Media kit: brand collabs updated from the dashboard", [{ path: "data/portfolio.json", text: JSON.stringify(kit, null, 2) + "\n" }]); }
-  catch (e) { console.error("media kit sync", e); }
+  const next = { brandCollabs, brands: brandsList };
+  if (JSON.stringify(await store.getSetting(env, "kit", null)) !== JSON.stringify(next)) await store.setSetting(env, "kit", next);   // the media kit reads it at GET /kit
 }
 
 async function run(a, env, h) {
   const op = String(a.op || "");
-  const S = () => Promise.all(["products", "reels"].map(f => h.readJson(env, `data/${f}.json`))).then(([products, reels]) => ({ products, reels }));
+  await store.ensure(env, h);
+  const S = () => Promise.all([store.readProducts(env), store.readReels(env)]).then(([products, reels]) => ({ products, reels }));
   const codeOf = r => ((r.reel || "").match(h.REEL_RE) || [])[1] || "";
 
   if (op === "load") return load(env, h);
@@ -190,12 +175,11 @@ async function run(a, env, h) {
       await logEvent(env, e.id, "Collab confirmed — the reel was already live");
       const ids = (() => { try { return JSON.parse(e.product_ids || "[]").map(Number); } catch { return []; } })();
       if (ids.length) {
-        const { products } = await S(), files = [];
+        const { products } = await S();
         let changed = false;
         for (const pr of products) if (ids.includes(+pr.id) && !String(pr.brand || "").trim()) { pr.brand = e.brand; changed = true; }
-        await withBrandNumbers(env, h, products, files);                    // gives the brand its page number if it's new
-        if (changed) files.push({ path: "data/products.json", text: h.pretty(products, "category") });
-        if (files.length) await h.commitFiles(env, `${e.brand}: collab on reel ${e.reel_code} (dashboard)`, files);
+        if (changed) await store.writeProducts(env, products);
+        else await store.brandId(env, e.brand);                            // gives the brand its page number if it's new
       }
     }
     if (status && STATUSES.includes(status) && status !== e.status) { sets.push("status = ?"); vals.push(status); await logEvent(env, e.id, `Status → ${status}`); }
@@ -211,28 +195,25 @@ async function run(a, env, h) {
   if (op === "fetch") {
     const p = { name: clip(a.name, 200), variants: [{ name: "Default", link: clip(a.link, 1000) }] };
     await h.enrichProduct(p);
-    const cats = h.flattenCats(await h.readJson(env, "data/categories.json"));
+    const cats = h.flattenCats(await store.readCategories(env));
     return { name: p.needsName ? "" : p.name, image: p.variants[0].image || "", category: h.guessCategories(p.name + " " + (p.pageTitle || ""), cats), brand: h.guessBrand(p.variants[0].link) };
   }
 
   // ---- products
   if (op === "product.save") {
     const { products } = await S();
-    const x = a.product || {}, files = [];
+    const x = a.product || {};
     if (!clip(x.name, 200).trim()) throw new Error("Add the product's name");
     let p = x.id != null ? products.find(q => q.id === +x.id) : null;
     const isNew = !p;
     if (isNew) { p = { id: Math.max(0, ...products.map(q => +q.id || 0)) + 1 }; products.push(p); }
     let image = clip(x.image, 1000);
-    if (a.photo) {                                                     // uploaded from the phone (base64 jpg/png)
-      image = `assets/products/${p.id}-${h.slug(x.name)}.jpg`;
-      files.push({ path: image, base64: String(a.photo).replace(/^data:[^,]+,/, "") });
-    }
+    const oldImage = ((p.variants || [])[0] || {}).image || "";
+    if (a.photo) image = await store.putImage(env, `p${p.id}-${h.slug(x.name)}-${Date.now().toString(36)}.jpg`, a.photo);   // uploaded from the phone (base64 jpg)
     const variants = (p.variants && p.variants.length ? p.variants : [{ name: "Default" }]).map((v, i) => i ? v : { ...v, link: clip(x.link, 1000), image });
     Object.assign(p, { name: clip(x.name, 200).trim(), brand: clip(x.brand, 120).trim(), category: [].concat(x.category || []).map(c => clip(c, 60)), variants });
-    await withBrandNumbers(env, h, products, files);
-    files.push({ path: "data/products.json", text: h.pretty(products, "category") });
-    await h.commitFiles(env, `${isNew ? "Add" : "Update"} product ${p.id} ${p.name} (dashboard)`, files);
+    await store.writeProducts(env, products);
+    if (oldImage && oldImage !== image) await store.deleteImageUrls(env, [oldImage]);
     if (a.enquiryId) {                                                 // part of a collab → link it + move the status on
       const e = await getEnquiry(env, a.enquiryId);
       if (e) {
@@ -250,10 +231,9 @@ async function run(a, env, h) {
     if (!target.reel && !target.products.length) throw new Error("Already gone");
     const plan = h.planDelete(target, products, reels); if (!plan) throw new Error("Already gone");
     const outp = h.applyDelete(plan, products, reels);
-    const files = [{ path: "data/products.json", text: h.pretty(outp.products, "category") }, { path: "data/reels.json", text: h.pretty(outp.reels, "products") }];
-    for (const path of [...new Set([...plan.reels.map(r => `assets/covers/${codeOf(r)}.jpg`), ...plan.products.flatMap(p => (p.variants || []).map(v => v.image).filter(i => /^assets\//.test(i || "")))])])
-      try { await h.gh(env, `/contents/${path}?ref=${env.GITHUB_BRANCH || "main"}`); files.push({ path, remove: true }); } catch {}
-    await h.commitFiles(env, `Remove ${op === "reel.delete" ? "reel " + a.code : "product " + a.id} (dashboard)`, files);
+    await store.writeReels(env, outp.reels);
+    await store.writeProducts(env, outp.products);
+    await store.deleteImageUrls(env, [...plan.reels.map(r => r.cover), ...plan.products.flatMap(p => (p.variants || []).map(v => v.image))]);
     return load(env, h);
   }
 
@@ -261,7 +241,7 @@ async function run(a, env, h) {
   if (op === "reel.save") {
     const code = (String(a.link || a.code || "").match(h.REEL_RE) || [])[1] || (/^[\w-]{5,}$/.test(a.code || "") ? a.code : "");
     if (!code) throw new Error("That doesn't look like an Instagram reel link");
-    const { reels } = await S(), files = [];
+    const { reels } = await S(); let gotCover = true;
     const ids = [...new Set([].concat(a.products || []).map(Number).filter(Boolean))];
     if (!ids.length) throw new Error("Pick at least one product for this reel");
     let r = reels.find(x => codeOf(x).toLowerCase() === code.toLowerCase());
@@ -270,27 +250,25 @@ async function run(a, env, h) {
       const info = await h.enrichReel(code);
       r = { id: Math.max(0, ...reels.map(x => +x.id || 0)) + 1, reel: `https://www.instagram.com/reel/${code}/`, title: clip(a.title, 200) || info.title || "New reel", products: ids };
       reels.push(r);
-      if (info.cover) try { files.push({ path: `assets/covers/${code}.jpg`, base64: await h.fetchBytes(info.cover) }); } catch {}
+      gotCover = false;
+      if (info.cover) try { r.cover = await store.putImage(env, `cover-${code}.jpg`, await h.fetchBytes(info.cover)); gotCover = true; } catch {}
     } else {
       r.products = ids;
       if (a.title) r.title = clip(a.title, 200);
     }
-    files.push({ path: "data/reels.json", text: h.pretty(reels, "products") });
-    await h.commitFiles(env, `${isNew ? "Add" : "Update"} reel ${code} (dashboard)`, files);
+    await store.writeReels(env, reels);
     if (a.enquiryId) {
       // live date: the one picked in the form, else keep the saved one, else today. A closed (delivered) deal stays closed.
       const liveOn = /^\d{4}-\d{2}-\d{2}$/.test(a.liveOn || "") ? a.liveOn : null;
       await env.STATS.prepare("UPDATE enquiries SET reel_code = ?, status = CASE WHEN status = 'delivered' THEN status ELSE 'live' END, live_on = COALESCE(?, live_on, date('now')), updated = ? WHERE id = ?").bind(code, liveOn, now(), a.enquiryId).run();
       await logEvent(env, a.enquiryId, `Reel live: ${code}`);
     }
-    return { ...(await load(env, h)), cover: isNew ? files.some(f => f.path.startsWith("assets/covers/")) : true };
+    return { ...(await load(env, h)), cover: gotCover };
   }
 
   // ---- featured (max 2)
   if (op === "featured") {
-    const site = await h.readJson(env, "data/site.json");
-    site.site = { ...site.site, featured: [].concat(a.ids || []).map(Number).filter(Boolean).slice(0, 2) };
-    await h.commitFiles(env, "Featured products (dashboard)", [{ path: "data/site.json", text: h.pretty(site, "featured") }]);
+    await store.setFeatured(env, a.ids);
     return load(env, h);
   }
   // ---- categories: add / rename / change keywords / delete (a deleted one is also taken off its products)
@@ -310,23 +288,16 @@ async function run(a, env, h) {
     const ids = tree.flatMap(c => [c.id, ...(c.sub || []).map(x => x.id)]);
     const dup = ids.find((x, i) => ids.indexOf(x) !== i); if (dup) throw new Error(`Two categories have the same name: ${dup}`);
     if (!tree.length) throw new Error("Keep at least one category");
-    const keep = new Set(ids), files = [{ path: "data/categories.json", text: catsText(tree) }];
+    const keep = new Set(ids);
     const { products } = await S(); let changed = 0;
     for (const p of products) { const before = (p.category || []).length; p.category = (p.category || []).filter(id => keep.has(id)); if (p.category.length !== before) changed++; }
-    if (changed) files.push({ path: "data/products.json", text: h.pretty(products, "category") });
-    await h.commitFiles(env, `Categories updated${changed ? ` (${changed} product${changed === 1 ? "" : "s"} tidied)` : ""} (dashboard)`, files);
+    await store.writeCategories(env, tree);
+    if (changed) await store.writeProducts(env, products);
     return load(env, h);
   }
+  // ---- brands: rename / Instagram + website / merge two into one (page numbers never change)
+  if (op === "brand.save") { await store.saveBrand(env, String(a.slug || ""), a.brand || {}); return load(env, h); }
+  if (op === "brand.merge") { await store.mergeBrand(env, String(a.from || ""), String(a.into || "")); return load(env, h); }
   throw new Error("Unknown action: " + op);
 }
 
-// categories.json in the same compact shape it's hand-written in: one line per sub-category
-function catsText(tree) {
-  const J = v => JSON.stringify(v);
-  const top = c => {
-    const head = [`"id": ${J(c.id)}`, `"name": ${J(c.name)}`, c.emoji ? `"emoji": ${J(c.emoji)}` : "", c.theme ? `"theme": true` : ""].filter(Boolean).join(", ");
-    if (!c.sub) return `  { ${head},\n    "keywords": ${J(c.keywords)} }`;
-    return `  { ${head}, "sub": [\n${c.sub.map(x => `    { "id": ${J(x.id)}, "name": ${J(x.name)}, "keywords": ${J(x.keywords)} }`).join(",\n")}\n  ]${c.keywords.length ? `, "keywords": ${J(c.keywords)}` : ""} }`;
-  };
-  return "[\n" + tree.map(top).join(",\n") + "\n]\n";
-}

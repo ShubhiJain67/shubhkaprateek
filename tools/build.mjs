@@ -1,19 +1,35 @@
 // Run by `make ship`:
-//   • builds assets/js/data.js from data/*.json (so products show instantly)
-//   • bumps the ?v= numbers in index.html + 404.html so browsers fetch the new CSS/JS right away
-//   • gives every new brand (data/products.json → "brand") its fixed 5-digit page number in bot/brands.json
-//     → shubhkaprateek.com/brand/<number>. Existing numbers never change.
+//   • refreshes the website's built-in copy of the data (assets/js/data.js) from the database (through the bot's
+//     GET /data) — the page shows this copy instantly and if the bot is ever down. Products, reels, brands and
+//     categories live in the database now: add/edit them in the dashboard (shubhkaprateek.com/admin), not in files.
+//   • also saves that copy into data/categories.json, products.json, reels.json — a backup you can read, never edited by hand
+//   • copies mediakit.html → collab.html, and bumps the ?v= numbers in index.html + 404.html so browsers fetch new CSS/JS
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import crypto from "crypto";
 import { DATA_FILES, dataJs } from "./data.mjs";
 
+const BOT = process.env.SKP_BOT || "https://shubhkaprateek-bot.shubhkaprateek.workers.dev";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const data = {};
-for (const f of DATA_FILES) {
-  try { data[f] = JSON.parse(fs.readFileSync(path.join(root, "data", f + ".json"), "utf8")); }
-  catch (e) { console.error(`❌ data/${f}.json has a typo: ${e.message}`); process.exit(1); }
+const file = f => path.join(root, "data", f + ".json");
+let data = null;
+try {
+  const r = await fetch(BOT + "/data", { signal: AbortSignal.timeout(15000) });
+  if (!r.ok) throw new Error("the bot answered " + r.status);
+  data = await r.json();
+  if (!Array.isArray(data.products) || !Array.isArray(data.reels)) throw new Error("unexpected answer");
+  for (const f of ["categories", "products", "reels"]) fs.writeFileSync(file(f), JSON.stringify(data[f], null, 2) + "\n");
+  // data/site.json (title, links, form…) is still edited by hand: use your local copy, with Featured from the database
+  const local = JSON.parse(fs.readFileSync(file("site"), "utf8"));
+  data.site = { ...local, site: { ...(local.site || {}), featured: ((data.site || {}).site || {}).featured || [] } };
+  console.log(`✓ data from the database: ${data.products.length} products, ${data.reels.length} reels`);
+} catch (e) {
+  console.warn(`⚠ Couldn't reach the bot (${e.message}) — building from the last saved copy in data/ instead.`);
+  data = {};
+  for (const f of DATA_FILES) {
+    try { data[f] = JSON.parse(fs.readFileSync(file(f), "utf8")); }
+    catch (err) { console.error(`❌ data/${f}.json has a typo: ${err.message}`); process.exit(1); }
+  }
 }
 fs.writeFileSync(path.join(root, "assets/js/data.js"), dataJs(data));
 // shubhkaprateek.com/collab is the media kit with packages + prices: the same page, so it's copied from mediakit.html
@@ -22,21 +38,5 @@ const version = Math.floor(Date.now() / 1000);
 for (const f of ["index.html", "404.html"]) {
   const p = path.join(root, f);
   fs.writeFileSync(p, fs.readFileSync(p, "utf8").replace(/(styles\.css|app\.js)\?v=\d+/g, `$1?v=${version}`));
-}
-// brand page numbers
-const slugOf = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
-const bf = path.join(root, "bot/brands.json");
-const B = JSON.parse(fs.readFileSync(bf, "utf8"));
-const used = new Set(Object.values(B.brands).map(b => b.id)), fresh = [];
-for (const p of data.products) {
-  const slug = slugOf(p.brand);
-  if (!slug || B.brands[slug]) continue;
-  let id; do { id = String(crypto.randomInt(10000, 100000)); } while (used.has(id));
-  used.add(id); B.brands[slug] = { name: p.brand.trim(), id, link: `https://shubhkaprateek.com/brand/${id}` }; fresh.push(B.brands[slug]);
-}
-if (fresh.length) {
-  B.brands = Object.fromEntries(Object.entries(B.brands).sort());
-  fs.writeFileSync(bf, JSON.stringify(B, null, 2) + "\n");
-  for (const b of fresh) console.log(`🏷 New brand page: ${b.name} → https://shubhkaprateek.com/brand/${b.id}`);
 }
 console.log("✓ site built");

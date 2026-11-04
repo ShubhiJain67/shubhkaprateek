@@ -25,11 +25,11 @@
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap"></noscript>
 <link rel="stylesheet" href="/assets/css/styles.css?v=1793750200">
 <script>
-  // Check the live data files straight away (in the background). The page itself shows the copy built into
-  // /assets/js/data.js (built from data/ by `make ship` and the bot) instantly, and switches to these only if they're newer.
-  window.SKP_FRESH = Promise.all(["site", "categories", "products", "reels"].map(f =>
-    fetch(`/data/${f}.json`, { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(f + " " + r.status); return r.json(); }).then(d => [f, d])))
-    .then(Object.fromEntries);
+  // Ask the database for the latest products/reels straight away (in the background, through the bot). The page itself
+  // shows the copy built into /assets/js/data.js (by `make ship`) instantly, and switches to the live one if it's newer —
+  // so anything added in the dashboard shows up without a deployment. If the bot is down, the built-in copy stays.
+  window.SKP_BOT = "https://shubhkaprateek-bot.shubhkaprateek.workers.dev";
+  window.SKP_FRESH = fetch(window.SKP_BOT + "/data", { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error("data " + r.status); return r.json(); });
   window.SKP_FRESH.catch(() => {});
 </script>
 </head>

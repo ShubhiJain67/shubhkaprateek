@@ -33,10 +33,17 @@
     document.documentElement.className = "going";
     var id = m[1], q = new URLSearchParams(location.search), done = false;
     var go = function (url) { if (done) return; done = true; location.replace(url); };
-    var s = document.createElement("script"); s.src = "/assets/js/data.js";
-    s.onerror = function () { go("/product/" + id); };
-    s.onload = function () {
-      var d = window.SKP_SNAPSHOT || {}, site = (d.site && d.site.site) || {};
+    // the product's link: live from the database (through the bot) — or the copy built into data.js if that's slow / down
+    var withData = function (fn) {
+      var used = false, fallback = function () { if (used) return; used = true;
+        var s = document.createElement("script"); s.src = "/assets/js/data.js"; s.onerror = function () { go("/product/" + id); };
+        s.onload = function () { fn(window.SKP_SNAPSHOT || {}); }; document.head.appendChild(s); };
+      var t = setTimeout(fallback, 2500);
+      fetch("https://shubhkaprateek-bot.shubhkaprateek.workers.dev/data").then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(function (d) { if (used) return; used = true; clearTimeout(t); fn(d); }).catch(function () { clearTimeout(t); fallback(); });
+    };
+    withData(function (d) {
+      var site = (d.site && d.site.site) || {};
       var p = (d.products || []).filter(function (x) { return String(x.id) === id; })[0];
       var v = p && p.variants && (p.variants[+q.get("v") || 0] || p.variants[0]);
       if (!v || !v.link) return go("/product/" + id);              // unknown product / no link → its page says so
@@ -55,8 +62,7 @@
         } catch (e) { go(v.link); }
       };
       document.head.appendChild(u);
-    };
-    document.head.appendChild(s);
+    });
   })();
 </script>
 <style>

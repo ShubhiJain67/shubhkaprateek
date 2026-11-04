@@ -14,18 +14,30 @@
 // KV namespace DRAFTS = a short cache for the brand pages; D1 database STATS = clicks, enquiries, deals.
 
 import { reportHttp, hitHttp } from "./report.js";
-import { adminHttp } from "./admin.js";   // 🗂 the dashboard (shubhkaprateek.com/admin) + the media kit's enquiry form
+import { adminHttp } from "./admin.js";
+import * as store from "./store.js";      // 🗄 products, brands, reels, categories, photos — the database behind the website   // 🗂 the dashboard (shubhkaprateek.com/admin) + the media kit's enquiry form
 import { DATA_FILES, dataJs } from "../tools/data.mjs"; // builds assets/js/data.js — same code `make ship` uses
 
 const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
 
+const H = { readJson };                     // what store.js needs from here (the one-time import reads the old files)
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     const hits = await hitHttp(req, env, url);                     // the website's click counter → brand pages
     if (hits) return hits;
-    const report = await reportHttp(req, env, url, { readJson });
+    const report = await reportHttp(req, env, url, H);
     if (report) return report;
+    // 🌐 what the website reads (live from the database, cached) — products, reels, categories, featured
+    if (url.pathname === "/data" && req.method === "GET") {
+      try { return new Response(await store.snapshot(env, H), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=30" } }); }
+      catch (e) { console.error(e); return new Response('{"error":"unavailable"}', { status: 503, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }); }
+    }
+    if (url.pathname.startsWith("/img/") && req.method === "GET") return store.imageHttp(env, decodeURIComponent(url.pathname.slice(5)));   // uploaded photos + reel covers
+    if (url.pathname === "/kit" && req.method === "GET") {            // the media kit's brand collabs + brands (from your deals)
+      let kit = null; try { await store.ensure(env, H); kit = await store.getSetting(env, "kit", null); } catch {}
+      return new Response(JSON.stringify(kit || {}), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=60" } });
+    }
     const admin = await adminHttp(req, env, url, { readJson, commitFiles, pretty, gh, enrichProduct, enrichReel, guessCategories, flattenCats,
       guessBrand, REEL_RE, fetchBytes, planDelete, applyDelete, esc, slug, notify });
     if (admin) return admin;

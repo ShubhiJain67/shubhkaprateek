@@ -8,7 +8,7 @@
 // Each brand's number is fixed in bot/brands.json (not on the public site). `make ship` gives new brands a number
 // automatically and prints their link (tools/build.mjs). Nothing to do by hand.
 
-import BRANDS from "./brands.json";
+import * as store from "./store.js";   // products, reels, categories + brand page numbers live in the database
 
 const UMAMI = "https://api.umami.is/v1";
 
@@ -73,13 +73,14 @@ async function umami(env, websiteId, path, params) {
   return r.json();
 }
 
-export async function buildReport(env, { readJson }, slug, days) {
-  const [products, reels, site, categories] = await Promise.all(["products", "reels", "site", "categories"].map(f => readJson(env, `data/${f}.json`)));
+export async function buildReport(env, h, slug, days) {
+  await store.ensure(env, h);
+  const [products, reels, categories] = await Promise.all([store.readProducts(env), store.readReels(env), store.readCategories(env)]);
   const catName = {};
   for (const c of categories || []) { catName[c.id] = c.name; for (const s of c.sub || []) catName[s.id] = s.name; }
   const mine = productsForBrand(slug, products), ids = new Set(mine.map(p => p.id));
   const myReels = reels.filter(r => (r.products || []).some(id => ids.has(id)))
-    .map(r => ({ code: (String(r.reel).match(REEL_CODE) || [])[1] || "", title: r.title || "", products: (r.products || []).filter(id => ids.has(id)) })).filter(r => r.code);
+    .map(r => ({ code: (String(r.reel).match(REEL_CODE) || [])[1] || "", title: r.title || "", cover: r.cover || "", products: (r.products || []).filter(id => ids.has(id)) })).filter(r => r.code);
   const siteUrl = env.SITE_URL || "https://shubhkaprateek.com";
   const out = {
     brand: brandName(slug, products), days,
@@ -105,6 +106,7 @@ export async function buildReport(env, { readJson }, slug, days) {
     if (since) out.since = since;
     return out;
   }
+  let site = {}; try { site = await h.readJson(env, "data/site.json"); } catch {}   // (only when there's no click counter: Umami's paid API)
   const wid = ((site || {}).site || {}).umamiWebsiteId;
   if (!env.UMAMI_API_KEY || !wid) { out.note = "Live numbers aren't connected yet."; return out; }
   const endAt = Date.now(), startAt = endAt - days * 864e5, range = { startAt, endAt };
@@ -134,9 +136,9 @@ export async function reportHttp(req, env, url, helpers) {
   if (req.method === "OPTIONS") return new Response(null, { headers: { ...cors, "Access-Control-Allow-Methods": "GET" } });
   const asked = String(url.searchParams.get("brand") || "");
   const days = [7, 30, 90, 365].includes(+url.searchParams.get("days")) ? +url.searchParams.get("days") : 30;
-  // /brand/19327 → "blix" (bot/brands.json on GitHub, so brands added from the dashboard work straight away)
-  let list = BRANDS.brands || {};
-  try { list = (await helpers.readJson(env, "bot/brands.json")).brands || list; } catch {}
+  // /brand/19327 → "blix" (brand page numbers are in the database, so new brands work straight away)
+  await store.ensure(env, helpers);
+  const list = await store.readBrands(env);
   const slug = (Object.entries(list).find(([, b]) => b.id === asked) || [""])[0];
   if (!slug) return new Response('{"error":"not found"}', { status: 404, headers: cors });
   const cacheKey = `reportcache:${slug}:${days}`;

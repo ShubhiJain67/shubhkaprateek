@@ -105,7 +105,11 @@
   try { k = await (await fetch("/data/portfolio.json", { cache: "no-cache" })).json(); }
   catch { main.innerHTML = `<p class="empty">Couldn't load — <a href="">try again</a>.</p>`; return; }
   const c = k.contact || {}, ig = has(c.instagram) ? `https://www.instagram.com/${c.instagram}/` : "";
-  const cover = code => `/assets/covers/${encodeURIComponent(code)}.jpg`;
+  // brand collabs + brands we've worked with come live from your deals (the dashboard, through the bot); the copy in
+  // data/portfolio.json is only used if the bot can't be reached
+  try { const live = await (await fetch("https://shubhkaprateek-bot.shubhkaprateek.workers.dev/kit", { cache: "no-cache" })).json(); if (live && Array.isArray(live.brandCollabs)) { k.brandCollabs = live.brandCollabs; k.brands = live.brands || []; } } catch {}
+  const covers = Object.fromEntries((k.brandCollabs || []).filter(b => b.cover).map(b => [b.code, b.cover]));   // reels added from the dashboard keep their cover in the database
+  const cover = code => covers[code] || `/assets/covers/${encodeURIComponent(code)}.jpg`;
   const reels = (k.bestReels || []).filter(r => has(r.code));   // only used for the 3 fanned covers at the top
   const btns = `<div class="hero-btns">
       ${has(c.email) ? `<a class="btn-mk main" href="mailto:${esc(c.email)}?subject=${encodeURIComponent("Collab with ShubhKaPrateek")}">✉️ Email us</a>` : ""}

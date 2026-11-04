@@ -14,12 +14,12 @@
 
   // ---- load data/ (each file has one job) ----
   // 1) Show the copy in /assets/js/data.js right away (no download → instant, and works even if downloads stall).
-  // 2) The live data/ files are checked in the background (started in index.html); if they're newer — e.g. the
-  //    bot just added a reel — remember them for this visit and reload once to show them.
+  // 2) The live data (from the database, through the bot) is checked in the background (started in index.html); if
+  //    it's newer — e.g. you just added a reel in the dashboard — remember it for this visit and reload once to show it.
   // 3) No built-in copy (older cached page)? Wait for the live files, with a timeout + one retry.
-  const FILES = ["site", "categories", "products", "reels"];
-  const fetchAll = () => Promise.all(FILES.map(f => fetch(`/data/${f}.json`, { cache: "no-cache" })
-    .then(r => { if (!r.ok) throw new Error(f + " " + r.status); return r.json(); }).then(d => [f, d]))).then(Object.fromEntries);
+  // the live data comes from the database through the bot (GET /data) — same shape as the old data/*.json files
+  const BOT = window.SKP_BOT || "https://shubhkaprateek-bot.shubhkaprateek.workers.dev";
+  const fetchAll = () => fetch(BOT + "/data", { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error("data " + r.status); return r.json(); });
   const timeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("timed out")), ms))]);
   const readJSON = get => { try { return JSON.parse(get() || "null"); } catch { return null; } };
   const fresh = window.SKP_FRESH || fetchAll();

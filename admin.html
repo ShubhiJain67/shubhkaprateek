@@ -207,6 +207,8 @@
   const catName = id => (flatCats().find(c => c.id === id) || { name: id }).name.split(" › ").pop();
   const prod = id => D.products.find(p => p.id === +id);
   const reelsOf = id => D.reels.filter(r => (r.products || []).includes(+id));
+  // the brand's record (page number, Instagram, website) — products link to it, deals match it by name
+  const brandRec = name => { const k = String(name || "").trim().toLowerCase(); const e = Object.entries(D.brands || {}).find(([, b]) => b.name.toLowerCase() === k); return e ? { slug: e[0], ...e[1] } : null; };
   const brandLink = name => { const b = Object.values(D.brands || {}).find(b => b.name.toLowerCase() === String(name || "").trim().toLowerCase()); return b ? b.link : ""; };
   const date = s => s ? new Date(s).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "";
   // who started it: "brand" = they reached out to us, "us" = we reached out (older ones came from the website form)
@@ -332,7 +334,8 @@
       ${[["enquiries", "Enquiries", n], ["money", "Money"], ["brands", "Brands"], ["products", "Products"], ["categories", "Categories"], ["reels", "Reels"]].map(([k, t, c]) =>
         `<a href="#${k}" data-go="${k}" class="${view === k || (view === "enquiry" && k === "enquiries") || (view === "brand" && k === "brands") ? "on" : ""}">${t}${c ? `<span class="n">${c}</span>` : ""}</a>`).join("")}
       <a href="${SITE}/" target="_blank" rel="noopener">Open website ↗</a>
-      <div class="foot">Saves go live on the website in about a minute.</div></div></nav><main>${body}</main></div>`;
+      <div class="foot">Saves show on the website within a few seconds.</div></div></nav><main>${body}</main></div>
+      <datalist id="brandlist">${Object.values(D.brands || {}).map(b => `<option value="${esc(b.name)}">`).join("")}</datalist>`;
   }
 
   // ---- Enquiries
@@ -412,7 +415,7 @@
   // the deal's full form (only when you tap Edit)
   function dealForm(e, prods, pk) {
     return `<form id="deal" class="grid2">
-          <label>Brand<input name="brand" value="${esc(e.brand)}"></label>
+          <label>Brand<input name="brand" list="brandlist" value="${esc(e.brand)}"></label>
           <label>Email<input name="email" value="${esc(e.email)}"></label>
           <label>Their Instagram ${e.instagram ? `<a class="small" href="${esc(igUrl(e.instagram))}" target="_blank" rel="noopener">open ↗</a>` : ""}<input name="instagram" value="${esc(e.instagram)}" placeholder="@brand or instagram.com/brand"></label>
           ${sourceSelect(srcOf(e))}
@@ -474,7 +477,7 @@
         <div style="display:grid;gap:12px">
           <label>Product link<span class="row"><input name="link" value="${esc(f.link)}" placeholder="https://…" style="flex:1 1 200px"><button type="button" data-act="fetch">Fetch details</button></span></label>
           <label>Name<input name="name" value="${esc(f.name)}" required></label>
-          <label>Brand<input name="brand" value="${esc(f.brand)}" placeholder="e.g. Deciwood"></label>
+          <label>Brand<input name="brand" list="brandlist" value="${esc(f.brand)}" placeholder="e.g. Deciwood"></label>
           <label>Photo link (optional)<input name="image" value="${esc(/^https?:/.test(f.image) ? f.image : "")}" placeholder="https://…jpg"></label>
           <div><b class="small">Categories</b><div class="ctree">${(D.categories || []).map(c => { const box = (x, cls = "") => `<label class="${cls}"><input type="checkbox" name="cat" value="${esc(x.id)}" ${f.category.includes(x.id) ? "checked" : ""}>${x.emoji ? esc(x.emoji) + " " : ""}${esc(x.name)}</label>`;
             return `<div class="grp">${box(c, "top")}${(c.sub || []).length ? `<div class="kids">${c.sub.map(x => box(x)).join("")}</div>` : ""}</div>`; }).join("")}</div></div>
@@ -510,7 +513,7 @@
         <div class="row"><input id="q" placeholder="Search reels…" value="${esc(q)}" style="width:220px"><button class="main" data-act="newReel">+ New reel</button></div></div>
       ${reelEdit ? reelForm() : ""}
       <div class="tablebox"><table class="table"><thead><tr><th></th><th>Reel</th><th>Products</th><th></th></tr></thead><tbody>
-      ${list.map(r => `<tr class="click ${isCollabReel(codeOf(r)) ? "gold" : ""}" data-href="${SITE}/reel/${esc(codeOf(r))}" title="Open the reel page"><td><img class="cover" src="/assets/covers/${esc(codeOf(r))}.jpg" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></td>
+      ${list.map(r => `<tr class="click ${isCollabReel(codeOf(r)) ? "gold" : ""}" data-href="${SITE}/reel/${esc(codeOf(r))}" title="Open the reel page"><td><img class="cover" src="${esc(r.cover || "/assets/covers/" + codeOf(r) + ".jpg")}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></td>
         <td><b>${esc(r.title)}</b><br><span class="muted small">${esc(codeOf(r))}</span></td>
         <td class="small">${(r.products || []).map(prod).filter(Boolean).map(p => esc(p.name)).join(", ")}</td>
         <td><div class="row" style="flex-wrap:nowrap"><button data-reel="${esc(codeOf(r))}">Edit</button>${(d => d ? `<button data-open="${d.id}" title="Open the deal">🤝 ${esc(d.brand)}</button>` : `<button data-pitch="${esc(codeOf(r))}" title="Start a brand deal from this reel">🎯 Pitch</button>`)(dealOfReel(codeOf(r)))}</div></td></tr>`).join("")}
@@ -651,7 +654,7 @@
     const m = brandMoney(b);
     const reels = [...new Set(b.products.flatMap(p => reelsOf(p.id)))];
     return `<a href="#brands" data-go="brands" class="small" style="font-weight:600;text-decoration:none">← Brands</a>
-      <div class="between"><h1>${esc(b.name)}</h1>${brandLink(b.name) ? `<a class="btn main" href="${esc(brandLink(b.name))}" target="_blank" rel="noopener">Their brand page ↗</a>` : ""}</div>
+      <div class="between"><h1>${esc(b.name)}</h1><span class="row">${brandRec(b.name) ? `<button data-brandedit="${esc(brandRec(b.name).slug)}">Edit brand</button>` : ""}${brandLink(b.name) ? `<a class="btn main" href="${esc(brandLink(b.name))}" target="_blank" rel="noopener">Their brand page ↗</a>` : ""}</span></div>
       <div class="grid2">
         <div class="card"><b style="font:700 26px Fraunces,serif">${b.enquiries.length}</b><br><span class="muted small">Collabs / enquiries</span></div>
         <div class="card"><b style="font:700 26px Fraunces,serif">₹${m.paid.toLocaleString("en-IN")}</b><br><span class="muted small">Paid deals · ${m.paidN}${m.pending ? ` · ₹${m.pending.toLocaleString("en-IN")} not received yet` : ""}</span></div>
@@ -691,10 +694,10 @@
       const id = +b.dataset.fav, cur = D.featured.map(Number);
       const ids = cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id];
       if (ids.length > 2) return toast("Up to 2 featured — un-star one first");
-      act(b, () => api("featured", { ids }), "Featured updated — live in about a minute");
+      act(b, () => api("featured", { ids }), "Featured updated — on the website in a few seconds");
     });
     root.querySelectorAll("[data-status]").forEach(b => b.onclick = () => act(b, () => api("enquiry.update", { id: +openId, patch: { status: b.dataset.status } }), "Status: " + STATUS[b.dataset.status]));
-    root.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { if (!confirmTwice(b)) return; act(b, async () => { await api("product.delete", { id: +b.dataset.del }); editing = null; }, "Product removed — gone from the site in about a minute"); });
+    root.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { if (!confirmTwice(b)) return; act(b, async () => { await api("product.delete", { id: +b.dataset.del }); editing = null; }, "Product removed — gone from the site in a few seconds"); });
     root.querySelectorAll("[data-delreel]").forEach(b => b.onclick = () => { if (!confirmTwice(b)) return; act(b, async () => { await api("reel.delete", { code: b.dataset.delreel }); reelEdit = null; }, "Reel removed"); });
     root.querySelectorAll("[data-act]").forEach(b => b.onclick = async ev => {
       const k = b.dataset.act;
@@ -718,7 +721,7 @@
     });
     const up = $("up"); if (up) up.onchange = () => { const file = up.files[0]; if (!file) return; readPF(); shrink(file).then(url => { editing.photo = url; render(); }); };
     const pf = $("pf"); if (pf) pf.onsubmit = ev => { ev.preventDefault(); readPF(); const f = editing.form, btn = pf.querySelector("button.main");
-      act(btn, async () => { const r = await api("product.save", { product: { id: editing.id, ...f, image: /^https?:|^assets\//.test(f.image) ? f.image : "" }, photo: editing.photo || null, enquiryId: view === "enquiry" ? +openId : null }); editing = null; }, "Saved — live in about a minute"); };
+      act(btn, async () => { const r = await api("product.save", { product: { id: editing.id, ...f, image: /^https?:|^assets\//.test(f.image) ? f.image : "" }, photo: editing.photo || null, enquiryId: view === "enquiry" ? +openId : null }); editing = null; }, "Saved — on the website in a few seconds"); };
     const deal = $("deal"); if (deal) { wireContacts(deal); deal.onsubmit = ev => { ev.preventDefault(); const patch = Object.fromEntries(new FormData(deal)); patch.contacts = readContacts(deal); patch.contact = ""; act(deal.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch }); editCard.delete("deal"); }, "Deal saved"); }; }
     // payment details open once it's paid: a "Payment received" date, or Payment switched to Paid
     if (deal) { const box = deal.querySelector("[data-paidbox]"), was = deal.payment.value,
@@ -726,6 +729,7 @@
       deal.payment.onchange = upd; deal.paid_on.oninput = upd; deal.paid_on.onchange = upd; }
     root.querySelectorAll("[data-foldall]").forEach(b => b.onclick = () => { const c = b.dataset.foldall === "1", s2 = {};
       root.querySelectorAll("[data-fold]").forEach(sec => { sec.classList.toggle("closed", c); s2[sec.dataset.fold] = c; }); try { localStorage.setItem("skp-fold", JSON.stringify(s2)); } catch {} });
+    root.querySelectorAll("[data-brandedit]").forEach(b => b.onclick = () => openBrandDialog(b.dataset.brandedit));
     root.querySelectorAll("[data-catedit]").forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); openCatDialog(b.dataset.catedit, null); });
     root.querySelectorAll("[data-catadd]").forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); openCatDialog(null, b.dataset.catadd); });
     root.querySelectorAll("tr[data-href]").forEach(tr => tr.onclick = ev => { if (ev.target.closest("button, a, input, select, label")) return; window.open(tr.dataset.href, "_blank", "noopener"); });
@@ -751,9 +755,9 @@
     const brief = $("brief"); if (brief) brief.onsubmit = ev => { ev.preventDefault(); act(brief.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch: Object.fromEntries(new FormData(brief)) }); editCard.delete("brief"); }, "Brief saved"); };
     const reelf = $("reelf"); if (reelf) reelf.onsubmit = ev => { ev.preventDefault(); const e = D.enquiries.find(x => x.id === +openId);
       const fd = new FormData(reelf);
-      act(reelf.querySelector("button"), () => api("reel.save", { link: fd.get("link"), liveOn: fd.get("live_on"), products: e.product_ids, enquiryId: e.id }), "Reel is live — the website updates in about a minute 🚀"); };
+      act(reelf.querySelector("button"), () => api("reel.save", { link: fd.get("link"), liveOn: fd.get("live_on"), products: e.product_ids, enquiryId: e.id }), "Reel is live on the website 🚀"); };
     const rf = $("rf"); if (rf) rf.onsubmit = ev => { ev.preventDefault(); const fd = new FormData(rf);
-      act(rf.querySelector("button.main"), async () => { await api("reel.save", { link: fd.get("link"), title: fd.get("title"), products: fd.getAll("p").map(Number) }); reelEdit = null; }, "Reel saved — live in about a minute"); };
+      act(rf.querySelector("button.main"), async () => { await api("reel.save", { link: fd.get("link"), title: fd.get("title"), products: fd.getAll("p").map(Number) }); reelEdit = null; }, "Reel saved — on the website in a few seconds"); };
   }
   // ---- "+ Add enquiry": one form in a pop-up (for brands that DM'd or emailed you)
   function openAddEnquiry(pitchCode = "") {
@@ -766,7 +770,7 @@
         <div style="grid-column:1/-1;display:grid;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px">
           <label>🎯 Pitching a reel you already posted? <span class="muted small" style="font-weight:500">(optional)</span><select name="reel_pick"><option value="">— No, a new collab —</option>${D.reels.filter(r => codeOf(r) === pitchCode || !dealOfReel(codeOf(r))).map(r => `<option value="${esc(codeOf(r))}" ${codeOf(r) === pitchCode ? "selected" : ""}>${esc(r.title || codeOf(r))}</option>`).join("")}</select></label>
           <label class="small">…or paste its Instagram link<input name="reel_paste" placeholder="https://www.instagram.com/reel/…"></label></div>
-        <label>Brand name<input name="brand" required autocomplete="organization"></label>
+        <label>Brand name<input name="brand" list="brandlist" required autocomplete="organization"></label>
         <label>Email<input name="email" type="email"></label>
         ${sourceSelect("us")}
         <label>Package<select name="package"><option value=""></option>${pk.map(p => `<option value="${esc(p.name)}">${esc(p.name)}${p.private ? " (private)" : ""}</option>`).join("")}<option>Not sure yet</option></select></label>
@@ -800,6 +804,36 @@
       catch { btn.disabled = false; }
     };
     dlg.showModal(); pickPitch(); f.brand.focus();
+  }
+  // rename a brand, set its Instagram + website, or merge it into another brand (e.g. "Samvardhan" → "Samvardhan Mart")
+  function openBrandDialog(slug) {
+    const b = (D.brands || {})[slug]; if (!b) return;
+    const others = Object.entries(D.brands).filter(([k]) => k !== slug).sort((x, y) => x[1].name.localeCompare(y[1].name));
+    const dlg = document.createElement("dialog");
+    dlg.style.cssText = "border:0;border-radius:18px;padding:0;width:min(520px,94vw);max-height:90vh;box-shadow:0 20px 60px rgba(43,31,26,.25)";
+    dlg.innerHTML = `<form method="dialog" style="padding:22px;display:grid;gap:12px">
+      <div class="between"><h2 style="margin:0">Edit brand</h2><button type="button" data-x aria-label="Close">✕</button></div>
+      <div class="grid2">
+        <label>Name<input name="name" required value="${esc(b.name)}"></label>
+        <label>Instagram<input name="instagram" value="${esc(b.instagram)}" placeholder="@brand"></label>
+        <label style="grid-column:1/-1">Website<input name="website" value="${esc(b.website)}" placeholder="https://…"></label>
+      </div>
+      <p class="muted small" style="margin:0">Renaming updates its products and deals. Its brand page number (${esc(b.id)}) stays the same.</p>
+      <div class="row"><button class="main" type="submit">Save</button><button type="button" data-x>Cancel</button></div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:4px 0">
+      <b class="small">Same brand twice?</b>
+      <div class="row" style="align-items:end"><label style="flex:1 1 200px">Merge ${esc(b.name)} into<select name="into"><option value="">— pick a brand —</option>${others.map(([k, o]) => `<option value="${esc(k)}">${esc(o.name)}</option>`).join("")}</select></label><button type="button" class="danger" data-merge>Merge</button></div>
+      <p class="muted small" style="margin:0">Its products and deals move to that brand, and <b>${esc(b.name)}</b>'s page number stops working.</p></form>`;
+    document.body.appendChild(dlg);
+    const f = dlg.querySelector("form"), close = () => { dlg.close(); dlg.remove(); };
+    dlg.querySelectorAll("[data-x]").forEach(x => x.onclick = close); dlg.addEventListener("cancel", close);
+    f.onsubmit = async ev => { ev.preventDefault(); const btn = f.querySelector("button.main"); btn.disabled = true;
+      try { await api("brand.save", { slug, brand: { name: f.name.value, instagram: f.instagram.value, website: f.website.value } }); close(); toast("Brand saved");
+        if (view === "brand") { openId = f.name.value.trim(); location.hash = "brand/" + encodeURIComponent(openId); } render(); } catch { btn.disabled = false; } };
+    const mb = f.querySelector("[data-merge]");
+    mb.onclick = async () => { const into = f.into.value; if (!into) return toast("Pick the brand to merge into"); if (!confirmTwice(mb)) return; mb.disabled = true;
+      try { await api("brand.merge", { from: slug, into }); close(); toast(`Merged into ${D.brands[into] ? D.brands[into].name : "it"}`); go("brand", (D.brands[into] || {}).name || ""); } catch { mb.disabled = false; } };
+    dlg.showModal(); f.name.focus();
   }
   // add / edit / delete one category (editId) or add one (parentId = "" for a new tab, or the tab's id for a sub-category)
   function openCatDialog(editId, parentId) {
@@ -836,7 +870,7 @@
         const c = { id, name, keywords: kw };
         if (isTop) { if (f.emoji.value.trim()) c.emoji = f.emoji.value.trim(); if (f.theme.checked) c.theme = true; tree.push(c); }
         else (under.sub = under.sub || []).push(c); }
-      send(f.querySelector("button.main"), tree, cur ? "Category saved — live in about a minute" : "Category added — live in about a minute"); };
+      send(f.querySelector("button.main"), tree, cur ? "Category saved — on the website in a few seconds" : "Category added — on the website in a few seconds"); };
     const del = f.querySelector("[data-del]");
     if (del) del.onclick = () => { if (!confirmTwice(del)) return;
       const next = isTop ? tree.filter(c => c.id !== cur.id) : tree.map(c => c === parent ? { ...c, sub: c.sub.filter(x => x.id !== cur.id) } : c);
