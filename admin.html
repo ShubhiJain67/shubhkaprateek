@@ -52,8 +52,13 @@
   label { display: grid; gap: 5px; font-size: 13px; font-weight: 600; }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
   .pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
-  .s-new { background: var(--accent); color: #fff; } .s-hold { background: #fdf0d8; color: #8a5a00; }
-  .s-confirmed { background: var(--ok); color: #fff; } .s-product { background: #efe6fb; color: #5b2ea6; } .s-live { background: #e3f3ea; color: #1f6b41; } .s-delivered { background: #1f6b41; color: #fff; } .s-declined { background: #f1ecea; color: var(--muted); }
+  .s-new { background: #d9534f; color: #fff; }               /* red — needs a reply */
+  .s-confirmed { background: #2f6fdb; color: #fff; }         /* blue */
+  .s-product { background: #7b4fd6; color: #fff; }           /* purple */
+  .s-live { background: #e8890c; color: #fff; }              /* orange — ongoing */
+  .s-delivered { background: #1f8a4c; color: #fff; }         /* green — done */
+  .s-hold { background: #f2c94c; color: #5a4300; }           /* yellow */
+  .s-declined { background: #8f8580; color: #fff; }          /* grey */
   .list { display: grid; gap: 10px; }
   .item { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: center; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-radius: 14px; cursor: pointer; text-align: left; width: 100%; font-weight: 400; }
   .item:hover { border-color: var(--accent); }
@@ -197,7 +202,7 @@
   }
 
   // ---------- helpers on the data
-  const STATUS = { new: "New", hold: "On hold", confirmed: "Confirmed", product: "Product added", live: "Live", delivered: "Delivered", declined: "Declined" };
+  const STATUS = { new: "New", hold: "On hold", confirmed: "Confirmed", product: "Product added", live: "Ongoing", delivered: "Delivered", declined: "Declined" };
   const FLOW = ["new", "confirmed", "product", "live", "delivered"];
   const today = () => new Date().toLocaleDateString("en-CA");   // YYYY-MM-DD in your time zone
   const pill = s => `<span class="pill s-${esc(s)}">${esc(STATUS[s] || s)}</span>`;
@@ -326,7 +331,7 @@
   window.addEventListener("hashchange", () => { const [v, id] = location.hash.slice(1).split("/"); if (v && v !== view + "") { view = v; openId = id || null; render(); } });
 
   function shell(body) {
-    const n = D.enquiries.filter(e => ["new", "confirmed", "product", "live"].includes(e.status)).length;   // open deals: new + confirmed + live
+    const n = D.enquiries.filter(e => ["new", "confirmed", "product", "live"].includes(e.status)).length;   // open deals: new + confirmed + ongoing
     const cur = { enquiry: "enquiries", brand: "brands" }[view] || view, curName = { enquiries: "Enquiries", money: "Money", brands: "Brands", products: "Products", categories: "Categories", reels: "Reels" }[cur] || "";
     root.innerHTML = `<div class="app"><nav aria-label="Dashboard" class="${navOpen ? "open" : ""}">
       <div class="top"><div class="logo">ShubhKaPrateek</div><button type="button" class="burger" data-burger aria-label="Menu" aria-expanded="${navOpen}">${navOpen ? "✕" : "☰"}</button></div>
@@ -368,12 +373,12 @@
       <span class="row small"><button type="button" data-foldall="1">Collapse all</button><button type="button" data-foldall="0">Expand all</button></span></div>
       <div class="between"><h1>${esc(e.brand)} <span class="muted" style="font:500 16px Inter,sans-serif">· ${esc(e.package || "—")}</span></h1>${pill(e.status)}</div>
       ${e.pitched === "1" ? `<p style="margin:0">🎯 Pitched from your reel ${(e.product_ids || []).length ? `<a href="${SITE}/reel/${esc(e.reel_code)}" target="_blank" rel="noopener">${esc(reelTitle(e.reel_code))}</a>` : `<b>${esc(reelTitle(e.reel_code))}</b>`} · <a href="https://www.instagram.com/reel/${esc(e.reel_code)}/" target="_blank" rel="noopener">Instagram ↗</a></p>` : ""}
-      <div class="steps">${FLOW.map((s, i) => `<span class="${i < at ? "done" : i === at ? "now" : ""}">${STATUS[s]}${i < at ? " ✓" : ""}</span>`).join("")}</div>
+      <div class="steps">${FLOW.map((s, i) => `<span class="${i < at ? "done" : i === at ? "now s-" + s : ""}">${STATUS[s]}${i < at ? " ✓" : ""}</span>`).join("")}</div>
       <div class="row">
         <a class="btn" href="${mail}">Reply by email</a>
         ${e.status !== "confirmed" && at < 2 ? `<button class="ok" data-status="confirmed">${e.pitched === "1" && e.reel_code ? "Confirm (reel is already live)" : "Confirm"}</button>` : ""}
         ${e.status === "live" ? `<button class="ok" data-status="delivered">Mark delivered ✓</button>` : ""}
-        ${e.status === "delivered" ? `<button data-status="live">Reopen (back to Live)</button>` : ""}
+        ${e.status === "delivered" ? `<button data-status="live">Reopen (back to Ongoing)</button>` : ""}
         ${!["hold", "delivered"].includes(e.status) ? `<button data-status="hold">Put on hold</button>` : ""}
         ${e.status !== "declined" ? `<button class="danger" data-status="declined">Decline</button>` : `<button data-status="new">Reopen</button>`}
         <button class="danger" data-act="delEnq" style="margin-left:auto">Delete</button>
@@ -402,9 +407,9 @@
         ${editing ? productForm(e) : ""}
       </section>
       <section class="card" data-fold="reel"><h2>Reel</h2>
-        ${e.reel_code ? `<p style="margin:0 0 10px">${e.pitched === "1" && !["live", "delivered"].includes(e.status) ? "Your reel" : "Live"}: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a>${moreReels.map(c => ` · <a href="${SITE}/reel/${esc(c)}" target="_blank" rel="noopener">${esc(reelTitle(c))}</a>`).join("")} · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
+        ${e.reel_code ? `<p style="margin:0 0 10px">${e.pitched === "1" && !["live", "delivered"].includes(e.status) ? "Your reel" : "Reel"}: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a>${moreReels.map(c => ` · <a href="${SITE}/reel/${esc(c)}" target="_blank" rel="noopener">${esc(reelTitle(c))}</a>`).join("")} · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
         ${prods.length ? `<form id="reelf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 170px">Live date<input name="live_on" type="date" value="${esc(e.live_on || today())}"></label><button class="main">${e.reel_code ? "Update reel" : "Go live →"}</button></form>
-          <p class="muted small" style="margin:8px 0 0">Makes the reel page, connects it to their product${prods.length > 1 ? "s" : ""} and publishes the website. Status → Live.</p>` : `<p class="muted" style="margin:0">Add their product first.</p>`}
+          <p class="muted small" style="margin:8px 0 0">Makes the reel page, connects it to their product${prods.length > 1 ? "s" : ""} and publishes the website. Status → Ongoing.</p>` : `<p class="muted" style="margin:0">Add their product first.</p>`}
       </section>
       <section class="card" data-fold="trials"><h2>Trial reels <span class="hint">${trialsOf(e).length || ""}</span><span class="muted small" style="font-weight:500">· just for your record, no page on the website</span></h2>
         ${!editCard.has("trials") ? `${trialsOf(e).length ? `<ul class="vlist">${trialsOf(e).map(t => `<li><b>${dateY(t.date) || "—"}</b> ${link(t.link)} ${t.note ? `<span class="muted">· ${esc(t.note)}</span>` : ""}</li>`).join("")}</ul>` : `<p class="muted" style="margin:0">No trial reels yet.</p>`}<div style="margin-top:10px">${editBtn("trials")}</div>` : `<form id="trf" style="display:grid;gap:8px"><div class="tlist" style="display:grid;gap:8px">${(trialsOf(e).length ? trialsOf(e) : [{ date: today() }]).map(trialRow).join("")}</div>
@@ -433,7 +438,7 @@
           <label>Reel went live<input name="live_on" type="date" value="${esc(e.live_on)}"></label>
           <label>Collab added on Instagram<input name="collab_on" type="date" value="${esc(e.collab_on)}"></label>
           <b class="small" style="grid-column:1/-1;margin-top:4px">Media kit</b>
-          <label style="display:flex;gap:8px;align-items:center"><input type="hidden" name="show_kit" value="0"><input type="checkbox" name="show_kit" value="1" style="width:auto" ${e.show_kit === "0" ? "" : "checked"}> Show this reel on the media kit <span class="muted small" style="font-weight:500">(once it's Live)</span></label>
+          <label style="display:flex;gap:8px;align-items:center"><input type="hidden" name="show_kit" value="0"><input type="checkbox" name="show_kit" value="1" style="width:auto" ${e.show_kit === "0" ? "" : "checked"}> Show this reel on the media kit <span class="muted small" style="font-weight:500">(once it's Ongoing)</span></label>
           <label>Views to show <span class="muted small" style="font-weight:500">(optional)</span><input name="kit_views" value="${esc(e.kit_views)}" placeholder="e.g. 1.2M"></label>
           <label>Payment received<input name="paid_on" type="date" value="${esc(e.paid_on)}"></label>
           <div data-paidbox style="grid-column:1/-1;display:${e.paid_on || e.txn_id || e.payment_notes ? "grid" : "none"};gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px">
@@ -456,7 +461,7 @@
       ["Payment deadline", dateY(e.payment_due)], ["Shoot by", dateY(e.shoot_by)], ["Post by", dateY(e.post_by)],
       ["Product dispatched", dateY(e.dispatched_on)], ["Product received", dateY(e.received_on)], ["Draft submitted", dateY(e.draft_on)],
       ["Reel went live", dateY(e.live_on)], ["Collab added", dateY(e.collab_on)], ["Payment received", dateY(e.paid_on)],
-      ["Media kit", reelsOfDeal(e).length ? (e.show_kit === "0" ? "Hidden" : ["live", "delivered"].includes(e.status) ? `Shown${e.kit_views ? " · ▶ " + esc(e.kit_views) + " views" : ""}` : "Shows once it's Live") : ""],
+      ["Media kit", reelsOfDeal(e).length ? (e.show_kit === "0" ? "Hidden" : ["live", "delivered"].includes(e.status) ? `Shown${e.kit_views ? " · ▶ " + esc(e.kit_views) + " views" : ""}` : "Shows once it's Ongoing") : ""],
       ["Transaction ID", esc(e.txn_id)], ["Payment details", esc(e.payment_notes)],
       ["Contacts", cs.map(c => `<span class="ct">${esc([c.name, c.role].filter(Boolean).join(" · "))}${c.phone ? ` · <a href="tel:${esc(c.phone.replace(/\s/g, ""))}">${esc(c.phone)}</a>` : ""}</span>`).join("")],
       ["Product link", link(pl)], ["Their message", esc(e.message)], ["Your notes", esc(e.notes)],
@@ -612,7 +617,7 @@
             ${byDay[d].map(x => `<div class="between small" style="cursor:pointer" data-open="${x.e.id}"><span class="muted">${x.kind === "cash" ? "💸" : "🎁"} ${esc(x.e.brand)}${x.kind === "cash" && x.e.txn_id ? " · " + esc(x.e.txn_id) : ""}${x.kind === "prod" && x.e.payment === "Barter" ? " · barter" : ""}</span><span>${rs(x.v)}</span></div>`).join("")}</div>`).join("") || `<p class="muted" style="margin:0">Nothing in this range. Money counts on its <b>Payment received</b> date; a product on its <b>Product received</b> date.</p>`}</section>
         <section class="card"><h2>Still due</h2><div class="list">${due.sort((a, b) => (a.payment_due || "9999").localeCompare(b.payment_due || "9999")).map(dueRow).join("") || `<p class="muted" style="margin:0">Nothing due 🎉</p>`}</div></section>
       </div>
-      <p class="muted small" style="margin:0">Counts confirmed, live and delivered deals. Money = Agreed price, counted on its Payment received date (until then it's due). Products = Product value, counted on Product received (or the reel's live date if that's empty); for an after-live pitch, on the day they paid.</p>`;
+      <p class="muted small" style="margin:0">Counts confirmed, ongoing and delivered deals. Money = Agreed price, counted on its Payment received date (until then it's due). Products = Product value, counted on Product received (or the reel's live date if that's empty); for an after-live pitch, on the day they paid.</p>`;
   }
 
   // ---- Categories: tab → sub-category → products
@@ -808,7 +813,8 @@
   // rename a brand, set its Instagram + website, or merge it into another brand (e.g. "Samvardhan" → "Samvardhan Mart")
   function openBrandDialog(slug) {
     const b = (D.brands || {})[slug]; if (!b) return;
-    const others = Object.entries(D.brands).filter(([k]) => k !== slug).sort((x, y) => x[1].name.localeCompare(y[1].name));
+    // every brand you have — from products and from deals (a deals-only brand gets its record when you merge into it)
+    const others = brandList().map(x => x.name).filter(n => n.toLowerCase() !== b.name.toLowerCase()).sort((x, y) => x.localeCompare(y));
     const dlg = document.createElement("dialog");
     dlg.style.cssText = "border:0;border-radius:18px;padding:0;width:min(520px,94vw);max-height:90vh;box-shadow:0 20px 60px rgba(43,31,26,.25)";
     dlg.innerHTML = `<form method="dialog" style="padding:22px;display:grid;gap:12px">
@@ -822,7 +828,7 @@
       <div class="row"><button class="main" type="submit">Save</button><button type="button" data-x>Cancel</button></div>
       <hr style="border:0;border-top:1px solid var(--line);margin:4px 0">
       <b class="small">Same brand twice?</b>
-      <div class="row" style="align-items:end"><label style="flex:1 1 200px">Merge ${esc(b.name)} into<select name="into"><option value="">— pick a brand —</option>${others.map(([k, o]) => `<option value="${esc(k)}">${esc(o.name)}</option>`).join("")}</select></label><button type="button" class="danger" data-merge>Merge</button></div>
+      <div class="row" style="align-items:end"><label style="flex:1 1 200px">Merge ${esc(b.name)} into<select name="into"><option value="">— pick a brand —</option>${others.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("")}</select></label><button type="button" class="danger" data-merge>Merge</button></div>
       <p class="muted small" style="margin:0">Its products and deals move to that brand, and <b>${esc(b.name)}</b>'s page number stops working.</p></form>`;
     document.body.appendChild(dlg);
     const f = dlg.querySelector("form"), close = () => { dlg.close(); dlg.remove(); };
@@ -832,7 +838,7 @@
         if (view === "brand") { openId = f.name.value.trim(); location.hash = "brand/" + encodeURIComponent(openId); } render(); } catch { btn.disabled = false; } };
     const mb = f.querySelector("[data-merge]");
     mb.onclick = async () => { const into = f.into.value; if (!into) return toast("Pick the brand to merge into"); if (!confirmTwice(mb)) return; mb.disabled = true;
-      try { await api("brand.merge", { from: slug, into }); close(); toast(`Merged into ${D.brands[into] ? D.brands[into].name : "it"}`); go("brand", (D.brands[into] || {}).name || ""); } catch { mb.disabled = false; } };
+      try { await api("brand.merge", { from: slug, intoName: into }); close(); toast(`Merged into ${into}`); go("brand", into); } catch { mb.disabled = false; } };
     dlg.showModal(); f.name.focus();
   }
   // add / edit / delete one category (editId) or add one (parentId = "" for a new tab, or the tab's id for a sub-category)

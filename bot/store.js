@@ -98,8 +98,9 @@ export async function saveBrand(env, slug, { name, instagram, website }) {
   await invalidate(env);
 }
 // merge brand `from` into `into`: its products + deals move over, `from` (and its page number) is removed
-export async function mergeBrand(env, from, into) {
+export async function mergeBrand(env, from, into, intoName) {
   const db = env.STATS;
+  if (!into && intoName) { into = slugOf(intoName); if (!(await db.prepare("SELECT 1 FROM brands WHERE slug = ?").bind(into).first())) await brandId(env, intoName); }   // a brand that only had deals so far
   const a = await db.prepare("SELECT * FROM brands WHERE slug = ?").bind(from).first(), b = await db.prepare("SELECT * FROM brands WHERE slug = ?").bind(into).first();
   if (!a || !b) throw new Error("Pick two brands that exist");
   if (a.id === b.id) throw new Error("That's the same brand");
