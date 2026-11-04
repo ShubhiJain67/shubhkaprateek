@@ -295,9 +295,8 @@ async function run(a, env, h) {
     if (changed) await store.writeProducts(env, products);
     return load(env, h);
   }
-  // ---- brands: rename / Instagram + website / merge two into one (page numbers never change)
+  // ---- brands: rename / Instagram + website (page numbers never change)
   if (op === "brand.save") { await store.saveBrand(env, String(a.slug || ""), a.brand || {}); return load(env, h); }
-  if (op === "brand.merge") { await store.mergeBrand(env, String(a.from || ""), String(a.into || ""), String(a.intoName || "").trim()); return load(env, h); }
   throw new Error("Unknown action: " + op);
 }
 

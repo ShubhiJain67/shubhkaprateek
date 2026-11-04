@@ -33,6 +33,11 @@ export async function ensure(env, h) {
   ]);
   const done = await db.prepare("SELECT value FROM settings WHERE key = 'imported'").first();
   if (!done) await importFromFiles(env, h);
+  // one-time tidy-ups of brand names (runs once, the first time after this is deployed)
+  if (!(await db.prepare("SELECT 1 FROM settings WHERE key = 'fix:brands:1'").first())) {
+    if (await db.prepare("SELECT 1 FROM brands WHERE slug = 'samvardhan'").first()) await mergeBrand(env, "samvardhan", "", "Samvardhan Mart");   // the products said "Samvardhan", the deals "Samvardhan Mart"
+    await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('fix:brands:1', ?)").bind(JSON.stringify(now())).run();
+  }
   ready = true;
 }
 
@@ -90,7 +95,7 @@ export async function saveBrand(env, slug, { name, instagram, website }) {
   if (!b && name) { await brandId(env, name); b = await db.prepare("SELECT * FROM brands WHERE slug = ?").bind(slugOf(name)).first(); }
   if (!b) throw new Error("That brand is gone");
   const nn = String(name ?? b.name).trim() || b.name, ns = slugOf(nn);
-  if (ns !== b.slug && await db.prepare("SELECT 1 FROM brands WHERE slug = ?").bind(ns).first()) throw new Error(`There's already a brand called ${nn} — use Merge instead`);
+  if (ns !== b.slug && await db.prepare("SELECT 1 FROM brands WHERE slug = ?").bind(ns).first()) return mergeBrand(env, b.slug, ns);   // renamed to a brand you already have → they become one
   await db.batch([
     db.prepare("UPDATE brands SET name = ?, slug = ?, instagram = ?, website = ? WHERE id = ?").bind(nn, ns, String(instagram ?? b.instagram ?? "").trim(), String(website ?? b.website ?? "").trim(), b.id),
     db.prepare("UPDATE enquiries SET brand = ? WHERE lower(trim(brand)) = lower(?)").bind(nn, b.name),
@@ -100,7 +105,11 @@ export async function saveBrand(env, slug, { name, instagram, website }) {
 // merge brand `from` into `into`: its products + deals move over, `from` (and its page number) is removed
 export async function mergeBrand(env, from, into, intoName) {
   const db = env.STATS;
-  if (!into && intoName) { into = slugOf(intoName); if (!(await db.prepare("SELECT 1 FROM brands WHERE slug = ?").bind(into).first())) await brandId(env, intoName); }   // a brand that only had deals so far
+  if (!into && intoName) {
+    into = slugOf(intoName);
+    // the other name only had deals so far → just rename this brand to it, so its page number (and any link you've shared) stays
+    if (!(await db.prepare("SELECT 1 FROM brands WHERE slug = ?").bind(into).first())) return saveBrand(env, from, { name: String(intoName).trim() });
+  }
   const a = await db.prepare("SELECT * FROM brands WHERE slug = ?").bind(from).first(), b = await db.prepare("SELECT * FROM brands WHERE slug = ?").bind(into).first();
   if (!a || !b) throw new Error("Pick two brands that exist");
   if (a.id === b.id) throw new Error("That's the same brand");

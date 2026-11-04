@@ -810,11 +810,9 @@
     };
     dlg.showModal(); pickPitch(); f.brand.focus();
   }
-  // rename a brand, set its Instagram + website, or merge it into another brand (e.g. "Samvardhan" → "Samvardhan Mart")
+  // rename a brand, set its Instagram + website
   function openBrandDialog(slug) {
     const b = (D.brands || {})[slug]; if (!b) return;
-    // every brand you have — from products and from deals (a deals-only brand gets its record when you merge into it)
-    const others = brandList().map(x => x.name).filter(n => n.toLowerCase() !== b.name.toLowerCase()).sort((x, y) => x.localeCompare(y));
     const dlg = document.createElement("dialog");
     dlg.style.cssText = "border:0;border-radius:18px;padding:0;width:min(520px,94vw);max-height:90vh;box-shadow:0 20px 60px rgba(43,31,26,.25)";
     dlg.innerHTML = `<form method="dialog" style="padding:22px;display:grid;gap:12px">
@@ -826,19 +824,13 @@
       </div>
       <p class="muted small" style="margin:0">Renaming updates its products and deals. Its brand page number (${esc(b.id)}) stays the same.</p>
       <div class="row"><button class="main" type="submit">Save</button><button type="button" data-x>Cancel</button></div>
-      <hr style="border:0;border-top:1px solid var(--line);margin:4px 0">
-      <b class="small">Same brand twice?</b>
-      <div class="row" style="align-items:end"><label style="flex:1 1 200px">Merge ${esc(b.name)} into<select name="into"><option value="">— pick a brand —</option>${others.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("")}</select></label><button type="button" class="danger" data-merge>Merge</button></div>
-      <p class="muted small" style="margin:0">Its products and deals move to that brand, and <b>${esc(b.name)}</b>'s page number stops working.</p></form>`;
+</form>`;
     document.body.appendChild(dlg);
     const f = dlg.querySelector("form"), close = () => { dlg.close(); dlg.remove(); };
     dlg.querySelectorAll("[data-x]").forEach(x => x.onclick = close); dlg.addEventListener("cancel", close);
     f.onsubmit = async ev => { ev.preventDefault(); const btn = f.querySelector("button.main"); btn.disabled = true;
       try { await api("brand.save", { slug, brand: { name: f.name.value, instagram: f.instagram.value, website: f.website.value } }); close(); toast("Brand saved");
         if (view === "brand") { openId = f.name.value.trim(); location.hash = "brand/" + encodeURIComponent(openId); } render(); } catch { btn.disabled = false; } };
-    const mb = f.querySelector("[data-merge]");
-    mb.onclick = async () => { const into = f.into.value; if (!into) return toast("Pick the brand to merge into"); if (!confirmTwice(mb)) return; mb.disabled = true;
-      try { await api("brand.merge", { from: slug, intoName: into }); close(); toast(`Merged into ${into}`); go("brand", into); } catch { mb.disabled = false; } };
     dlg.showModal(); f.name.focus();
   }
   // add / edit / delete one category (editId) or add one (parentId = "" for a new tab, or the tab's id for a sub-category)
