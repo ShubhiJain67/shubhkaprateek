@@ -41,7 +41,7 @@ export async function hitHttp(req, env, url) {
 }
 async function statsFor(env, items, days) {
   await statsTable(env);
-  const since = new Date(Date.now() + 5.5 * 3600e3 - (days - 1) * 864e5).toISOString().slice(0, 10);
+  const since = days ? new Date(Date.now() + 5.5 * 3600e3 - (days - 1) * 864e5).toISOString().slice(0, 10) : "0000-00-00";   // days 0 = lifetime
   const marks = items.map(() => "?").join(",");
   const rows = items.length ? (await env.STATS.prepare(`SELECT kind, item, src, SUM(n) AS n FROM hits WHERE day >= ? AND item IN (${marks}) GROUP BY kind, item, src`)
     .bind(since, ...items).all()).results || [] : [];
@@ -109,7 +109,7 @@ export async function buildReport(env, h, slug, days) {
   let site = {}; try { site = await h.readJson(env, "data/site.json"); } catch {}   // (only when there's no click counter: Umami's paid API)
   const wid = ((site || {}).site || {}).umamiWebsiteId;
   if (!env.UMAMI_API_KEY || !wid) { out.note = "Live numbers aren't connected yet."; return out; }
-  const endAt = Date.now(), startAt = endAt - days * 864e5, range = { startAt, endAt };
+  const endAt = Date.now(), startAt = days ? endAt - days * 864e5 : Date.UTC(2025, 0, 1), range = { startAt, endAt };
   const get = (path, params) => umami(env, wid, path, { ...range, ...params }).then(pairs).catch(e => { out.note = "Some numbers couldn't be loaded right now."; console.error(e); return []; });
   const [events, buys, paths] = await Promise.all([
     get("/metrics", { type: "event", limit: 1000 }),
@@ -135,7 +135,7 @@ export async function reportHttp(req, env, url, helpers) {
   const cors = { "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store", "Content-Type": "application/json", "X-Robots-Tag": "noindex" };
   if (req.method === "OPTIONS") return new Response(null, { headers: { ...cors, "Access-Control-Allow-Methods": "GET" } });
   const asked = String(url.searchParams.get("brand") || "");
-  const days = [7, 30, 90, 365].includes(+url.searchParams.get("days")) ? +url.searchParams.get("days") : 30;
+  const asked0 = url.searchParams.get("days"), days = ["0", "1", "2", "3", "4", "5", "6", "7", "15", "30"].includes(asked0) ? +asked0 : 7;   // today (1), last 2–30 days, or lifetime (0)
   // /brand/19327 → "blix" (brand page numbers are in the database, so new brands work straight away)
   await store.ensure(env, helpers);
   const list = await store.readBrands(env);

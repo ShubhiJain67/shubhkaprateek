@@ -19,9 +19,8 @@
   .rp h1 { font-family: Fraunces, Georgia, serif; font-size: clamp(30px, 6vw, 48px); line-height: 1.05; margin: 8px 0 6px; letter-spacing: -.02em; }
   .rp h2 { font-family: Fraunces, Georgia, serif; font-size: 22px; margin: 34px 0 12px; }
   .muted { color: var(--muted); margin: 0; }
-  .range { display: flex; gap: 6px; flex-wrap: wrap; margin: 18px 0 4px; }
-  .range button { height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; cursor: pointer; }
-  .range button[aria-pressed="true"] { background: var(--pink); color: var(--on-accent); border-color: transparent; }
+  .range { display: inline-flex; gap: 8px; align-items: center; margin: 18px 0 4px; font-weight: 600; color: var(--muted); }
+  .range select { font: inherit; font-weight: 700; color: var(--ink); height: 40px; padding: 0 34px 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
   .organic-note { margin: 10px 0 0; font-weight: 700; font-size: 14px; color: #2e8b57; }
   .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 16px; }
   @media (min-width: 760px) { .tiles { grid-template-columns: repeat(4, 1fr); gap: 14px; } }
@@ -67,7 +66,8 @@
   let api = "";
   try { api = ((await (await fetch("/data/site.json", { cache: "no-cache" })).json()).site || {}).reportApi || ""; } catch {}
   if (!api) return fail("Brand pages aren't set up yet.");
-  let days = 30;
+  let days = 7;   // 1 = today, 2–30 = last N days, 0 = lifetime
+  const PERIODS = [1, 2, 3, 4, 5, 6, 7, 15, 30, 0];
   async function load() {
     let r;
     try { r = await fetch(`${api}/brand/api?brand=${encodeURIComponent(brand)}&days=${days}${fresh}`); }
@@ -89,7 +89,7 @@
       <span class="kick">Brand page</span>
       <h1>${esc(d.brand)} × ShubhKaPrateek</h1>
       <p class="muted">Your product${P.length > 1 ? "s" : ""} on shubhkaprateek.com, the reels ${P.length > 1 ? "they're" : "it's"} in, and how many people we sent your way — live from our analytics.</p>
-      <div class="range" role="group" aria-label="Period">${[7, 30, 90, 365].map(n => `<button type="button" data-days="${n}" aria-pressed="${n === d.days}">${n === 365 ? "Last year" : `Last ${n} days`}</button>`).join("")}</div>
+      <label class="range">Showing <select id="days" aria-label="Period">${PERIODS.map(n => `<option value="${n}" ${n === d.days ? "selected" : ""}>${n === 1 ? "Today" : n ? `Last ${n} days` : "Lifetime"}</option>`).join("")}</select></label>
       <div class="tile total"><b>${fmt(clicks)}</b><span>Total clicks to your store</span><small>all three below added up</small></div>
       <p class="organic-note">🌱 Organic views and clicks — we don't run ads.</p>
       <div class="tiles">
@@ -114,7 +114,7 @@
       <p class="foot">${d.since ? `Counting since ${esc(new Date(d.since + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }))} · ` : ""}Updated ${esc(new Date(d.updated || Date.now()).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }))} · refreshes every 5 minutes<br>
         Reel views and likes are on Instagram; these are the visits and clicks on our website.</p>`;
   }
-  main.addEventListener("click", e => { const b = e.target.closest("[data-days]"); if (b) { days = +b.dataset.days; main.querySelectorAll("[data-days]").forEach(x => x.setAttribute("aria-pressed", x === b)); load(); } });
+  main.addEventListener("change", e => { if (e.target.id === "days") { days = +e.target.value; load(); } });
   load();
 })();
 </script>
