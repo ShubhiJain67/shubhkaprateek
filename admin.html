@@ -54,6 +54,7 @@
   .pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
   .s-new { background: #d9534f; color: #fff; }               /* red — needs a reply */
   .s-confirmed { background: #2f6fdb; color: #fff; }         /* blue */
+  .s-received { background: #0f9aa8; color: #fff; }          /* teal — product's here */
   .s-product { background: #7b4fd6; color: #fff; }           /* purple */
   .s-live { background: #e8890c; color: #fff; }              /* orange — ongoing */
   .s-delivered { background: #1f8a4c; color: #fff; }         /* green — done */
@@ -202,8 +203,8 @@
   }
 
   // ---------- helpers on the data
-  const STATUS = { new: "New", hold: "On hold", confirmed: "Confirmed", product: "Product added", live: "Ongoing", delivered: "Delivered", declined: "Declined" };
-  const FLOW = ["new", "confirmed", "product", "live", "delivered"];
+  const STATUS = { new: "New", hold: "On hold", confirmed: "Confirmed", received: "Product received", product: "Product added", live: "Ongoing", delivered: "Delivered", declined: "Declined" };
+  const FLOW = ["new", "confirmed", "received", "product", "live", "delivered"];
   const today = () => new Date().toLocaleDateString("en-CA");   // YYYY-MM-DD in your time zone
   // date + time, in your time zone: "YYYY-MM-DDTHH:MM" (what the date-and-time boxes use)
   const nowLocal = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16); };
@@ -252,7 +253,7 @@
   const reelsOfDeal = e => { let x = []; try { x = JSON.parse(e.reels || "[]"); } catch {} return [e.reel_code, ...(Array.isArray(x) ? x : [])].filter(Boolean).map(c => String(c).toLowerCase()); };
   const dealOfReel = code => D.enquiries.find(e => e.status !== "declined" && reelsOfDeal(e).includes(String(code || "").toLowerCase()));
   // golden rows: reels that are a brand collab, and products we got without paying (from a deal, not pitched after buying)
-  const AGREED = ["confirmed", "product", "live", "delivered"];
+  const AGREED = ["confirmed", "received", "product", "live", "delivered"];
   const isCollabReel = code => D.enquiries.some(e => AGREED.includes(e.status) && reelsOfDeal(e).includes(String(code || "").toLowerCase()));
   const isFreeProduct = id => D.enquiries.some(e => AGREED.includes(e.status) && e.pitched !== "1" && e.return_product !== "1" && (e.product_ids || []).includes(+id));
   const dateY = s => s ? new Date(ms(s)).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) + (timeOf(s) ? ", " + timeOf(s) : "") : "";
@@ -341,7 +342,7 @@
   window.addEventListener("hashchange", () => { const [v, id] = location.hash.slice(1).split("/"); if (v && v !== view + "") { view = v; openId = id || null; render(); } });
 
   function shell(body) {
-    const n = D.enquiries.filter(e => ["new", "confirmed", "product", "live"].includes(e.status)).length;   // open deals: new + confirmed + ongoing
+    const n = D.enquiries.filter(e => ["new", "confirmed", "received", "product", "live"].includes(e.status)).length;   // open deals: new + confirmed + received + ongoing
     const cur = { enquiry: "enquiries", brand: "brands" }[view] || view, curName = { enquiries: "Enquiries", money: "Earnings", brands: "Brands", products: "Products", categories: "Categories", reels: "Reels" }[cur] || "";
     root.innerHTML = `<div class="app"><nav aria-label="Dashboard" class="${navOpen ? "open" : ""}">
       <div class="top"><div class="logo">ShubhKaPrateek</div><button type="button" class="burger" data-burger aria-label="Menu" aria-expanded="${navOpen}">${navOpen ? "✕" : "☰"}</button></div>
@@ -356,14 +357,14 @@
   // ---- Enquiries
   function vEnquiries() {
     // tabs: Confirmed also holds "product added"
-    const TAB = { new: ["new"], confirmed: ["confirmed", "product"], live: ["live"], delivered: ["delivered"], declined: ["declined"], hold: ["hold"] };
+    const TAB = { new: ["new"], confirmed: ["confirmed"], received: ["received", "product"], live: ["live"], delivered: ["delivered"], declined: ["declined"], hold: ["hold"] };
     const inTab = (e, t) => t === "all" || (TAB[t] || [t]).includes(e.status);
     // in All: everything open first (newest on top), then on hold, then delivered, then declined
     const rank = e => ({ hold: 1, delivered: 2, declined: 3 })[e.status] || 0;
     const list = D.enquiries.filter(e => inTab(e, filter) && (!q || (e.brand + " " + e.email).toLowerCase().includes(q))).sort((a, b) => rank(a) - rank(b));
     const count = t => D.enquiries.filter(e => inTab(e, t)).length;
     return `<div class="between"><h1>Enquiries</h1><div class="row"><input id="q" placeholder="Search brands…" value="${esc(q)}" style="width:220px"><button class="main" data-act="addEnq">+ Add enquiry</button></div></div>
-      <div class="row">${["all", "new", "confirmed", "live", "delivered", "declined", "hold"].map(s =>
+      <div class="row">${["all", "new", "confirmed", "received", "live", "delivered", "declined", "hold"].map(s =>
         `<button class="chip ${filter === s ? "on" : ""}" data-filter="${s}">${s === "all" ? "All" : STATUS[s]} ${count(s)}</button>`).join("")}</div>
       <div class="list">${list.map(e => `<button class="item" data-open="${e.id}">
           <span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${e.pitched === "1" ? "🎯 Pitched a posted reel" : srcOf(e) === "us" ? "↗ We reached out" : "↘ They reached out"}${e.email ? " · " + esc(e.email) : ""} · ${date(e.created)}${e.payment_due ? ` · payment due ${date(e.payment_due)}` : ""}</span></span>
@@ -386,8 +387,8 @@
       <div class="steps">${FLOW.map((s, i) => `<span class="${i < at ? "done" : i === at ? "now s-" + s : ""}">${STATUS[s]}${i < at ? " ✓" : ""}</span>`).join("")}</div>
       <div class="row">
         <a class="btn" href="${mail}">Reply by email</a>
-        ${e.status !== "confirmed" && at < 2 ? `<button class="ok" data-status="confirmed">${e.pitched === "1" && e.reel_code ? "Confirm (reel is already live)" : "Confirm"}</button>` : ""}
-        ${!e.received_on && e.pitched !== "1" && ["confirmed", "product", "live", "hold"].includes(e.status) ? `<button data-recv>📬 Product received</button>` : ""}
+        ${!["confirmed", "received"].includes(e.status) && at < 1 ? `<button class="ok" data-status="confirmed">${e.pitched === "1" && e.reel_code ? "Confirm (reel is already live)" : "Confirm"}</button>` : ""}
+        ${!e.received_on && e.pitched !== "1" && ["confirmed", "received", "product", "live", "hold"].includes(e.status) ? `<button data-recv>📬 Product received</button>` : ""}
         ${e.status === "live" ? `<button class="ok" data-status="delivered">Mark delivered ✓</button>` : ""}
         ${e.status === "delivered" ? `<button data-status="live">Reopen (back to Ongoing)</button>` : ""}
         ${!["hold", "delivered"].includes(e.status) ? `<button data-status="hold">Put on hold</button>` : ""}

@@ -10,7 +10,7 @@
 
 import * as store from "./store.js";
 
-const STATUSES = ["new", "hold", "confirmed", "product", "live", "delivered", "declined"];   // delivered = everything done, deal closed
+const STATUSES = ["new", "hold", "confirmed", "received", "product", "live", "delivered", "declined"];   // delivered = everything done, deal closed
 const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels", "show_kit", "kit_views", "return_product", "returned_on"];
 const now = () => new Date().toISOString();
 const clip = (v, n = 2000) => String(v ?? "").slice(0, n);
@@ -29,6 +29,8 @@ async function tables(env) {
   // columns added later — tables made before them get them here (fails harmlessly once they exist)
   for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT", "show_kit TEXT", "kit_views TEXT", "return_product TEXT", "returned_on TEXT"]) { try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
   // there's no "replied" status any more: those go back to New, and their "Status → replied" log lines are dropped
+  // a Confirmed deal whose product already arrived is "Product received"
+  try { await env.STATS.prepare("UPDATE enquiries SET status = 'received' WHERE status = 'confirmed' AND COALESCE(received_on, '') <> ''").run(); } catch {}
   try { await env.STATS.batch([env.STATS.prepare("UPDATE enquiries SET status = 'new' WHERE status = 'replied'"), env.STATS.prepare("DELETE FROM events WHERE text = 'Status → replied'")]); } catch {}
   ready = true;
 }
@@ -175,6 +177,8 @@ async function run(a, env, h) {
     const sets = [], vals = [];
     for (const k of DEAL_FIELDS) if (k in p) { sets.push(`${k} = ?`); vals.push(clip(p[k], LONG[k] || 2000)); }
     let status = p.status;
+    // the product arrived (📬 button or the date filled in) → a Confirmed deal moves to "Product received"
+    if (!status && p.received_on && !e.received_on && e.status === "confirmed") status = "received";
     // a pitched reel is already up: confirming the collab makes it Live straight away, and puts the brand on the reel's products
     if (status === "confirmed" && e.pitched === "1" && e.reel_code) {
       status = "live";
@@ -224,7 +228,7 @@ async function run(a, env, h) {
       const e = await getEnquiry(env, a.enquiryId);
       if (e) {
         const ids = [...new Set([...(JSON.parse(e.product_ids || "[]")), p.id])];
-        const status = ["new", "hold", "confirmed"].includes(e.status) ? "product" : e.status;
+        const status = ["new", "hold", "confirmed", "received"].includes(e.status) ? "product" : e.status;
         await env.STATS.prepare("UPDATE enquiries SET product_ids = ?, status = ?, brand = COALESCE(NULLIF(brand, ''), ?), updated = ? WHERE id = ?").bind(JSON.stringify(ids), status, p.brand, now(), e.id).run();
         await logEvent(env, e.id, `Product added: ${p.name}`);
       }
