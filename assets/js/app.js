@@ -23,13 +23,14 @@
   const timeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("timed out")), ms))]);
   const readJSON = get => { try { return JSON.parse(get() || "null"); } catch { return null; } };
   const fresh = window.SKP_FRESH || fetchAll();
-  let raw = readJSON(() => sessionStorage.getItem("skp-fresh")) || (window.SKP_SNAPSHOT || null);
+  // Wait up to 1.5 s for the live data (usually it's there in a fraction of that) → no second page load.
+  // Too slow / bot down → show the built-in copy now, and keep the live one for the next page you open.
+  const remember = d => { try { sessionStorage.setItem("skp-fresh", JSON.stringify(d)); } catch {} };
+  let raw = readJSON(() => sessionStorage.getItem("skp-fresh"));
+  if (!raw) raw = await timeout(fresh, 1500).then(d => (remember(d), d)).catch(() => null);
+  if (!raw) raw = window.SKP_SNAPSHOT || null;
   if (raw) {
-    fresh.then(d => {
-      if (JSON.stringify(d) === JSON.stringify(raw)) return;
-      try { sessionStorage.setItem("skp-fresh", JSON.stringify(d)); } catch { return; }   // can't remember → don't loop
-      location.reload();
-    }).catch(() => {});
+    fresh.then(d => { if (JSON.stringify(d) !== JSON.stringify(raw)) remember(d); }).catch(() => {});
   } else {
     try { raw = await timeout(fresh, 8000).catch(() => timeout(fetchAll(), 8000)); }
     catch (e) {

@@ -26,12 +26,13 @@ async function tables(env) {
       shoot_by TEXT, post_by TEXT, contact TEXT, notes TEXT, product_ids TEXT, reel_code TEXT)`),
     env.STATS.prepare("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, enquiry_id INTEGER, at TEXT, text TEXT)")
   ]);
-  // columns added later — tables made before them get them here (fails harmlessly once they exist)
-  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT", "show_kit TEXT", "kit_views TEXT", "return_product TEXT", "returned_on TEXT"]) { try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
+  // columns added later — only the missing ones are added (one quick look instead of ~25 tries every cold start)
+  const have = new Set((((await env.STATS.prepare("PRAGMA table_info(enquiries)").all()).results) || []).map(c => c.name));
+  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT", "show_kit TEXT", "kit_views TEXT", "return_product TEXT", "returned_on TEXT"]) { if (!have.has(col.split(" ")[0])) try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
   // there's no "replied" status any more: those go back to New, and their "Status → replied" log lines are dropped
   // there's no "Product received" status: those deals are Ongoing
-  try { await env.STATS.prepare("UPDATE enquiries SET status = 'live' WHERE status = 'received'").run(); } catch {}
-  try { await env.STATS.batch([env.STATS.prepare("UPDATE enquiries SET status = 'new' WHERE status = 'replied'"), env.STATS.prepare("DELETE FROM events WHERE text = 'Status → replied'")]); } catch {}
+  try { await env.STATS.batch([env.STATS.prepare("UPDATE enquiries SET status = 'live' WHERE status = 'received'"),
+    env.STATS.prepare("UPDATE enquiries SET status = 'new' WHERE status = 'replied'"), env.STATS.prepare("DELETE FROM events WHERE text = 'Status → replied'")]); } catch {}
   ready = true;
 }
 const logEvent = (env, id, text) => env.STATS.prepare("INSERT INTO events (enquiry_id, at, text) VALUES (?, ?, ?)").bind(id, now(), clip(text, 300)).run();
@@ -46,7 +47,7 @@ const json = (env, body, status = 200) => new Response(JSON.stringify(body), { s
 // A package's price + payment type, from the media kit (data/portfolio.json): "Option 2 — …" → ₹3,000 · Paid,
 // the barter card → Barter. Used to pre-fill a new enquiry's deal — you can change them in the dashboard.
 async function packageDefaults(env, h, name) {
-  let k = {}; try { k = await h.readJson(env, "data/portfolio.json"); } catch {}
+  const k = await kitFile(env, h);
   const p = [...(k.packages || []), ...(k.privatePackages || [])].find(x => x.name === name);
   if (p) return { price: p.price || "", payment: "Paid" };
   if (k.barter && k.barter.title && k.barter.title === name) return { price: "", payment: "Barter" };
@@ -93,13 +94,20 @@ export async function adminHttp(req, env, url, h) {
   }
 }
 
+// data/portfolio.json (packages for the deal forms) — read from GitHub at most every 10 minutes
+async function kitFile(env, h) {
+  try { const c = env.DRAFTS && await env.DRAFTS.get("file:portfolio"); if (c) return JSON.parse(c); } catch {}
+  let k = {}; try { k = await h.readJson(env, "data/portfolio.json"); if (env.DRAFTS) await env.DRAFTS.put("file:portfolio", JSON.stringify(k), { expirationTtl: 600 }); } catch {}
+  return k;
+}
+
 async function load(env, h) {
   await store.ensure(env, h);
   const [products, reels, categories, featured, brands] = await Promise.all([store.readProducts(env), store.readReels(env), store.readCategories(env), store.getFeatured(env), store.readBrands(env)]);
   const enquiries = (await env.STATS.prepare("SELECT * FROM enquiries ORDER BY id DESC").all()).results || [];
   const events = (await env.STATS.prepare("SELECT * FROM events ORDER BY id DESC LIMIT 2000").all()).results || [];
   enquiries.forEach(e => { try { e.product_ids = JSON.parse(e.product_ids || "[]"); } catch { e.product_ids = []; } });
-  let kit = {}; try { kit = await h.readJson(env, "data/portfolio.json"); } catch {}
+  const kit = await kitFile(env, h);
   const packages = [...[...(kit.packages || []), ...(kit.privatePackages || []).map(p => ({ ...p, private: true }))].map(p => ({ name: p.name, price: p.price || "", payment: "Paid", items: p.items || [], private: !!p.private })), ...(kit.barter && kit.barter.title ? [{ name: kit.barter.title, price: "", payment: "Barter" }] : [])];
   // one-time: the 3 Samvardhan Mart collabs (not the link swap) send their products back
   if (!(await store.getSetting(env, "fix:samvardhan-return", null))) {

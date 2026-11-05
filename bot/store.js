@@ -31,10 +31,10 @@ export async function ensure(env, h) {
     db.prepare("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)"),
     db.prepare("CREATE TABLE IF NOT EXISTS images (key TEXT PRIMARY KEY, type TEXT, data TEXT, created TEXT)"),
   ]);
-  const done = await db.prepare("SELECT value FROM settings WHERE key = 'imported'").first();
-  if (!done) await importFromFiles(env, h);
+  const flags = new Set((((await db.prepare("SELECT key FROM settings WHERE key IN ('imported', 'fix:brands:1')").all()).results) || []).map(r => r.key));
+  if (!flags.has("imported")) await importFromFiles(env, h);
   // one-time tidy-ups of brand names (runs once, the first time after this is deployed)
-  if (!(await db.prepare("SELECT 1 FROM settings WHERE key = 'fix:brands:1'").first())) {
+  if (!flags.has("fix:brands:1")) {
     if (await db.prepare("SELECT 1 FROM brands WHERE slug = 'samvardhan'").first()) await mergeBrand(env, "samvardhan", "", "Samvardhan Mart");   // the products said "Samvardhan", the deals "Samvardhan Mart"
     await db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('fix:brands:1', ?)").bind(JSON.stringify(now())).run();
   }
