@@ -1,5 +1,5 @@
 {
-  "_help": "Media kit at shubhkaprateek.com/mediakit (for pitching, no prices) and /collab (with packages + prices) — not linked anywhere on the site. Anything left empty (\"\" or []) is hidden on the page. brands + brandCollabs are filled automatically from the dashboard (Live/Delivered deals with a reel; untick \"Show on media kit\" on a deal to hide it) — don't edit them here  ·  bestReels / series codes = the part after instagram.com/reel/ (needs a cover in assets/covers)",
+  "_help": "Media kit at shubhkaprateek.com/mediakit (for pitching, no prices) /collab (collab packages + prices) and /ugc (UGC packages + prices) — not linked anywhere on the site. Anything left empty (\"\" or []) is hidden on the page. brands + brandCollabs are filled automatically from the dashboard (Live/Delivered deals with a reel; untick \"Show on media kit\" on a deal to hide it) — don't edit them here  ·  bestReels / series codes = the part after instagram.com/reel/ (needs a cover in assets/covers)  ·  brandOrder = the order of \"Brands we've worked with\" (most popular first; brands not listed go at the end; spaces/case don't matter)",
   "updated": "November 2026",
   "tagline": "24M+ Organic Reach | Couple Content | Gifting & Surprises",
   "intro": "We're Shubhi & Prateek — a married couple posting a reel every day about our life, games, and gifting each other everything from Marvel merch to the weirdest gadgets on the internet.",
@@ -45,6 +45,16 @@
       "value": "Every day",
       "note": "for months, without a break"
     }
+  ],
+  "brandOrder": [
+    "Play Retro",
+    "Blix",
+    "WonderBox",
+    "Brickadda",
+    "Tipsytap",
+    "Eazy Arts",
+    "Storegenie",
+    "Samvardhan Mart"
   ],
   "brands": [
     {
@@ -202,7 +212,7 @@
     "ugc": {
       "title": "UGC — for your ads",
       "points": [
-        "Raw footage shared via Google Drive — use it on your page and in ads for 3 months",
+        "Edited videos + raw footage on Google Drive — made for your page and your ads",
         "Relatable Hinglish couple content that feels native on Instagram",
         "Unboxing, demo, reaction or gifting formats",
         "We post daily, so shooting is routine for us — quick turnaround"
@@ -262,6 +272,86 @@
     "items": [
       "Only for products worth ₹10,000 or more",
       "Deliverables discussed based on the product"
+    ]
+  },
+  "ugc": {
+    "_help": "shubhkaprateek.com/ugc — content we make for the brand to post on their own page / run as ads (not posted on ours). DRAFT prices — edit before you ship.  ·  samples = UGC videos posted by the brand (code + link; cover in assets/covers/<code>.jpg)",
+    "intro": "Content made for your page and your ads — shot by us, posted by you.",
+    "samples": [
+      {
+        "brand": "Brickadda",
+        "code": "De4c36mK70X",
+        "url": "https://www.instagram.com/p/De4c36mK70X/",
+        "views": ""
+      }
+    ],
+    "gear": [
+      "Shot on iPhone 17 Pro",
+      "Clear audio with Hollyland wireless mics",
+      "Proper lighting setup",
+      "Gimbal and tripod for steady shots"
+    ],
+    "packages": [
+      {
+        "name": "UGC 1 — Organic only",
+        "price": "₹1,000",
+        "items": [
+          "1 UGC video (up to 45 seconds), edited",
+          "1 round of changes",
+          "No ads — organic page only"
+        ]
+      },
+      {
+        "name": "UGC 2 — Single video",
+        "price": "₹1,500",
+        "items": [
+          "1 UGC video (up to 45 seconds), edited",
+          "1 round of changes",
+          "Ads for 3 months"
+        ]
+      },
+      {
+        "name": "UGC 3 — Ads-ready video",
+        "price": "₹2,000",
+        "items": [
+          "1 UGC video (up to 45 seconds), edited",
+          "Multiple hook variations for ad testing",
+          "Raw footage on Google Drive (you share the Drive link)",
+          "Unlimited ads",
+          "1 round of changes"
+        ]
+      },
+      {
+        "name": "UGC 4 — Video bundle",
+        "price": "₹5,000",
+        "items": [
+          "3 UGC videos (up to 45 seconds each), edited",
+          "Multiple hook variations per video",
+          "Raw footage on Google Drive (you share the Drive link)",
+          "Unlimited ads",
+          "1 round of changes per video"
+        ]
+      }
+    ],
+    "terms": [
+      {
+        "title": "Payment",
+        "text": "50% when we share the first draft, and 50% when we hand over the final files."
+      },
+      {
+        "title": "Timeline",
+        "text": "Agreed with you during our conversation — usually a few days after the product reaches us."
+      },
+      {
+        "title": "Delivery",
+        "text": "Final videos and raw footage go into the Google Drive link you share with us. Nothing is posted on our page."
+      }
+    ],
+    "guidelines": [
+      "Videos are made for you to post — they are not posted on @shubhkaprateek.",
+      "Relatable Hinglish couple formats: unboxing, demo, reaction or gifting.",
+      "You send the product; product gifting is separate from the fee.",
+      "More videos or longer ad rights can be discussed separately."
     ]
   },
   "guidelines": [

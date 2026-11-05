@@ -48,7 +48,7 @@ const json = (env, body, status = 200) => new Response(JSON.stringify(body), { s
 // the barter card → Barter. Used to pre-fill a new enquiry's deal — you can change them in the dashboard.
 async function packageDefaults(env, h, name) {
   const k = await kitFile(env, h);
-  const p = [...(k.packages || []), ...(k.privatePackages || [])].find(x => x.name === name);
+  const p = [...(k.packages || []), ...(k.privatePackages || []), ...((k.ugc || {}).packages || [])].find(x => x.name === name);
   if (p) return { price: p.price || "", payment: "Paid" };
   if (k.barter && k.barter.title && k.barter.title === name) return { price: "", payment: "Barter" };
   return { price: "", payment: "" };
@@ -64,7 +64,7 @@ async function onEnquiry(req, env, h) {
   await tables(env);
   const t = now();
   const d = await packageDefaults(env, h, clip(b.package, 120));
-  const via = b.via === "collab" ? "Sent from the collab packages link (/collab) — they saw your rates" : b.via === "mediakit" ? "Sent from the media kit link (/mediakit) — no rates shown" : "";
+  const via = b.via === "ugc" ? "Sent from the UGC packages link (/ugc) — they saw your UGC rates" : b.via === "collab" ? "Sent from the collab packages link (/collab) — they saw your rates" : b.via === "mediakit" ? "Sent from the media kit link (/mediakit) — no rates shown" : "";
   const r = await env.STATS.prepare(`INSERT INTO enquiries (created, updated, status, brand, email, package, product_link, message, price, payment, product_ids, source, notes)
     VALUES (?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, '[]', 'brand', ?)`).bind(t, t, brand, email, clip(b.package, 120), clip(b.link, 500), clip(b.message, 2000), d.price, d.payment, via).run();
   const id = r.meta && r.meta.last_row_id;

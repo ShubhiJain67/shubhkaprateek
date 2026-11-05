@@ -21,6 +21,7 @@
     else if ((m = p.match(/^\/products?\/(\d+)(?:\.html)?\/?$/))) location.replace("/?product=" + m[1] + location.search.replace(/^\?/, "&"));
     else if (/^\/(?:media-?kit|portfolio)\/?$/i.test(p)) location.replace("/mediakit" + location.search);            // media kit (pitch)
     else if (/^\/(?:rates|packages|collabs?)\/?$/i.test(p)) location.replace("/collab" + location.search);               // media kit + packages
+    else if (/^\/ugc(?:[-_]?(?:rates|packages))?\/$|^\/ugc[-_]?(?:rates|packages)$/i.test(p)) location.replace("/ugc" + location.search);       // UGC rate card
     else if ((m = p.match(/^\/(?:brand|brands|report)\/([a-z0-9-]+)\/?$/i))) location.replace("/brand.html?b=" + m[1] + location.search.replace(/^\?/, "&"));   // brand pages
   })();
 </script>

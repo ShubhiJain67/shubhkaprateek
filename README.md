@@ -22,6 +22,7 @@ Every reel from @shubhkaprateek, playing on the page, with its products listed u
 ├── brand.html              Brand pages: shubhkaprateek.com/brand/<number> — products, reels, live clicks
 ├── mediakit.html           Media kit for brands (data/portfolio.json): /mediakit = for pitching (no prices),
 │                           /collab = same page + packages & prices (collab.html is copied from it on make ship)
+│                           /ugc    = same page + UGC packages & prices (ugc.html, copied on make ship; data in portfolio.json → ugc)
 ├── portfolio.html          Old address — redirects to /mediakit
 ├── bot/                    The back end (Cloudflare Worker + database) — see bot/README.md
 ├── CNAME                   Custom domain (shubhkaprateek.com) — don't delete

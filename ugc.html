@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShubhKaPrateek — Media kit</title>
+<script>if (/^\/collab/.test(location.pathname)) document.title = "ShubhKaPrateek — Collab packages"; else if (/^\/ugc/.test(location.pathname)) document.title = "ShubhKaPrateek — UGC packages";</script>
+<meta name="color-scheme" content="light dark">
+<!-- Media kit for brands — not linked from the site, kept out of Google. Two links, one page:
+       shubhkaprateek.com/mediakit  → for pitching: everything except packages + prices
+       shubhkaprateek.com/collab    → the same media kit + collaboration packages, barter and prices
+       shubhkaprateek.com/ugc       → UGC rate card: videos we make for the brand to post (portfolio.json → ugc)
+     collab.html and ugc.html are copies of this file made by tools/build.mjs (make ship) — only edit mediakit.html.
+     Old /portfolio links redirect to /mediakit. Everything comes from data/portfolio.json (empty values are hidden). -->
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:title" content="ShubhKaPrateek — Media kit">
+<meta property="og:description" content="Couple creators · daily reels · collabs & UGC">
+<meta property="og:image" content="https://shubhkaprateek.com/assets/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/assets/css/styles.css">
+<style>
+  .mk { padding-top: 28px; padding-bottom: 56px; }
+  .mk section { margin-top: 40px; }
+  .mk h2 { font-family: Fraunces, Georgia, serif; font-size: clamp(24px, 4vw, 32px); margin: 0 0 14px; letter-spacing: -.01em; }
+  .kick { font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--pink); }
+  .hero-mk { display: grid; gap: 22px; align-items: center; }
+  @media (min-width: 760px) { .hero-mk { grid-template-columns: 1.2fr 1fr; } }
+  .hero-mk h1 { font-family: Fraunces, Georgia, serif; font-size: clamp(36px, 7vw, 60px); line-height: 1.02; margin: 8px 0 12px; letter-spacing: -.02em; }
+  .hero-mk p { color: var(--muted); font-size: 17px; margin: 0; max-width: 520px; }
+  .hero-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .btn-mk { display: inline-flex; align-items: center; gap: 6px; height: 46px; padding: 0 18px; border-radius: 12px; font-weight: 700; text-decoration: none;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+  .btn-mk.main { background: var(--pink); color: var(--on-accent); border-color: transparent; }
+  .fan { position: relative; height: 300px; }
+  .fan img { position: absolute; width: 150px; aspect-ratio: 9/16; object-fit: cover; border-radius: 16px; border: 5px solid var(--surface); box-shadow: 0 14px 34px rgba(43,31,26,.2); }
+  .fan img:nth-child(1) { left: 6%; top: 34px; transform: rotate(-8deg); }
+  .fan img:nth-child(2) { left: 32%; top: 0; transform: rotate(2deg); z-index: 2; width: 166px; }
+  .fan img:nth-child(3) { left: 58%; top: 40px; transform: rotate(9deg); }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (min-width: 760px) { .stats { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; } }
+  .stat, .card-mk { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
+  .stat b { display: block; font-family: Fraunces, Georgia, serif; font-size: clamp(26px, 5vw, 36px); line-height: 1.1; }
+  .stat span { display: block; font-weight: 600; margin-top: 4px; }
+  .stat small { display: block; color: var(--muted); margin-top: 2px; }
+  /* best reels: a swipeable carousel (arrows on bigger screens) */
+  .car-mk { position: relative; }
+  .reels-mk { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: 4px; }
+  .reels-mk::-webkit-scrollbar { display: none; }
+  .reel-mk { flex: 0 0 calc((100% - 10px) / 1.6); scroll-snap-align: start; }
+  @media (min-width: 760px) { .reels-mk { gap: 14px; } .reel-mk { flex-basis: calc((100% - 42px) / 4); } }
+  .car-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink); font-size: 22px; cursor: pointer; box-shadow: var(--shadow); z-index: 2; }
+  .car-arrow.prev { left: -12px; } .car-arrow.next { right: -12px; }
+  @media (max-width: 759px) { .car-arrow { display: none; } }
+  .tagline { font-weight: 700; color: var(--pink) !important; font-size: 15px !important; margin: -4px 0 12px !important; }
+  .guide { columns: 1; }
+  .guide ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
+  .mail { margin-top: 12px; font-weight: 600; }
+  .mail a { color: var(--ink); }
+  .reel-mk { position: relative; display: block; border-radius: var(--radius); overflow: hidden; aspect-ratio: 9/16; background: var(--media-bg); }
+  .reel-mk img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .reel-mk .views { position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,.65); color: #fff; font-weight: 700; font-size: 13px; padding: 4px 9px; border-radius: 999px; }
+  .two { display: grid; gap: 12px; }
+  @media (min-width: 760px) { .two { grid-template-columns: 1fr 1fr; gap: 16px; } }
+  .card-mk h3 { margin: 0 0 10px; font-size: 18px; }
+  .card-mk ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; }
+  .pk { display: grid; gap: 12px; }
+  @media (min-width: 760px) { .pk { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+  @media (min-width: 760px) { .pk.four { grid-template-columns: repeat(2, 1fr); } } @media (min-width: 1100px) { .pk.four { grid-template-columns: repeat(4, 1fr); } }
+  .pk .price { font-family: Fraunces, Georgia, serif; font-size: 22px; margin: -4px 0 10px; color: var(--pink); }
+  .reel-mk .tag { position: absolute; left: 8px; top: 8px; background: var(--pink); color: #fff; font-weight: 700; font-size: 12px; padding: 4px 9px; border-radius: 999px; }
+  .brands { display: flex; flex-wrap: wrap; gap: 8px; }
+  .brand-chip { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-weight: 700; color: var(--ink); text-decoration: none; }
+  .series-covers { display: flex; gap: 6px; margin-bottom: 12px; }
+  .series-covers a { flex: 1; } .series-covers img { width: 100%; aspect-ratio: 9/16; object-fit: cover; border-radius: 10px; display: block; }
+  .series h3 { margin-bottom: 4px; } .series-views { font-weight: 700; color: var(--pink); margin: 0 0 4px; }
+  .muted { color: var(--muted); margin: 0; }
+  .pk-card { display: flex; flex-direction: column; } .pk-card ul { flex: 1; margin-bottom: 16px; align-content: start; } .pk-card .choose { align-self: flex-start; cursor: pointer; }
+  .pk.barter { margin-top: 12px; } @media (min-width: 760px) { .pk.barter { grid-template-columns: 1fr; } }
+  .pk-card.slim { background: var(--field); box-shadow: none; }
+  .enquiry h2 { text-align: center; } .enquiry > .muted { text-align: center; margin-bottom: 16px; }
+  #enq { display: grid; gap: 12px; max-width: 520px; margin: 0 auto; }
+  #enq label { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
+  #enq input, #enq select, #enq textarea { font: inherit; color: var(--ink); background: var(--field); border: 1px solid transparent; border-radius: 12px; padding: 12px; width: 100%; }
+  #enq input:focus, #enq select:focus, #enq textarea:focus { outline: none; border-color: var(--pink); background: var(--surface); }
+  #enq button { justify-self: start; cursor: pointer; }
+  .enq-status { margin: 0; font-weight: 600; } .enq-status.ok { color: #2e8b57; } .enq-status.bad { color: var(--pink); }
+  .enquiry .or { text-align: center; margin: 20px 0 0; } .enquiry .hero-btns { justify-content: center; } .enquiry .mail { text-align: center; }
+  /* /collab — the rate card */
+  .rc-head { display: grid; gap: 14px; }
+  .rc-head h1 { font-family: Fraunces, Georgia, serif; font-size: clamp(32px, 6vw, 52px); line-height: 1.05; margin: 6px 0 4px; letter-spacing: -.02em; }
+  .rc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .rc-stats .stat { padding: 12px; } .rc-stats .stat b { font-size: clamp(20px, 4.5vw, 30px); } .rc-stats .stat span { font-size: 13px; }
+  .cmp { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; font-size: 14px; }
+  .cmp th, .cmp td { padding: 11px 12px; text-align: center; border-bottom: 1px solid var(--line); }
+  .cmp tr:last-child td { border-bottom: 0; }
+  .cmp th:first-child, .cmp td:first-child { text-align: left; font-weight: 600; }
+  .cmp thead th { background: var(--field); font-size: 13px; vertical-align: bottom; } .cmp thead th b { display: block; font-family: Fraunces, Georgia, serif; font-size: 18px; color: var(--pink); margin-top: 2px; }
+  .cmp .yes { color: #2e8b57; font-weight: 800; } .cmp .no { color: var(--muted); }
+  .cmp-wrap { overflow-x: auto; }
+  @media (max-width: 759px) { .cmp { font-size: 12.5px; table-layout: fixed; } .cmp th, .cmp td { padding: 9px 6px; } .cmp th:first-child, .cmp td:first-child { width: 40%; } .cmp thead th b { font-size: 15px; } }
+  .terms { display: grid; gap: 12px; } @media (min-width: 760px) { .terms { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+  .terms .card-mk p { margin: 0; color: var(--muted); }
+  .switch { display: grid; gap: 4px; margin-top: 16px; text-decoration: none; color: inherit; border: 2px dashed var(--pink); background: var(--surface); }
+  .switch b { font-size: 18px; } .switch .muted { margin: 0; } .switch .go { color: var(--pink); font-weight: 700; margin-top: 6px; } .switch:hover { background: var(--field); }
+  .to-kit { text-align: center; margin-top: 24px; font-weight: 700; line-height: 2; } .to-kit a { color: var(--pink); }
+  .organic { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-weight: 700; font-size: 14px; color: #2e8b57; }
+  .upd { text-align: center; color: var(--muted); font-size: 13px; margin-top: 28px; }
+</style>
+</head>
+<body>
+  <header class="site-head">
+    <div class="wrap"><a class="brand" href="/"><span class="brand-name">ShubhKaPrateek</span></a></div>
+  </header>
+  <main class="wrap mk" id="mk"><p class="empty">Loading…</p></main>
+<script>
+(async function () {
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const has = v => v != null && String(v).trim() !== "";
+  const main = document.getElementById("mk");
+  const UGC = /^\/ugc/.test(location.pathname);                  // /ugc: the UGC rate card (content for the brand's own page / ads)
+  const RATES = UGC || /^\/collab/.test(location.pathname);   // /collab + /ugc show packages + prices; /mediakit doesn't
+  let k;
+  try { k = await (await fetch("/data/portfolio.json", { cache: "no-cache" })).json(); }
+  catch { main.innerHTML = `<p class="empty">Couldn't load — <a href="">try again</a>.</p>`; return; }
+  const u = k.ugc || {};
+  const c = k.contact || {}, ig = has(c.instagram) ? `https://www.instagram.com/${c.instagram}/` : "";
+  // brand collabs + brands we've worked with come live from your deals (the dashboard, through the bot); the copy in
+  // data/portfolio.json is only used if the bot can't be reached
+  try { const live = await (await fetch("https://shubhkaprateek-bot.shubhkaprateek.workers.dev/kit", { cache: "no-cache" })).json(); if (live && Array.isArray(live.brandCollabs)) { k.brandCollabs = live.brandCollabs; k.brands = live.brands || []; } } catch {}
+  const covers = Object.fromEntries((k.brandCollabs || []).filter(b => b.cover).map(b => [b.code, b.cover]));   // reels added from the dashboard keep their cover in the database
+  const cover = code => covers[code] || `/assets/covers/${encodeURIComponent(code)}.jpg`;
+  const reels = (k.bestReels || []).filter(r => has(r.code));   // only used for the 3 fanned covers at the top
+  const btns = `<div class="hero-btns">
+      ${has(c.email) ? `<a class="btn-mk main" href="mailto:${esc(c.email)}?subject=${encodeURIComponent(UGC ? "UGC with ShubhKaPrateek" : "Collab with ShubhKaPrateek")}">✉️ Email us</a>` : ""}
+      ${ig ? `<a class="btn-mk ${has(c.email) ? "" : "main"}" href="https://ig.me/m/${esc(c.instagram)}" target="_blank" rel="noopener">💬 DM on Instagram</a>` : ""}
+      ${ig ? `<a class="btn-mk" href="${ig}" target="_blank" rel="noopener">📸 @${esc(c.instagram)}</a>` : ""}
+    </div>`;
+  const stats = (k.stats || []).filter(s => has(s.value));
+  const why = k.why || {};
+  const whyCard = w => w && (w.points || []).length ? `<div class="card-mk"><h3>${esc(w.title)}</h3><ul>${w.points.map(p => `<li>${esc(p)}</li>`).join("")}</ul></div>` : "";
+  const section = (kick, title, body) => `<section><span class="kick">${kick}</span><h2>${title}</h2>${body}</section>`;
+  // a swipeable row of reels (arrows on bigger screens); each item: { code, views, label }
+  const carousel = items => `<div class="car-mk"><button class="car-arrow prev" type="button" aria-label="Previous" data-dir="-1">‹</button>
+      <div class="reels-mk">${items.map(r => `<a class="reel-mk" href="${esc(r.url || `https://www.instagram.com/reel/${r.code}/`)}" target="_blank" rel="noopener">
+        <img loading="lazy" src="${cover(r.code)}" alt="Reel" onerror="this.remove()">${has(r.label) ? `<span class="tag">${esc(r.label)}</span>` : ""}${has(r.views) ? `<span class="views">▶ ${esc(r.views)} views</span>` : ""}</a>`).join("")}</div>
+      <button class="car-arrow next" type="button" aria-label="Next" data-dir="1">›</button></div>`;
+  const brands = (k.brands || []).filter(b => has(b.name));
+  const bkey = n => String(n).toLowerCase().replace(/[^a-z0-9]/g, ""), border = (k.brandOrder || []).map(bkey);
+  const brank = n => { const i = border.indexOf(bkey(n)); return i < 0 ? 1e9 : i; };
+  const collabs = (k.brandCollabs || []).filter(b => has(b.code)).map(b => ({ ...b, label: b.brand }));
+  const series = (k.series || []).filter(x => has(x.title));
+  if (UGC) (u.samples || []).forEach(x => { if (has(x.brand) && !brands.some(b => b.name.toLowerCase() === x.brand.toLowerCase())) brands.push({ name: x.brand, link: "" }); });   // /ugc: collab brands + UGC brands
+  brands.sort((a, b) => brank(a.name) - brank(b.name));   // most popular first (portfolio.json → brandOrder)
+  const samples = UGC ? (u.samples || []).filter(x => has(x.code)).map(x => ({ ...x, label: x.brand })) : [];   // UGC videos posted by the brands
+  const packages = UGC ? [...(u.packages || [])] : RATES ? [...(k.packages || [])] : [], barter = RATES && !UGC && k.barter && has(k.barter.title) ? k.barter : null;
+  const guides = UGC ? (u.guidelines || []) : (k.guidelines || []).filter(g => RATES || !/barter|₹/i.test(g));   // money talk only on the rate cards
+  const choices = [...packages.map(p => p.name), ...(barter ? [barter.title] : []), "Not sure yet"];
+  const organic = has(k.organic) ? `<p class="organic">🌱 ${esc(k.organic)}</p>` : "";   // "all our reach is organic" — under the numbers
+  // /collab: a short header with 3 headline numbers (the full story is on /mediakit)
+  const rateHead = UGC ? `<div class="rc-head"><div><span class="kick">UGC packages · Shubhi &amp; Prateek</span><h1>Content for your brand</h1>
+      <p class="muted">${esc(u.intro || "")} Pick a package below or tell us what you have in mind.</p></div>
+      ${whyCard(why.ugc)}</div>`
+    : `<div class="rc-head"><div><span class="kick">Collab packages · Shubhi &amp; Prateek</span><h1>Let's work together</h1>
+      <p class="muted">Our packages, what's in each one, and how it works. Pick one below or tell us what you have in mind.</p></div>
+      ${stats.length ? `<div class="rc-stats">${stats.slice(0, 3).map(s => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`).join("")}</div>${organic}` : ""}</div>`;
+  const terms = (UGC ? (u.terms || []) : (k.terms || [])).filter(t => has(t.title) && has(t.text));
+  // every package's items lined up: one row per kind of deliverable ("2 Instagram Stories" → 2 in the Stories row)
+  const keyOf = i => String(i).replace(/^\d+\s+/, "").replace(/\bstories\b/i, "Story").replace(/\s*\(.*?\)\s*/g, " ").trim().toLowerCase();
+  const rows = []; packages.forEach(p => (p.items || []).forEach(i => { const key = keyOf(i); if (!rows.some(r => r.key === key)) rows.push({ key, label: String(i).replace(/^\d+\s+/, "").replace(/\s*\(.*?\)\s*/g, " ").replace(/\bStory\b/, "Stories").trim() }); }));
+  const cell = (p, key) => { const it = (p.items || []).find(i => keyOf(i) === key); if (!it) return `<td class="no">—</td>`; const n = (String(it).match(/^(\d+)\s/) || [])[1]; return `<td class="yes">${n || "✓"}</td>`; };
+  const compare = `<div class="cmp-wrap"><table class="cmp"><thead><tr><th></th>${packages.map(p => `<th>${esc(String(p.name).replace(/^Option\s*\d+\s*[—–-]\s*/i, "").replace(/\s*(Brand\s+)?Collaboration$/i, ""))}<b>${has(p.price) ? esc(p.price) : "On request"}</b></th>`).join("")}</tr></thead>
+      <tbody>${rows.map(r => `<tr><td>${esc(r.label)}</td>${packages.map(p => cell(p, r.key)).join("")}</tr>`).join("")}</tbody></table></div>`;
+  // the enquiry form (only on /collab — the pitch link just has the reach-out buttons)
+  const enqForm = `<form id="enq" novalidate>
+        ${RATES ? `<label>Package<select id="enq-pkg">${choices.map(x => `<option>${esc(x)}</option>`).join("")}</select></label>` : ""}
+        <label>Brand name<input id="enq-brand" required autocomplete="organization"></label>
+        <label>Your email<input id="enq-email" type="email" required autocomplete="email"></label>
+        <label>Product link<input id="enq-link" type="url" placeholder="https://…"></label>
+        <label>Anything else? <span class="muted">(timeline, product value, ideas)</span><textarea id="enq-msg" rows="3"></textarea></label>
+        <input type="checkbox" id="enq-bot" tabindex="-1" autocomplete="off" hidden>
+        <button class="btn-mk main" id="enq-send" type="submit">Send enquiry →</button>
+        <p class="enq-status" id="enq-status" role="status"></p>
+      </form>`;
+  const pkCard = (p, extra = "") => `<div class="card-mk pk-card${extra}"><h3>${esc(p.name || p.title)}</h3><div class="price">${has(p.price) ? esc(p.price) : "Price on request"}</div>
+        <ul>${(p.items || []).map(i => `<li>${esc(i)}</li>`).join("")}</ul>
+        <button class="btn-mk main choose" type="button" data-pick="${esc(p.name || p.title)}">Choose this →</button></div>`;
+  main.innerHTML = `
+    ${RATES ? rateHead : `<div class="hero-mk">
+      <div>
+        <span class="kick">${RATES ? "Collab packages" : "Media kit"} · Couple creators</span>
+        <h1>Shubhi &amp; Prateek</h1>
+        ${has(k.tagline) ? `<p class="tagline">${esc(k.tagline)}</p>` : ""}
+        <p>${esc(k.intro)}</p>
+        ${btns}
+      </div>
+      ${reels.length >= 3 ? `<div class="fan" aria-hidden="true">${reels.slice(0, 3).map(r => `<img src="${cover(r.code)}" alt="">`).join("")}</div>` : ""}
+    </div>`}
+    ${!RATES && stats.length ? section("In numbers", "Our reach",
+      `<div class="stats">${stats.map(s => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span>${has(s.note) ? `<small>${esc(s.note)}</small>` : ""}</div>`).join("")}</div>${organic}`) : ""}
+    ${(!RATES || UGC) && brands.length ? section("Trusted by", "Brands we've worked with",
+      `<div class="brands">${brands.map(b => has(b.link) ? `<a class="brand-chip" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<span class="brand-chip">${esc(b.name)}</span>`).join("")}</div>`) : ""}
+    ${!RATES && collabs.length ? section("Brand collabs", "Top performing brand collabs", carousel(collabs)) : ""}
+    ${!RATES && series.length ? section("Series", "Top performing series", `<div class="two">${series.map(x => `<div class="card-mk series">
+        ${(x.codes || []).length ? `<div class="series-covers">${x.codes.slice(0, 3).map(code => `<a href="https://www.instagram.com/reel/${esc(code)}/" target="_blank" rel="noopener"><img loading="lazy" src="${cover(code)}" alt="" onerror="this.parentNode.remove()"></a>`).join("")}</div>` : ""}
+        <h3>${esc(x.title)}</h3>${has(x.views) ? `<p class="series-views">▶ ${esc(x.views)} views</p>` : ""}<p class="muted">${esc(x.description || "")}</p></div>`).join("")}</div>`) : ""}
+    ${!RATES && (whyCard(why.collab) || whyCard(why.ugc)) ? section("Why choose us?", "UGC or Collab — your pick", `<div class="two">${whyCard(why.collab)}${whyCard(why.ugc)}</div>`) : ""}
+    ${UGC && (u.gear || []).length ? section("Our setup", "Shot with proper gear", `<div class="card-mk guide"><ul>${u.gear.map(g => `<li>${esc(g)}</li>`).join("")}</ul></div>`) : ""}
+    ${samples.length > 5 ? section("Our UGC work", "Videos we made for brands", carousel(samples)) : ""}
+    ${packages.length ? section("Work with us", UGC ? "UGC packages" : "Collaboration packages",
+      `<div class="pk${packages.length === 4 ? " four" : ""}">${packages.map(p => pkCard(p)).join("")}</div>${barter ? `<div class="pk barter">${pkCard(barter, " slim")}</div>` : ""}`) : ""}
+    ${RATES ? (UGC
+      ? `<a class="card-mk switch" href="/collab"><span class="kick">Collab instead?</span><b>Want it posted on our page too?</b><span class="muted">A collaborative reel on @${esc(c.instagram || "shubhkaprateek")}${stats[0] ? ` — ${esc(stats[0].value)} organic ${esc(stats[0].label.toLowerCase())}` : ""}, plus stories.</span><span class="go">See collab packages →</span></a>`
+      : `<a class="card-mk switch" href="/ugc"><span class="kick">UGC instead?</span><b>Only need videos for your own page or ads?</b><span class="muted">We shoot it, you post it — nothing goes on our page.</span><span class="go">See UGC packages →</span></a>`) : ""}
+    ${RATES && terms.length ? section("How it works", "Payment & timeline", `<div class="terms">${terms.map(t => `<div class="card-mk"><h3>${esc(t.title)}</h3><p>${esc(t.text)}</p></div>`).join("")}</div>`) : ""}
+    ${guides.length ? section("How we work", "Content guidelines",
+      `<div class="card-mk guide"><ul>${guides.map(g => `<li>${esc(g)}</li>`).join("")}</ul></div>`) : ""}
+    <section class="card-mk enquiry" id="enquire">
+      <h2>Let's make something together</h2>
+      ${RATES ? `<p class="muted">${esc(c.note || "")} Pick a package and tell us about your product.</p>` : ""}
+      ${RATES ? enqForm : ""}
+      ${RATES ? `<p class="muted or">or reach us directly</p>` : ""}${btns}
+      ${RATES && has(c.email) ? `<p class="mail">✉️ <a href="mailto:${esc(c.email)}">${esc(c.email)}</a></p>` : ""}
+    </section>
+    ${RATES ? `<p class="to-kit"><a href="/mediakit">See our full media kit →</a></p>` : ""}
+    ${has(k.updated) ? `<p class="upd">Updated ${esc(k.updated)}</p>` : ""}`;
+
+  document.addEventListener("click", e => {
+    const a = e.target.closest(".car-arrow");
+    if (a) { const t = a.parentNode.querySelector(".reels-mk"); t.scrollBy({ left: +a.dataset.dir * t.clientWidth * 0.75, behavior: "smooth" }); return; }
+    const pick = e.target.closest(".choose");
+    if (pick) { document.getElementById("enq-pkg").value = pick.dataset.pick; document.getElementById("enquire").scrollIntoView({ behavior: "smooth" });
+      setTimeout(() => document.getElementById("enq-brand").focus({ preventScroll: true }), 500); }
+  });
+
+  // Enquiry → saved in our database (shows up in the dashboard: shubhkaprateek.com/admin) through the bot
+  // (data/site.json → site.reportApi), plus an email copy through the form service (contact.formKey).
+  // If both fail, it opens an email instead.
+  let formKey = "", bot = "";
+  fetch("/data/site.json").then(r => r.json()).then(j => { formKey = (j.contact || {}).formKey || ""; bot = (j.site || {}).reportApi || ""; }).catch(() => {});
+  const $ = id => document.getElementById(id), status = (t, ok) => { $("enq-status").textContent = t; $("enq-status").className = "enq-status " + (ok ? "ok" : "bad"); };
+  if ($("enq")) $("enq").addEventListener("submit", async e => {
+    e.preventDefault();
+    const pkg = RATES ? $("enq-pkg").value : "", via = UGC ? "ugc" : RATES ? "collab" : "mediakit", brand = $("enq-brand").value.trim(), email = $("enq-email").value.trim(), link = $("enq-link").value.trim(), msg = $("enq-msg").value.trim();
+    if (!brand) { status("Please add your brand name.", false); $("enq-brand").focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { status("Please add a valid email so we can reply.", false); $("enq-email").focus(); return; }
+    const text = `Package: ${pkg || "—"} (from /${via})\nBrand: ${brand}\nEmail: ${email}\nProduct: ${link || "—"}\n\n${msg}`;
+    const mailto = () => { if (has(c.email)) location.href = `mailto:${c.email}?subject=${encodeURIComponent((UGC ? "UGC" : "Collab") + " enquiry: " + brand + (pkg ? " — " + pkg : ""))}&body=${encodeURIComponent(text)}`; };
+    $("enq-send").disabled = true;
+    const saved = bot ? fetch(bot + "/enquiry", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ package: pkg, brand, email, link, message: msg, via, botcheck: $("enq-bot").checked }) }).then(r => r.ok).catch(() => false) : Promise.resolve(false);
+    const mailed = formKey ? fetch("https://api.web3forms.com/submit", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ access_key: formKey, botcheck: $("enq-bot").checked, subject: `${UGC ? "UGC" : "Collab"} enquiry: ${brand}${pkg ? " — " + pkg : ""}`, from_name: brand, replyto: email, message: text }) })
+        .then(r => r.json()).then(j => !!j.success).catch(() => false) : Promise.resolve(false);
+    const [inDb, inMail] = await Promise.all([saved, mailed]);
+    if (inDb || inMail) { status("Sent ✓ Thank you! We'll reply to " + email + " within a day.", true); $("enq").reset(); }
+    else { status("Couldn't send — opening your email app instead…", false); mailto(); }
+    $("enq-send").disabled = false;
+  });
+})();
+</script>
+</body>
+</html>
