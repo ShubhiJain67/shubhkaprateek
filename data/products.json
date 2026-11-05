@@ -4,7 +4,9 @@
     "name": "Paint-your-own portrait kit (Eazy Arts)",
     "brand": "Eazy Arts",
     "category": [
-      "diy"
+      "diy",
+      "date-night",
+      "gifts"
     ],
     "variants": [
       {
@@ -19,7 +21,8 @@
     "name": "Minion Comforter",
     "brand": "",
     "category": [
-      "bedding"
+      "bedding",
+      "gifts"
     ],
     "variants": [
       {
@@ -35,7 +38,9 @@
     "brand": "Storegenie",
     "category": [
       "bedding",
-      "diy"
+      "diy",
+      "date-night",
+      "gifts"
     ],
     "variants": [
       {
@@ -50,7 +55,8 @@
     "name": "Google Eyes Drinking Straws",
     "brand": "",
     "category": [
-      "mugs"
+      "mugs",
+      "quirky"
     ],
     "variants": [
       {
@@ -66,7 +72,8 @@
     "brand": "The Souled Store",
     "category": [
       "topwear",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -82,7 +89,9 @@
     "brand": "Brickadda",
     "category": [
       "building-sets",
-      "marvel"
+      "marvel",
+      "date-night",
+      "gifts"
     ],
     "variants": [
       {
@@ -97,8 +106,9 @@
     "name": "Deadpool Car Accessory",
     "brand": "",
     "category": [
-      "car-accessories",
-      "marvel"
+      "fashion-accessories",
+      "marvel",
+      "quirky"
     ],
     "variants": [
       {
@@ -114,7 +124,8 @@
     "brand": "",
     "category": [
       "role-play",
-      "marvel"
+      "marvel",
+      "quirky"
     ],
     "variants": [
       {
@@ -129,7 +140,8 @@
     "name": "Superhero Jigsaw Puzzle",
     "brand": "Wonderbox",
     "category": [
-      "board-games"
+      "board-games",
+      "date-night"
     ],
     "variants": [
       {
@@ -145,7 +157,8 @@
     "brand": "The Souled Store",
     "category": [
       "footwear",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -161,7 +174,8 @@
     "brand": "",
     "category": [
       "board-games",
-      "marvel"
+      "marvel",
+      "date-night"
     ],
     "variants": [
       {
@@ -177,7 +191,8 @@
     "brand": "The Souled Store",
     "category": [
       "topwear",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -193,7 +208,8 @@
     "brand": "",
     "category": [
       "role-play",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -209,7 +225,8 @@
     "brand": "Socksxpress",
     "category": [
       "footwear",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -225,7 +242,9 @@
     "brand": "Brickadda",
     "category": [
       "building-sets",
-      "marvel"
+      "marvel",
+      "date-night",
+      "gifts"
     ],
     "variants": [
       {
@@ -241,7 +260,8 @@
     "brand": "The Souled Store",
     "category": [
       "topwear",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -257,7 +277,8 @@
     "brand": "The Souled Store",
     "category": [
       "fashion-accessories",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -273,7 +294,8 @@
     "brand": "The Souled Store",
     "category": [
       "topwear",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -289,7 +311,8 @@
     "brand": "Funblast",
     "category": [
       "fashion-accessories",
-      "marvel"
+      "marvel",
+      "quirky"
     ],
     "variants": [
       {
@@ -304,7 +327,8 @@
     "name": "Crocs",
     "brand": "Crocs",
     "category": [
-      "footwear"
+      "footwear",
+      "gifts"
     ],
     "variants": [
       {
@@ -320,7 +344,8 @@
     "brand": "",
     "category": [
       "board-games",
-      "marvel"
+      "marvel",
+      "date-night"
     ],
     "variants": [
       {
@@ -336,7 +361,8 @@
     "brand": "",
     "category": [
       "figures",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -352,7 +378,8 @@
     "brand": "",
     "category": [
       "bedding",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -368,7 +395,8 @@
     "brand": "The Souled Store",
     "category": [
       "topwear",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -384,7 +412,8 @@
     "brand": "",
     "category": [
       "role-play",
-      "electronics"
+      "electronics",
+      "quirky"
     ],
     "variants": [
       {
@@ -400,7 +429,9 @@
     "brand": "Brickadda",
     "category": [
       "building-sets",
-      "marvel"
+      "marvel",
+      "date-night",
+      "gifts"
     ],
     "variants": [
       {
@@ -416,7 +447,8 @@
     "brand": "",
     "category": [
       "role-play",
-      "electronics"
+      "electronics",
+      "quirky"
     ],
     "variants": [
       {
@@ -432,7 +464,8 @@
     "brand": "The 7 Dots",
     "category": [
       "mugs",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -447,7 +480,7 @@
     "name": "Spider-Man Lower",
     "brand": "The Souled Store",
     "category": [
-      "bottomwear",
+      "topwear",
       "marvel"
     ],
     "variants": [
@@ -464,7 +497,8 @@
     "brand": "Play Retro",
     "category": [
       "game-gadgets",
-      "electronics"
+      "electronics",
+      "date-night"
     ],
     "variants": [
       {
@@ -480,7 +514,8 @@
     "brand": "",
     "category": [
       "role-play",
-      "marvel"
+      "marvel",
+      "quirky"
     ],
     "variants": [
       {
@@ -496,7 +531,8 @@
     "brand": "The 7 Dots",
     "category": [
       "mugs",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -512,7 +548,8 @@
     "brand": "Hamleys",
     "category": [
       "figures",
-      "marvel"
+      "marvel",
+      "gifts"
     ],
     "variants": [
       {
@@ -528,7 +565,8 @@
     "brand": "",
     "category": [
       "lighting",
-      "electronics"
+      "electronics",
+      "gifts"
     ],
     "variants": [
       {
@@ -544,7 +582,9 @@
     "brand": "Tipsytap",
     "category": [
       "game-gadgets",
-      "electronics"
+      "electronics",
+      "date-night",
+      "quirky"
     ],
     "variants": [
       {
@@ -560,7 +600,8 @@
     "brand": "Blix",
     "category": [
       "game-gadgets",
-      "electronics"
+      "electronics",
+      "quirky"
     ],
     "variants": [
       {
@@ -576,7 +617,9 @@
     "brand": "Samvardhan Mart",
     "category": [
       "toys",
-      "electronics"
+      "electronics",
+      "quirky",
+      "gifts"
     ],
     "variants": [
       {
@@ -591,7 +634,9 @@
     "name": "Clay IceCream Maker",
     "brand": "",
     "category": [
-      "diy"
+      "diy",
+      "date-night",
+      "quirky"
     ],
     "variants": [
       {
@@ -606,8 +651,9 @@
     "name": "Popcorn Maker",
     "brand": "",
     "category": [
-      "home",
-      "electronics"
+      "mugs",
+      "electronics",
+      "date-night"
     ],
     "variants": [
       {
@@ -621,7 +667,11 @@
     "id": 52,
     "name": "Credit Card - Magic Wand",
     "brand": "",
-    "category": [],
+    "category": [
+      "toys",
+      "quirky",
+      "gifts"
+    ],
     "variants": [
       {
         "name": "Default",
