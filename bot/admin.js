@@ -108,7 +108,7 @@ async function load(env, h) {
   const events = (await env.STATS.prepare("SELECT * FROM events ORDER BY id DESC LIMIT 2000").all()).results || [];
   enquiries.forEach(e => { try { e.product_ids = JSON.parse(e.product_ids || "[]"); } catch { e.product_ids = []; } });
   const kit = await kitFile(env, h);
-  const packages = [...[...(kit.packages || []), ...(kit.privatePackages || []).map(p => ({ ...p, private: true }))].map(p => ({ name: p.name, price: p.price || "", payment: "Paid", items: p.items || [], private: !!p.private })), ...(kit.barter && kit.barter.title ? [{ name: kit.barter.title, price: "", payment: "Barter" }] : [])];
+  const packages = [...[...(kit.packages || []), ...(kit.privatePackages || []).map(p => ({ ...p, private: true }))].map(p => ({ name: p.name, price: p.price || "", payment: "Paid", items: p.items || [], private: !!p.private })), ...((kit.ugc || {}).packages || []).map(p => ({ name: p.name, price: p.price || "", payment: "Paid", items: p.items || [], ugc: true })), ...(kit.barter && kit.barter.title ? [{ name: kit.barter.title, price: "", payment: "Barter" }] : [])];
   // one-time: the 3 Samvardhan Mart collabs (not the link swap) send their products back
   if (!(await store.getSetting(env, "fix:samvardhan-return", null))) {
     await env.STATS.prepare("UPDATE enquiries SET return_product = '1' WHERE lower(brand) LIKE 'samvardhan%' AND COALESCE(package, '') <> 'After-live pitch' AND COALESCE(reel_code, '') <> 'DfJSWTLSvaV' AND status <> 'declined'").run();

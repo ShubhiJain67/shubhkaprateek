@@ -334,6 +334,9 @@
     });
   };
   const money = v => { const n = +String(v || "").replace(/[^\d.]/g, ""); return n || 0; };
+  // a deal's amount: its Agreed price — or, if that's empty on a paid deal, the price of the package it's on
+  const pkgPrice = e => e.payment === "Barter" ? 0 : money(((D.packages || []).find(p => p.name === e.package) || {}).price);
+  const price = e => money(e.price) || pkgPrice(e), guessed = e => !money(e.price) && pkgPrice(e) > 0;
 
   // ---------- views
   let navOpen = false, view = "enquiries", filter = "all", srcFilter = "all", moneyRange = "30", moneyFrom = "", moneyTo = "", editCard = new Set(), q = "", openId = null, editing = null, reelEdit = null;
@@ -553,9 +556,9 @@
   // a brand's money: paid deals (agreed price) and barter deals (product worth); declined ones don't count
   function brandMoney(b) {
     const live = b.enquiries.filter(e => e.status !== "declined");
-    const paidL = live.filter(e => e.payment !== "Barter" && money(e.price) > 0), barterL = live.filter(e => e.payment === "Barter" && e.return_product !== "1");
-    return { paid: paidL.reduce((t, e) => t + money(e.price), 0), paidN: paidL.length, barter: barterL.reduce((t, e) => t + money(e.product_value), 0), barterN: barterL.length,
-      pending: paidL.filter(e => !e.paid_on).reduce((t, e) => t + money(e.price), 0) };
+    const paidL = live.filter(e => e.payment !== "Barter" && price(e) > 0), barterL = live.filter(e => e.payment === "Barter" && e.return_product !== "1");
+    return { paid: paidL.reduce((t, e) => t + price(e), 0), paidN: paidL.length, barter: barterL.reduce((t, e) => t + money(e.product_value), 0), barterN: barterL.length,
+      pending: paidL.filter(e => !e.paid_on).reduce((t, e) => t + price(e), 0) };
   }
   function brandList() {
     const map = new Map();
@@ -572,9 +575,9 @@
     const short = n => n >= 1e5 ? "₹" + (n / 1e5).toFixed(n % 1e5 ? 1 : 0) + "L" : n >= 1000 ? "₹" + (n / 1000).toFixed(n % 1000 ? 1 : 0) + "k" : "₹" + Math.round(n);
     const day = v => String(v || "").slice(0, 10);
     const agreed = D.enquiries.filter(e => AGREED.includes(e.status));
-    const cash = agreed.filter(e => money(e.price) > 0);                        // any deal with an agreed amount (barter + extra payment counts too)
-    // confirmed but not started yet = tentative (not counted as due until the work starts)
-    const TENT = ["confirmed", "product"], isTent = e => TENT.includes(e.status);
+    const cash = agreed.filter(e => price(e) > 0);                        // any deal with an agreed amount (barter + extra payment counts too)
+    // tentative = the reel isn't out yet: confirmed, or ongoing without a "Reel went live" date — once it's live (or delivered) the money is due
+    const isTent = e => ["confirmed", "product"].includes(e.status) || (e.status === "live" && !e.live_on && e.pitched !== "1");
     const got = cash.filter(e => e.paid_on), unpaid = cash.filter(e => !e.paid_on), due = unpaid.filter(e => !isTent(e));
     const late = unpaid.filter(e => e.payment_due && e.payment_due < now);
     // a product counts the day it became yours for free: Product received — or, for a reel pitched after you bought the product, the day they paid you back
@@ -582,11 +585,11 @@
     const pday = e => day(e.pitched === "1" ? (e.paid_on || e.collab_on || e.created) : (e.received_on || e.live_on || e.collab_on || e.paid_on));
     const prods = agreed.filter(e => money(e.product_value) > 0 && pday(e) && e.return_product !== "1");   // a product that goes back to the brand isn't ours
     const toReturn = agreed.filter(e => e.return_product === "1" && !e.returned_on);
-    // 🔮 incoming (tentative): confirmed deals — their unpaid amount + the product that's still to arrive
-    const tent = agreed.filter(isTent).map(e => ({ e, c: e.paid_on ? 0 : money(e.price), p: e.return_product !== "1" && !pday(e) ? money(e.product_value) : 0 })).filter(x => x.c + x.p > 0);
+    // 🔮 incoming (tentative): deals whose reel isn't out yet — their unpaid amount + the product that's still to arrive
+    const tent = agreed.filter(isTent).map(e => ({ e, c: e.paid_on ? 0 : price(e), p: e.return_product !== "1" && !pday(e) ? money(e.product_value) : 0 })).filter(x => x.c + x.p > 0);
     const tentC = tent.reduce((t, x) => t + x.c, 0), tentP = tent.reduce((t, x) => t + x.p, 0);
     const tentRow = ({ e, c, p }) => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br>
-        <span class="muted small">${[c ? "💸 " + rs(c) : "", p ? "🎁 " + rs(p) + (e.dispatched_on ? " · on its way" : "") : "", e.post_by ? "post by " + dateY(e.post_by) : ""].filter(Boolean).join(" · ")}</span></span><b>${rs(c + p)}</b></button>`;
+        <span class="muted small">${[pill(e.status), c ? "💸 " + rs(c) + (guessed(e) ? " (package price — no Agreed price set)" : "") : "", p ? "🎁 " + rs(p) + (e.dispatched_on ? " · on its way" : "") : "", e.post_by ? "post by " + dateY(e.post_by) : ""].filter(Boolean).join(" · ")}</span></span><b>${rs(c + p)}</b></button>`;
     // the range
     const first = [...got.map(e => e.paid_on), ...prods.map(pday)].filter(Boolean).sort()[0] || now;
     const back = n => new Date(Date.now() - n * 864e5).toLocaleDateString("en-CA");
@@ -594,9 +597,9 @@
       : moneyRange === "custom" ? [moneyFrom || first, moneyTo || now] : [back(29), now];
     const inR = d => d >= from && d <= to;
     // every earning as one line: money or a product
-    const items = [...got.map(e => ({ d: day(e.paid_on), kind: "cash", v: money(e.price), e })), ...prods.map(e => ({ d: pday(e), kind: "prod", v: money(e.product_value), e }))].filter(x => inR(x.d));
+    const items = [...got.map(e => ({ d: day(e.paid_on), kind: "cash", v: price(e), e })), ...prods.map(e => ({ d: pday(e), kind: "prod", v: money(e.product_value), e }))].filter(x => inR(x.d));
     const tot = k => items.filter(x => !k || x.kind === k).reduce((t, x) => t + x.v, 0);
-    const allTime = got.reduce((t, e) => t + money(e.price), 0) + prods.reduce((t, e) => t + money(e.product_value), 0);
+    const allTime = got.reduce((t, e) => t + price(e), 0) + prods.reduce((t, e) => t + money(e.product_value), 0);
     // the graph follows the range: days up to ~2 months, then weeks, then months
     const span = Math.round((new Date(to) - new Date(from)) / 864e5) + 1;
     const unit = span <= 62 ? "day" : span <= 190 ? "week" : "month";
@@ -616,15 +619,15 @@
     const days = Object.keys(byDay).sort().reverse();
     const lbl = moneyRange === "all" ? "all time" : moneyRange === "month" ? "this month" : moneyRange === "custom" ? `${dateY(from)} – ${dateY(to)}` : "last 30 days";
     const dueRow = e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br>
-        <span class="small ${e.payment_due && e.payment_due < now ? "" : "muted"}" style="${e.payment_due && e.payment_due < now ? "color:#9b2c2c;font-weight:600" : ""}">${e.payment_due ? (e.payment_due < now ? "Late — was due " : "Due ") + dateY(e.payment_due) : "No deadline set"}</span></span><b>${rs(money(e.price))}</b></button>`;
+        <span class="small ${e.payment_due && e.payment_due < now ? "" : "muted"}" style="${e.payment_due && e.payment_due < now ? "color:#9b2c2c;font-weight:600" : ""}">${e.payment_due ? (e.payment_due < now ? "Late — was due " : "Due ") + dateY(e.payment_due) : "No deadline set"}${guessed(e) ? " · package price — no Agreed price set" : ""}</span></span><b>${rs(price(e))}</b></button>`;
     return `<div class="between"><h1>Earnings</h1><div class="row">${[["30", "Last 30 days"], ["month", "This month"], ["all", "All time"], ["custom", "Custom"]].map(([k, t]) => `<button class="chip ${moneyRange === k ? "on" : ""}" data-mrange="${k}">${t}</button>`).join("")}</div></div>
       ${moneyRange === "custom" ? `<div class="row" style="align-items:end"><label class="small">From<input type="date" id="mfrom" value="${esc(from)}" max="${esc(now)}"></label><label class="small">To<input type="date" id="mto" value="${esc(to)}" max="${esc(now)}"></label></div>` : ""}
       <div class="stats4">
         <div class="stat big"><b>${rs(tot())}</b><span>Total earned · ${esc(lbl)} (money + products)</span></div>
         <div class="stat"><b>${rs(tot("cash"))}</b><span>💸 Money received · ${items.filter(x => x.kind === "cash").length}</span></div>
         <div class="stat"><b>${rs(tot("prod"))}</b><span>🎁 Products worth · ${items.filter(x => x.kind === "prod").length}</span></div>
-        <div class="stat ${late.length ? "warn" : ""}"><b>${rs(due.reduce((t, e) => t + money(e.price), 0))}</b><span>Still due now · ${due.length} deal${due.length === 1 ? "" : "s"}${late.length ? ` · ⚠️ ${rs(late.reduce((t, e) => t + money(e.price), 0))} late` : ""}</span></div>
-        <div class="stat"><b>${rs(tentC + tentP)}</b><span>🔮 Incoming (tentative) · ${tent.length} confirmed${tentP ? ` · 💸 ${rs(tentC)} + 🎁 ${rs(tentP)}` : ""}</span></div>
+        <div class="stat ${late.length ? "warn" : ""}"><b>${rs(due.reduce((t, e) => t + price(e), 0))}</b><span>Still due now · ${due.length} deal${due.length === 1 ? "" : "s"}${late.length ? ` · ⚠️ ${rs(late.reduce((t, e) => t + price(e), 0))} late` : ""}</span></div>
+        <div class="stat"><b>${rs(tentC + tentP)}</b><span>🔮 Incoming (tentative) · ${tent.length} deal${tent.length === 1 ? "" : "s"}${tentP ? ` · 💸 ${rs(tentC)} + 🎁 ${rs(tentP)}` : ""}</span></div>
         <div class="stat"><b>${rs(allTime)}</b><span>Earned all time (money + products)</span></div>
       </div>
       <section class="card"><h2>Earned per ${unit} <span class="muted small" style="font-weight:500">· ${esc(lbl)} · <span style="color:var(--accent)">■</span> money <span style="color:#d4a62a">■</span> products</span></h2>
@@ -638,10 +641,10 @@
           ${days.map(d => `<div style="padding:8px 0;border-bottom:1px dashed var(--line)"><div class="between"><b>${dateY(d)}</b><b>${rs(byDay[d].reduce((t, x) => t + x.v, 0))}</b></div>
             ${byDay[d].map(x => `<div class="between small" style="cursor:pointer" data-open="${x.e.id}"><span class="muted">${x.kind === "cash" ? "💸" : "🎁"} ${esc(x.e.brand)}${x.kind === "cash" && x.e.txn_id ? " · " + esc(x.e.txn_id) : ""}${x.kind === "prod" && x.e.payment === "Barter" ? " · barter" : ""}</span><span>${rs(x.v)}</span></div>`).join("")}</div>`).join("") || `<p class="muted" style="margin:0">Nothing in this range. Money counts on its <b>Payment received</b> date; a product on its <b>Product received</b> date.</p>`}</section>
         ${toReturn.length ? `<section class="card"><h2>↩ Products to send back <span class="muted small" style="font-weight:500">· ${toReturn.length}</span></h2><div class="list">${toReturn.map(e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${e.product_value ? esc(e.product_value) + " · " : ""}not counted in Earnings</span></span>${pill(e.status)}</button>`).join("")}</div></section>` : ""}
-        <section class="card"><h2>🔮 Incoming <span class="muted small" style="font-weight:500">· tentative · confirmed, not started yet</span></h2><div class="list">${tent.sort((a, b) => (a.e.post_by || "9999").localeCompare(b.e.post_by || "9999")).map(tentRow).join("") || `<p class="muted" style="margin:0">No confirmed deals waiting.</p>`}</div></section>
-        <section class="card"><h2>Still due <span class="muted small" style="font-weight:500">· ongoing + delivered, not paid</span></h2><div class="list">${due.sort((a, b) => (a.payment_due || "9999").localeCompare(b.payment_due || "9999")).map(dueRow).join("") || `<p class="muted" style="margin:0">Nothing due 🎉</p>`}</div></section>
+        <section class="card"><h2>🔮 Incoming <span class="muted small" style="font-weight:500">· tentative · confirmed + ongoing, reel not live yet</span></h2><div class="list">${tent.sort((a, b) => (a.e.post_by || "9999").localeCompare(b.e.post_by || "9999")).map(tentRow).join("") || `<p class="muted" style="margin:0">Nothing in the pipeline.</p>`}</div></section>
+        <section class="card"><h2>Still due <span class="muted small" style="font-weight:500">· reel is live, not paid</span></h2><div class="list">${due.sort((a, b) => (a.payment_due || "9999").localeCompare(b.payment_due || "9999")).map(dueRow).join("") || `<p class="muted" style="margin:0">Nothing due 🎉</p>`}</div></section>
       </div>
-      <p class="muted small" style="margin:0">Counts confirmed, ongoing and delivered deals. 🔮 Incoming = Confirmed deals that haven't started: their unpaid price + the product still to arrive (it moves to Still due / Products once the product arrives and the deal turns Ongoing). Money = Agreed price, counted on its Payment received date (until then it's due). Products = Product value (not ones that go back to the brand), counted on Product received (or the reel's live date if that's empty); for an after-live pitch, on the day they paid.</p>`;
+      <p class="muted small" style="margin:0">Counts confirmed, ongoing and delivered deals. 🔮 Incoming = Confirmed and Ongoing deals whose reel isn't live yet: their unpaid price + the product still to arrive. When the product arrives it counts as earned; when you set "Reel went live" (or mark Delivered) the money moves to Still due. Money = Agreed price, counted on its Payment received date (until then it's due). Products = Product value (not ones that go back to the brand), counted on Product received (or the reel's live date if that's empty); for an after-live pitch, on the day they paid.</p>`;
   }
 
   // ---- Categories: tab → sub-category → products
