@@ -33,7 +33,8 @@ async function tables(env) {
   // there's no "Product received" status: those deals are Ongoing
   try { await env.STATS.batch([env.STATS.prepare("UPDATE enquiries SET status = 'live' WHERE status = 'received'"),
     env.STATS.prepare("UPDATE enquiries SET status = 'new' WHERE status = 'replied'"),
-    env.STATS.prepare("UPDATE enquiries SET deal_type = 'ugc' WHERE (deal_type IS NULL OR deal_type = '') AND package LIKE 'UGC%'"),   // deal type: UGC deals from their package name env.STATS.prepare("DELETE FROM events WHERE text = 'Status → replied'")]); } catch {}
+    env.STATS.prepare("UPDATE enquiries SET deal_type = 'ugc' WHERE (deal_type IS NULL OR deal_type = '') AND package LIKE 'UGC%'"),   // deal type: UGC deals from their package name
+    env.STATS.prepare("DELETE FROM events WHERE text = 'Status → replied'")]); } catch {}
   ready = true;
 }
 const logEvent = (env, id, text) => env.STATS.prepare("INSERT INTO events (enquiry_id, at, text) VALUES (?, ?, ?)").bind(id, now(), clip(text, 300)).run();
