@@ -24,7 +24,9 @@ async function tables(env) {
     env.STATS.prepare(`CREATE TABLE IF NOT EXISTS enquiries (id INTEGER PRIMARY KEY AUTOINCREMENT, created TEXT, updated TEXT, status TEXT,
       brand TEXT, email TEXT, package TEXT, product_link TEXT, message TEXT, price TEXT, payment TEXT, product_value TEXT,
       shoot_by TEXT, post_by TEXT, contact TEXT, notes TEXT, product_ids TEXT, reel_code TEXT)`),
-    env.STATS.prepare("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, enquiry_id INTEGER, at TEXT, text TEXT)")
+    env.STATS.prepare("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, enquiry_id INTEGER, at TEXT, text TEXT)"),
+    // content ideas: quick notes of reel / video ideas, for any of your accounts
+    env.STATS.prepare("CREATE TABLE IF NOT EXISTS ideas (id INTEGER PRIMARY KEY AUTOINCREMENT, created TEXT, updated TEXT, text TEXT, account TEXT, status TEXT, link TEXT, notes TEXT)")
   ]);
   // columns added later — only the missing ones are added (one quick look instead of ~25 tries every cold start)
   const have = new Set((((await env.STATS.prepare("PRAGMA table_info(enquiries)").all()).results) || []).map(c => c.name));
@@ -108,6 +110,7 @@ async function load(env, h) {
   const [products, reels, categories, featured, brands] = await Promise.all([store.readProducts(env), store.readReels(env), store.readCategories(env), store.getFeatured(env), store.readBrands(env)]);
   const enquiries = (await env.STATS.prepare("SELECT * FROM enquiries ORDER BY id DESC").all()).results || [];
   const events = (await env.STATS.prepare("SELECT * FROM events ORDER BY id DESC LIMIT 2000").all()).results || [];
+  const ideas = await readIdeas(env);
   enquiries.forEach(e => { try { e.product_ids = JSON.parse(e.product_ids || "[]"); } catch { e.product_ids = []; } });
   const kit = await kitFile(env, h);
   const packages = [...[...(kit.packages || []), ...(kit.privatePackages || []).map(p => ({ ...p, private: true }))].map(p => ({ name: p.name, price: p.price || "", payment: "Paid", items: p.items || [], private: !!p.private })), ...((kit.ugc || {}).packages || []).map(p => ({ name: p.name, price: p.price || "", payment: "Paid", items: p.items || [], ugc: true })), ...(kit.barter && kit.barter.title ? [{ name: kit.barter.title, price: "", payment: "Barter" }] : [])];
@@ -118,8 +121,9 @@ async function load(env, h) {
     for (const e of enquiries) if (/^samvardhan/i.test(e.brand || "") && (e.package || "") !== "After-live pitch" && (e.reel_code || "") !== "DfJSWTLSvaV" && e.status !== "declined") e.return_product = "1";
   }
   await syncKit(env, h, reels, enquiries);
-  return { products, reels, categories, featured, brands, enquiries, events, packages };
+  return { products, reels, categories, featured, brands, enquiries, events, packages, ideas };
 }
+const readIdeas = async env => (await env.STATS.prepare("SELECT * FROM ideas ORDER BY id DESC").all()).results || [];
 
 // ---------------------------------------------------------------- the media kit's brand lists, from your deals
 // The media kit's brandCollabs (the reels carousel) + brands ("Brands we've worked with") come from your deals:
@@ -316,6 +320,17 @@ async function run(a, env, h) {
     return load(env, h);
   }
   // ---- brands: rename / Instagram + website (page numbers never change)
+  // ---- content ideas (saved instantly; only the ideas list comes back)
+  if (op === "idea.save") {
+    await tables(env);
+    const i = a.idea || {}, t = now();
+    const v = { text: clip(i.text, 2000).trim(), account: clip(i.account, 40), status: ["idea", "planned", "shot", "posted", "dropped"].includes(i.status) ? i.status : "idea", link: clip(i.link, 500).trim(), notes: clip(i.notes, 4000) };
+    if (!v.text) throw new Error("Write the idea first");
+    if (i.id) await env.STATS.prepare("UPDATE ideas SET updated = ?, text = ?, account = ?, status = ?, link = ?, notes = ? WHERE id = ?").bind(t, v.text, v.account, v.status, v.link, v.notes, +i.id).run();
+    else await env.STATS.prepare("INSERT INTO ideas (created, updated, text, account, status, link, notes) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(t, t, v.text, v.account, v.status, v.link, v.notes).run();
+    return { ideas: await readIdeas(env) };
+  }
+  if (op === "idea.delete") { await tables(env); await env.STATS.prepare("DELETE FROM ideas WHERE id = ?").bind(+a.id).run(); return { ideas: await readIdeas(env) }; }
   if (op === "brand.save") { await store.saveBrand(env, String(a.slug || ""), a.brand || {}); return load(env, h); }
   throw new Error("Unknown action: " + op);
 }
