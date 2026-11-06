@@ -583,7 +583,7 @@
   // ---- Money: what came in (money on its Payment received date, products on their Product received date) + what's still due
   // ---- Content ideas for @shubhkaprateek: jot them down the moment you get them
   const ITYPE = { gadget: "🔌 Gadget", emotion: "💖 Emotion", us: "👫 More about us", "": "— No type" };
-  const typeSel = cur => `<select name="type">${Object.entries(ITYPE).map(([k, t]) => `<option value="${k}" ${k === (cur || "") ? "selected" : ""}>${t}</option>`).join("")}</select>`;
+  const typeSel = (cur, css = "") => `<select name="type" style="${css}">${Object.entries(ITYPE).map(([k, t]) => `<option value="${k}" ${k === (cur || "") ? "selected" : ""}>${t}</option>`).join("")}</select>`;
   const ISTAT = { idea: "💡 Idea", planned: "📝 Planned", shot: "🎬 Shot", posted: "✅ Posted", dropped: "🗑 Dropped" };
   function vIdeas() {
     const all = D.ideas || [], open = i => ["idea", "planned", "shot"].includes(i.status);
@@ -598,11 +598,11 @@
         <label>Notes <span class="muted small" style="font-weight:500">(hook, script, props, where to shoot)</span><textarea name="notes" rows="4">${esc(i.notes)}</textarea></label>
         <div class="row"><button class="main" type="submit">Save</button><button type="button" data-ideacancel>Cancel</button><button type="button" data-ideadel="${i.id}" style="margin-left:auto">Delete</button></div></form>`
       : `<div class="item idea-row" style="cursor:default;align-items:flex-start"><span style="flex:1;min-width:0"><span style="white-space:pre-wrap">${esc(i.text)}</span><br>
-        <span class="muted small">${i.type ? ITYPE[i.type] + " · " : ""}${date(i.created)}${i.link ? ` · <a href="${esc(i.link)}" target="_blank" rel="noopener">link ↗</a>` : ""}${i.notes ? " · 📝 notes" : ""}</span></span>
-        <span class="row" style="gap:6px;flex-wrap:nowrap"><select data-ideastat="${i.id}" aria-label="Status" style="width:auto">${Object.entries(ISTAT).map(([k, t]) => `<option value="${k}" ${k === i.status ? "selected" : ""}>${t}</option>`).join("")}</select><button type="button" data-ideaedit="${i.id}">Edit</button></span></div>`;
+        <span class="muted small">${date(i.created)}${i.link ? ` · <a href="${esc(i.link)}" target="_blank" rel="noopener">link ↗</a>` : ""}${i.notes ? " · 📝 notes" : ""}</span></span>
+        <span class="row" style="gap:6px;flex-wrap:wrap"><select data-ideatype="${i.id}" aria-label="Type" style="width:auto">${Object.entries(ITYPE).map(([k, t]) => `<option value="${k}" ${k === (i.type || "") ? "selected" : ""}>${t}</option>`).join("")}</select><select data-ideastat="${i.id}" aria-label="Status" style="width:auto">${Object.entries(ISTAT).map(([k, t]) => `<option value="${k}" ${k === i.status ? "selected" : ""}>${t}</option>`).join("")}</select><button type="button" data-ideaedit="${i.id}">Edit</button></span></div>`;
     return `<div class="between"><h1>Content ideas</h1><input id="q" placeholder="Search ideas…" value="${esc(q)}" style="width:220px"></div>
       <form id="ideaadd" class="card" style="display:grid;gap:10px"><textarea name="text" rows="2" placeholder="Got an idea? Write it down… (⌘/Ctrl + Enter to save)" required></textarea>
-        <div class="row" style="align-items:center">${typeSel("")}<input name="link" placeholder="Link (optional)" style="flex:1;min-width:160px"><button class="main" type="submit">+ Add idea</button></div></form>
+        <div class="row" style="align-items:center">${typeSel("", "width:auto")}<input name="link" placeholder="Link (optional)" style="flex:1;min-width:160px"><button class="main" type="submit">+ Add idea</button></div></form>
       <div class="row">${[["open", "Open"], ...Object.entries(ISTAT), ["all", "All"]].map(([k, t]) => `<button class="chip ${ideaFilter === k ? "on" : ""}" data-ifilter="${k}">${t} ${cnt(k)}</button>`).join("")}</div>
       <div class="row">${[["all", "All types"], ...Object.entries(ITYPE).filter(([k]) => k)].map(([k, t]) => `<button class="chip ${ideaType === k ? "on" : ""}" data-itype="${k}">${t}</button>`).join("")}</div>
       <div class="list">${list.map(row).join("") || `<p class="empty">${all.length ? "No ideas here." : "No ideas yet — the next one you get, put it here."}</p>`}</div>`;
@@ -764,6 +764,8 @@
     root.querySelectorAll("[data-ifilter]").forEach(b => b.onclick = () => { ideaFilter = b.dataset.ifilter; render(); });
     root.querySelectorAll("[data-ideaedit]").forEach(b => b.onclick = () => { ideaEdit = +b.dataset.ideaedit; render(); });
     root.querySelectorAll("[data-ideacancel]").forEach(b => b.onclick = () => { ideaEdit = null; render(); });
+    root.querySelectorAll("[data-ideatype]").forEach(sel => sel.onchange = () => { const i = D.ideas.find(x => x.id === +sel.dataset.ideatype);
+      act(null, () => saveIdea({ ...i, type: sel.value }), ITYPE[sel.value]); });
     root.querySelectorAll("[data-ideastat]").forEach(sel => sel.onchange = () => { const i = D.ideas.find(x => x.id === +sel.dataset.ideastat);
       act(null, () => saveIdea({ ...i, status: sel.value }), ISTAT[sel.value]); });
     root.querySelectorAll("[data-ideaform]").forEach(f => f.onsubmit = ev => { ev.preventDefault();
