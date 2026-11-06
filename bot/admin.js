@@ -26,8 +26,9 @@ async function tables(env) {
       shoot_by TEXT, post_by TEXT, contact TEXT, notes TEXT, product_ids TEXT, reel_code TEXT)`),
     env.STATS.prepare("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, enquiry_id INTEGER, at TEXT, text TEXT)"),
     // content ideas: quick notes of reel / video ideas, for any of your accounts
-    env.STATS.prepare("CREATE TABLE IF NOT EXISTS ideas (id INTEGER PRIMARY KEY AUTOINCREMENT, created TEXT, updated TEXT, text TEXT, account TEXT, status TEXT, link TEXT, notes TEXT)")
+    env.STATS.prepare("CREATE TABLE IF NOT EXISTS ideas (id INTEGER PRIMARY KEY AUTOINCREMENT, created TEXT, updated TEXT, text TEXT, account TEXT, status TEXT, link TEXT, notes TEXT, type TEXT)")
   ]);
+  try { if (!((((await env.STATS.prepare("PRAGMA table_info(ideas)").all()).results) || []).some(c => c.name === "type"))) await env.STATS.prepare("ALTER TABLE ideas ADD COLUMN type TEXT").run(); } catch {}
   // columns added later — only the missing ones are added (one quick look instead of ~25 tries every cold start)
   const have = new Set((((await env.STATS.prepare("PRAGMA table_info(enquiries)").all()).results) || []).map(c => c.name));
   for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT", "show_kit TEXT", "kit_views TEXT", "return_product TEXT", "returned_on TEXT", "deal_type TEXT"]) { if (!have.has(col.split(" ")[0])) try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
@@ -324,10 +325,10 @@ async function run(a, env, h) {
   if (op === "idea.save") {
     await tables(env);
     const i = a.idea || {}, t = now();
-    const v = { text: clip(i.text, 2000).trim(), account: clip(i.account, 40), status: ["idea", "planned", "shot", "posted", "dropped"].includes(i.status) ? i.status : "idea", link: clip(i.link, 500).trim(), notes: clip(i.notes, 4000) };
+    const v = { text: clip(i.text, 2000).trim(), account: clip(i.account, 40), status: ["idea", "planned", "shot", "posted", "dropped"].includes(i.status) ? i.status : "idea", link: clip(i.link, 500).trim(), notes: clip(i.notes, 4000), type: ["gadget", "emotion", "us"].includes(i.type) ? i.type : "" };
     if (!v.text) throw new Error("Write the idea first");
-    if (i.id) await env.STATS.prepare("UPDATE ideas SET updated = ?, text = ?, account = ?, status = ?, link = ?, notes = ? WHERE id = ?").bind(t, v.text, v.account, v.status, v.link, v.notes, +i.id).run();
-    else await env.STATS.prepare("INSERT INTO ideas (created, updated, text, account, status, link, notes) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(t, t, v.text, v.account, v.status, v.link, v.notes).run();
+    if (i.id) await env.STATS.prepare("UPDATE ideas SET updated = ?, text = ?, account = ?, status = ?, link = ?, notes = ?, type = ? WHERE id = ?").bind(t, v.text, v.account, v.status, v.link, v.notes, v.type, +i.id).run();
+    else await env.STATS.prepare("INSERT INTO ideas (created, updated, text, account, status, link, notes, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(t, t, v.text, v.account, v.status, v.link, v.notes, v.type).run();
     return { ideas: await readIdeas(env) };
   }
   if (op === "idea.delete") { await tables(env); await env.STATS.prepare("DELETE FROM ideas WHERE id = ?").bind(+a.id).run(); return { ideas: await readIdeas(env) }; }

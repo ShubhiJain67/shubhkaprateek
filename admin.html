@@ -346,7 +346,7 @@
   const price = e => money(e.price) || pkgPrice(e), guessed = e => !money(e.price) && pkgPrice(e) > 0;
 
   // ---------- views
-  let ideaFilter = "open", ideaAcct = "all", ideaEdit = null;
+  let ideaFilter = "open", ideaType = "all", ideaEdit = null;
   let navOpen = false, view = "enquiries", filter = "all", typeFilter = "all", moneyType = "all", srcFilter = "all", moneyRange = "30", moneyFrom = "", moneyTo = "", editCard = new Set(), q = "", openId = null, editing = null, reelEdit = null;
   const go = (v, id = null) => { navOpen = false; view = v; openId = id; editing = null; reelEdit = null; editCard = new Set(); location.hash = v + (id != null ? "/" + id : ""); render(); window.scrollTo(0, 0); };
   window.addEventListener("hashchange", () => { const [v, id] = location.hash.slice(1).split("/"); if (v && v !== view + "") { view = v; openId = id || null; render(); } });
@@ -581,29 +581,30 @@
     return [...map.values()].sort((a, b) => lastDeal(b).localeCompare(lastDeal(a)) || Math.max(0, ...b.products.map(p => p.id)) - Math.max(0, ...a.products.map(p => p.id)));
   }
   // ---- Money: what came in (money on its Payment received date, products on their Product received date) + what's still due
-  // ---- Content ideas: jot them down the moment you get them
-  const ACCTS = { shubhkaprateek: "💑 @shubhkaprateek", shubhzzi: "🙋‍♀️ @shubhzzi", yourtechbuddy: "▶️ YourTechBuddy", "": "🌀 Any" };
+  // ---- Content ideas for @shubhkaprateek: jot them down the moment you get them
+  const ITYPE = { gadget: "🔌 Gadget", emotion: "💖 Emotion", us: "👫 More about us", "": "— No type" };
+  const typeSel = cur => `<select name="type">${Object.entries(ITYPE).map(([k, t]) => `<option value="${k}" ${k === (cur || "") ? "selected" : ""}>${t}</option>`).join("")}</select>`;
   const ISTAT = { idea: "💡 Idea", planned: "📝 Planned", shot: "🎬 Shot", posted: "✅ Posted", dropped: "🗑 Dropped" };
-  const acctSel = (cur, name = "account") => `<select name="${name}">${Object.entries(ACCTS).map(([k, t]) => `<option value="${k}" ${k === (cur || "") ? "selected" : ""}>${t}</option>`).join("")}</select>`;
   function vIdeas() {
     const all = D.ideas || [], open = i => ["idea", "planned", "shot"].includes(i.status);
-    const inF = i => (ideaFilter === "open" ? open(i) : ideaFilter === "all" || i.status === ideaFilter) && (ideaAcct === "all" || (i.account || "") === ideaAcct)
+    const inF = i => (ideaFilter === "open" ? open(i) : ideaFilter === "all" || i.status === ideaFilter) 
+      && (ideaType === "all" || (i.type || "") === ideaType)
       && (!q || (i.text + " " + (i.notes || "")).toLowerCase().includes(q));
     const list = all.filter(inF), cnt = f => all.filter(i => f === "open" ? open(i) : f === "all" || i.status === f).length;
     const row = i => ideaEdit === i.id ? `<form class="card idea-edit" data-ideaform="${i.id}" style="display:grid;gap:10px">
         <textarea name="text" rows="3" required>${esc(i.text)}</textarea>
-        <div class="grid2"><label>Account${acctSel(i.account)}</label><label>Status<select name="status">${Object.entries(ISTAT).map(([k, t]) => `<option value="${k}" ${k === i.status ? "selected" : ""}>${t}</option>`).join("")}</select></label></div>
+        <div class="grid2"><label>Type${typeSel(i.type)}</label><label>Status<select name="status">${Object.entries(ISTAT).map(([k, t]) => `<option value="${k}" ${k === i.status ? "selected" : ""}>${t}</option>`).join("")}</select></label></div>
         <label>Link <span class="muted small" style="font-weight:500">(inspiration reel, audio, the posted reel…)</span><input name="link" value="${esc(i.link)}" placeholder="https://…"></label>
         <label>Notes <span class="muted small" style="font-weight:500">(hook, script, props, where to shoot)</span><textarea name="notes" rows="4">${esc(i.notes)}</textarea></label>
         <div class="row"><button class="main" type="submit">Save</button><button type="button" data-ideacancel>Cancel</button><button type="button" data-ideadel="${i.id}" style="margin-left:auto">Delete</button></div></form>`
       : `<div class="item idea-row" style="cursor:default;align-items:flex-start"><span style="flex:1;min-width:0"><span style="white-space:pre-wrap">${esc(i.text)}</span><br>
-        <span class="muted small">${ACCTS[i.account || ""]} · ${date(i.created)}${i.link ? ` · <a href="${esc(i.link)}" target="_blank" rel="noopener">link ↗</a>` : ""}${i.notes ? " · 📝 notes" : ""}</span></span>
+        <span class="muted small">${i.type ? ITYPE[i.type] + " · " : ""}${date(i.created)}${i.link ? ` · <a href="${esc(i.link)}" target="_blank" rel="noopener">link ↗</a>` : ""}${i.notes ? " · 📝 notes" : ""}</span></span>
         <span class="row" style="gap:6px;flex-wrap:nowrap"><select data-ideastat="${i.id}" aria-label="Status" style="width:auto">${Object.entries(ISTAT).map(([k, t]) => `<option value="${k}" ${k === i.status ? "selected" : ""}>${t}</option>`).join("")}</select><button type="button" data-ideaedit="${i.id}">Edit</button></span></div>`;
     return `<div class="between"><h1>Content ideas</h1><input id="q" placeholder="Search ideas…" value="${esc(q)}" style="width:220px"></div>
       <form id="ideaadd" class="card" style="display:grid;gap:10px"><textarea name="text" rows="2" placeholder="Got an idea? Write it down… (⌘/Ctrl + Enter to save)" required></textarea>
-        <div class="row" style="align-items:center">${acctSel("shubhkaprateek")}<input name="link" placeholder="Link (optional)" style="flex:1;min-width:160px"><button class="main" type="submit">+ Add idea</button></div></form>
+        <div class="row" style="align-items:center">${typeSel("")}<input name="link" placeholder="Link (optional)" style="flex:1;min-width:160px"><button class="main" type="submit">+ Add idea</button></div></form>
       <div class="row">${[["open", "Open"], ...Object.entries(ISTAT), ["all", "All"]].map(([k, t]) => `<button class="chip ${ideaFilter === k ? "on" : ""}" data-ifilter="${k}">${t} ${cnt(k)}</button>`).join("")}</div>
-      <div class="row">${[["all", "All accounts"], ...Object.entries(ACCTS)].map(([k, t]) => `<button class="chip ${ideaAcct === k ? "on" : ""}" data-iacct="${k}">${t}</button>`).join("")}</div>
+      <div class="row">${[["all", "All types"], ...Object.entries(ITYPE).filter(([k]) => k)].map(([k, t]) => `<button class="chip ${ideaType === k ? "on" : ""}" data-itype="${k}">${t}</button>`).join("")}</div>
       <div class="list">${list.map(row).join("") || `<p class="empty">${all.length ? "No ideas here." : "No ideas yet — the next one you get, put it here."}</p>`}</div>`;
   }
 
@@ -757,10 +758,10 @@
     // content ideas
     const saveIdea = idea => api("idea.save", { idea }).then(j => { D.ideas = j.ideas; });
     const ia = $("ideaadd"); if (ia) { ia.onsubmit = ev => { ev.preventDefault(); const v = Object.fromEntries(new FormData(ia)); if (!v.text.trim()) return;
-        act(ia.querySelector("button.main"), () => saveIdea({ ...v, status: "idea" }), "💡 Idea saved"); };
+        act(ia.querySelector("button.main"), () => saveIdea({ ...v, account: "shubhkaprateek", status: "idea" }), "💡 Idea saved"); };
       ia.text.onkeydown = ev => { if (ev.key === "Enter" && (ev.metaKey || ev.ctrlKey)) ia.requestSubmit(); }; }
+    root.querySelectorAll("[data-itype]").forEach(b => b.onclick = () => { ideaType = b.dataset.itype; render(); });
     root.querySelectorAll("[data-ifilter]").forEach(b => b.onclick = () => { ideaFilter = b.dataset.ifilter; render(); });
-    root.querySelectorAll("[data-iacct]").forEach(b => b.onclick = () => { ideaAcct = b.dataset.iacct; render(); });
     root.querySelectorAll("[data-ideaedit]").forEach(b => b.onclick = () => { ideaEdit = +b.dataset.ideaedit; render(); });
     root.querySelectorAll("[data-ideacancel]").forEach(b => b.onclick = () => { ideaEdit = null; render(); });
     root.querySelectorAll("[data-ideastat]").forEach(sel => sel.onchange = () => { const i = D.ideas.find(x => x.id === +sel.dataset.ideastat);
