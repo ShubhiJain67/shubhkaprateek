@@ -107,7 +107,6 @@
             <div class="nums"><span><b>${fmt((+p.buy || 0) + (+p.buyPage || 0) + (+p.go || 0))}</b> clicks to store</span><span><b>${fmt(p.go)}</b> direct link</span><span><b>${fmt(p.buyPage)}</b> buy on product page</span><span><b>${fmt(p.buy)}</b> buy elsewhere</span><span><b>${fmt(p.views)}</b> page views</span>${p.reels ? `<span><b>${p.reels}</b> reel${p.reels > 1 ? "s" : ""}</span>` : ""}</div>
             <div class="links">${p.page ? `<a href="${esc(p.page)}" target="_blank" rel="noopener">See it on our site ↗</a>` : ""}${p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener sponsored">Buy link ↗</a>` : ""}</div>
           </div></div>`).join("") || `<p class="muted">No products on this page yet.</p>`}</div>
-      ${fromList.length ? `<h2>Where link clicks came from</h2><div class="card"><div class="nums">${fromList.map(([k, v]) => `<span><b>${fmt(v)}</b> ${esc(k)}</span>`).join("")}</div></div>` : ""}
       ${R.length ? `<h2>Reels featuring ${esc(d.brand)}</h2><div class="reels">${R.map(r => `<a class="reel" href="https://www.instagram.com/reel/${esc(r.code)}/" target="_blank" rel="noopener">
           <img loading="lazy" src="${esc(r.cover || "/assets/covers/" + encodeURIComponent(r.code) + ".jpg")}" alt="" onerror="this.remove()"><span>${esc(r.title)}</span></a>`).join("")}</div>` : ""}
       ${d.note ? `<p class="note">ℹ️ ${esc(d.note)}</p>` : ""}

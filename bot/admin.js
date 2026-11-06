@@ -11,7 +11,7 @@
 import * as store from "./store.js";
 
 const STATUSES = ["new", "hold", "confirmed", "product", "live", "delivered", "declined"];   // delivered = everything done, deal closed
-const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels", "show_kit", "kit_views", "return_product", "returned_on"];
+const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels", "show_kit", "kit_views", "return_product", "returned_on", "deal_type"];
 const now = () => new Date().toISOString();
 const clip = (v, n = 2000) => String(v ?? "").slice(0, n);
 const LONG = { script: 20000, non_negotiables: 5000, contacts: 5000, deliverables: 5000, trial_reels: 10000 };   // fields allowed to be longer than 2,000 characters
@@ -28,11 +28,12 @@ async function tables(env) {
   ]);
   // columns added later — only the missing ones are added (one quick look instead of ~25 tries every cold start)
   const have = new Set((((await env.STATS.prepare("PRAGMA table_info(enquiries)").all()).results) || []).map(c => c.name));
-  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT", "show_kit TEXT", "kit_views TEXT", "return_product TEXT", "returned_on TEXT"]) { if (!have.has(col.split(" ")[0])) try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
+  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT", "show_kit TEXT", "kit_views TEXT", "return_product TEXT", "returned_on TEXT", "deal_type TEXT"]) { if (!have.has(col.split(" ")[0])) try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
   // there's no "replied" status any more: those go back to New, and their "Status → replied" log lines are dropped
   // there's no "Product received" status: those deals are Ongoing
   try { await env.STATS.batch([env.STATS.prepare("UPDATE enquiries SET status = 'live' WHERE status = 'received'"),
-    env.STATS.prepare("UPDATE enquiries SET status = 'new' WHERE status = 'replied'"), env.STATS.prepare("DELETE FROM events WHERE text = 'Status → replied'")]); } catch {}
+    env.STATS.prepare("UPDATE enquiries SET status = 'new' WHERE status = 'replied'"),
+    env.STATS.prepare("UPDATE enquiries SET deal_type = 'ugc' WHERE (deal_type IS NULL OR deal_type = '') AND package LIKE 'UGC%'"),   // deal type: UGC deals from their package name env.STATS.prepare("DELETE FROM events WHERE text = 'Status → replied'")]); } catch {}
   ready = true;
 }
 const logEvent = (env, id, text) => env.STATS.prepare("INSERT INTO events (enquiry_id, at, text) VALUES (?, ?, ?)").bind(id, now(), clip(text, 300)).run();
@@ -65,8 +66,8 @@ async function onEnquiry(req, env, h) {
   const t = now();
   const d = await packageDefaults(env, h, clip(b.package, 120));
   const via = b.via === "ugc" ? "Sent from the UGC packages link (/ugc) — they saw your UGC rates" : b.via === "collab" ? "Sent from the collab packages link (/collab) — they saw your rates" : b.via === "mediakit" ? "Sent from the media kit link (/mediakit) — no rates shown" : "";
-  const r = await env.STATS.prepare(`INSERT INTO enquiries (created, updated, status, brand, email, package, product_link, message, price, payment, product_ids, source, notes)
-    VALUES (?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, '[]', 'brand', ?)`).bind(t, t, brand, email, clip(b.package, 120), clip(b.link, 500), clip(b.message, 2000), d.price, d.payment, via).run();
+  const r = await env.STATS.prepare(`INSERT INTO enquiries (created, updated, status, brand, email, package, product_link, message, price, payment, product_ids, source, notes, deal_type)
+    VALUES (?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, '[]', 'brand', ?, ?)`).bind(t, t, brand, email, clip(b.package, 120), clip(b.link, 500), clip(b.message, 2000), d.price, d.payment, via, b.via === "ugc" ? "ugc" : "collab").run();
   const id = r.meta && r.meta.last_row_id;
   if (id) await logEvent(env, id, "Enquiry received");
   await h.notify(env, `📩 <b>New enquiry</b> — ${h.esc(brand)}${b.package ? "\n" + h.esc(clip(b.package, 120)) : ""}\nOpen the dashboard: ${h.esc((env.SITE_URL || "https://shubhkaprateek.com") + "/admin")}`).catch(() => {});   // a ping on your phone

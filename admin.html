@@ -226,6 +226,12 @@
   // who started it: "brand" = they reached out to us, "us" = we reached out (older ones came from the website form)
   const SOURCES = { brand: "They reached out", us: "We reached out" };
   const srcOf = e => e.source === "us" ? "us" : "brand";
+  // deal type: Collab (a reel on our page) or UGC (videos for the brand's own page)
+  const typeOf = e => e.deal_type === "ugc" || (!e.deal_type && /^UGC/i.test(e.package || "")) ? "ugc" : "collab";
+  const TYPES = { collab: "🎬 Collab", ugc: "📹 UGC" };
+  const typeBadge = e => typeOf(e) === "ugc" ? `<span class="pill" style="background:#e8f0fe;color:#1a4fa3">UGC</span> ` : "";
+  const typeSelect = cur => `<label>Deal type<select name="deal_type">${Object.entries(TYPES).map(([k, t]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
+  const typeChips = (cur, attr, n) => `<div class="row">${[["all", "All types"], ["collab", "🎬 Collab"], ["ugc", "📹 UGC"]].map(([k, t]) => `<button class="chip ${cur === k ? "on" : ""}" ${attr}="${k}">${t}${n ? " " + n(k) : ""}</button>`).join("")}</div>`;
   const sourceSelect = cur => `<label>Who reached out<select name="source">${Object.entries(SOURCES).map(([k, t]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
   // ---- deliverables: ticked from the package's list, then yours to change
   const DELIV = [
@@ -339,7 +345,7 @@
   const price = e => money(e.price) || pkgPrice(e), guessed = e => !money(e.price) && pkgPrice(e) > 0;
 
   // ---------- views
-  let navOpen = false, view = "enquiries", filter = "all", srcFilter = "all", moneyRange = "30", moneyFrom = "", moneyTo = "", editCard = new Set(), q = "", openId = null, editing = null, reelEdit = null;
+  let navOpen = false, view = "enquiries", filter = "all", typeFilter = "all", moneyType = "all", srcFilter = "all", moneyRange = "30", moneyFrom = "", moneyTo = "", editCard = new Set(), q = "", openId = null, editing = null, reelEdit = null;
   const go = (v, id = null) => { navOpen = false; view = v; openId = id; editing = null; reelEdit = null; editCard = new Set(); location.hash = v + (id != null ? "/" + id : ""); render(); window.scrollTo(0, 0); };
   window.addEventListener("hashchange", () => { const [v, id] = location.hash.slice(1).split("/"); if (v && v !== view + "") { view = v; openId = id || null; render(); } });
 
@@ -363,13 +369,15 @@
     const inTab = (e, t) => t === "all" || (TAB[t] || [t]).includes(e.status);
     // in All: everything open first (newest on top), then on hold, then delivered, then declined
     const rank = e => ({ hold: 1, delivered: 2, declined: 3 })[e.status] || 0;
-    const list = D.enquiries.filter(e => inTab(e, filter) && (!q || (e.brand + " " + e.email).toLowerCase().includes(q))).sort((a, b) => rank(a) - rank(b));
-    const count = t => D.enquiries.filter(e => inTab(e, t)).length;
+    const inType = e => typeFilter === "all" || typeOf(e) === typeFilter;
+    const list = D.enquiries.filter(e => inTab(e, filter) && inType(e) && (!q || (e.brand + " " + e.email).toLowerCase().includes(q))).sort((a, b) => rank(a) - rank(b));
+    const count = t => D.enquiries.filter(e => inTab(e, t) && inType(e)).length;
     return `<div class="between"><h1>Enquiries</h1><div class="row"><input id="q" placeholder="Search brands…" value="${esc(q)}" style="width:220px"><button class="main" data-act="addEnq">+ Add enquiry</button></div></div>
       <div class="row">${["all", "new", "confirmed", "live", "delivered", "declined", "hold"].map(s =>
         `<button class="chip ${filter === s ? "on" : ""}" data-filter="${s}">${s === "all" ? "All" : STATUS[s]} ${count(s)}</button>`).join("")}</div>
+      ${typeChips(typeFilter, "data-type", k => D.enquiries.filter(e => inTab(e, filter) && (k === "all" || typeOf(e) === k)).length)}
       <div class="list">${list.map(e => `<button class="item" data-open="${e.id}">
-          <span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${e.pitched === "1" ? "🎯 Pitched a posted reel" : srcOf(e) === "us" ? "↗ We reached out" : "↘ They reached out"}${e.email ? " · " + esc(e.email) : ""} · ${date(e.created)}${e.payment_due ? ` · payment due ${date(e.payment_due)}` : ""}</span></span>
+          <span>${typeBadge(e)}<b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${e.pitched === "1" ? "🎯 Pitched a posted reel" : srcOf(e) === "us" ? "↗ We reached out" : "↘ They reached out"}${e.email ? " · " + esc(e.email) : ""} · ${date(e.created)}${e.payment_due ? ` · payment due ${date(e.payment_due)}` : ""}</span></span>
           ${pill(e.status)}</button>`).join("") || `<p class="empty">No enquiries here yet. When a brand sends the form on your media kit, it shows up here.</p>`}</div>`;
   }
 
@@ -438,6 +446,7 @@
           <label>Email<input name="email" value="${esc(e.email)}"></label>
           <label>Their Instagram ${e.instagram ? `<a class="small" href="${esc(igUrl(e.instagram))}" target="_blank" rel="noopener">open ↗</a>` : ""}<input name="instagram" value="${esc(e.instagram)}" placeholder="@brand or instagram.com/brand"></label>
           ${sourceSelect(srcOf(e))}
+          ${typeSelect(typeOf(e))}
           <label>Package<select name="package">${[...new Set([e.package || "", ...(D.packages || []).map(p => p.name)])].map(o => `<option ${o === (e.package || "") ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></label>
           <label>Agreed price${pk.private ? ` <span class="muted small" style="font-weight:500">— extra payment only, the refund is in Deliverables</span>` : ""}<input name="price" value="${esc(e.price || pk.price)}" placeholder="${pk.private ? "₹0 if it's only the refund" : "₹3,000"}"></label>
           <label>Payment<select name="payment">${["Paid", "Barter", "Pending"].map(o => `<option ${o === (e.payment || pk.payment) ? "selected" : ""}>${o}</option>`).join("")}</select></label>
@@ -473,7 +482,7 @@
     return kv([
       ["Brand", esc(e.brand)], ["Email", e.email ? `<a href="mailto:${esc(e.email)}">${esc(e.email)}</a>` : ""],
       ["Instagram", e.instagram ? link(igUrl(e.instagram), e.instagram) : ""], ["Who reached out", e.pitched === "1" ? "🎯 We pitched a posted reel" : SOURCES[srcOf(e)]],
-      ["Package", esc(e.package)], ["Agreed price", esc(e.price)], ["Payment", esc(e.payment)], ["Product value", esc(e.product_value)],
+      ["Deal type", TYPES[typeOf(e)]], ["Package", esc(e.package)], ["Agreed price", esc(e.price)], ["Payment", esc(e.payment)], ["Product value", esc(e.product_value)],
       ["Payment deadline", dateY(e.payment_due)], ["Shoot by", dateY(e.shoot_by)], ["Post by", dateY(e.post_by)],
       ["Product dispatched", dateY(e.dispatched_on)], ["Product received", dateY(e.received_on)], ["Draft submitted", dateY(e.draft_on)],
       ["Reel went live", dateY(e.live_on)], ["Collab added", dateY(e.collab_on)], ["Payment received", dateY(e.paid_on)],
@@ -574,7 +583,7 @@
     const rs = n => "₹" + Math.round(n).toLocaleString("en-IN"), now = today();
     const short = n => n >= 1e5 ? "₹" + (n / 1e5).toFixed(n % 1e5 ? 1 : 0) + "L" : n >= 1000 ? "₹" + (n / 1000).toFixed(n % 1000 ? 1 : 0) + "k" : "₹" + Math.round(n);
     const day = v => String(v || "").slice(0, 10);
-    const agreed = D.enquiries.filter(e => AGREED.includes(e.status));
+    const agreed = D.enquiries.filter(e => AGREED.includes(e.status) && (moneyType === "all" || typeOf(e) === moneyType));
     const cash = agreed.filter(e => price(e) > 0);                        // any deal with an agreed amount (barter + extra payment counts too)
     // tentative = the reel isn't out yet: confirmed, or ongoing without a "Reel went live" date — once it's live (or delivered) the money is due
     const isTent = e => ["confirmed", "product"].includes(e.status) || (e.status === "live" && !e.live_on && e.pitched !== "1");
@@ -622,8 +631,9 @@
         <span class="small ${e.payment_due && e.payment_due < now ? "" : "muted"}" style="${e.payment_due && e.payment_due < now ? "color:#9b2c2c;font-weight:600" : ""}">${e.payment_due ? (e.payment_due < now ? "Late — was due " : "Due ") + dateY(e.payment_due) : "No deadline set"}${guessed(e) ? " · package price — no Agreed price set" : ""}</span></span><b>${rs(price(e))}</b></button>`;
     return `<div class="between"><h1>Earnings</h1><div class="row">${[["30", "Last 30 days"], ["month", "This month"], ["all", "All time"], ["custom", "Custom"]].map(([k, t]) => `<button class="chip ${moneyRange === k ? "on" : ""}" data-mrange="${k}">${t}</button>`).join("")}</div></div>
       ${moneyRange === "custom" ? `<div class="row" style="align-items:end"><label class="small">From<input type="date" id="mfrom" value="${esc(from)}" max="${esc(now)}"></label><label class="small">To<input type="date" id="mto" value="${esc(to)}" max="${esc(now)}"></label></div>` : ""}
+      ${typeChips(moneyType, "data-mtype")}
       <div class="stats4">
-        <div class="stat big"><b>${rs(tot())}</b><span>Total earned · ${esc(lbl)} (money + products)</span></div>
+        <div class="stat big"><b>${rs(tot())}</b><span>Total earned · ${esc(lbl)} (money + products)${moneyType === "all" && items.some(x => typeOf(x.e) === "ugc") ? `<br>🎬 Collab ${rs(items.filter(x => typeOf(x.e) === "collab").reduce((t, x) => t + x.v, 0))} · 📹 UGC ${rs(items.filter(x => typeOf(x.e) === "ugc").reduce((t, x) => t + x.v, 0))}` : ""}</span></div>
         <div class="stat"><b>${rs(tot("cash"))}</b><span>💸 Money received · ${items.filter(x => x.kind === "cash").length}</span></div>
         <div class="stat"><b>${rs(tot("prod"))}</b><span>🎁 Products worth · ${items.filter(x => x.kind === "prod").length}</span></div>
         <div class="stat ${late.length ? "warn" : ""}"><b>${rs(due.reduce((t, e) => t + price(e), 0))}</b><span>Still due now · ${due.length} deal${due.length === 1 ? "" : "s"}${late.length ? ` · ⚠️ ${rs(late.reduce((t, e) => t + price(e), 0))} late` : ""}</span></div>
@@ -639,7 +649,7 @@
       <div class="split">
         <section class="card"><h2>Day by day</h2>
           ${days.map(d => `<div style="padding:8px 0;border-bottom:1px dashed var(--line)"><div class="between"><b>${dateY(d)}</b><b>${rs(byDay[d].reduce((t, x) => t + x.v, 0))}</b></div>
-            ${byDay[d].map(x => `<div class="between small" style="cursor:pointer" data-open="${x.e.id}"><span class="muted">${x.kind === "cash" ? "💸" : "🎁"} ${esc(x.e.brand)}${x.kind === "cash" && x.e.txn_id ? " · " + esc(x.e.txn_id) : ""}${x.kind === "prod" && x.e.payment === "Barter" ? " · barter" : ""}</span><span>${rs(x.v)}</span></div>`).join("")}</div>`).join("") || `<p class="muted" style="margin:0">Nothing in this range. Money counts on its <b>Payment received</b> date; a product on its <b>Product received</b> date.</p>`}</section>
+            ${byDay[d].map(x => `<div class="between small" style="cursor:pointer" data-open="${x.e.id}"><span class="muted">${x.kind === "cash" ? "💸" : "🎁"} ${esc(x.e.brand)}${typeOf(x.e) === "ugc" ? " · UGC" : ""}${x.kind === "cash" && x.e.txn_id ? " · " + esc(x.e.txn_id) : ""}${x.kind === "prod" && x.e.payment === "Barter" ? " · barter" : ""}</span><span>${rs(x.v)}</span></div>`).join("")}</div>`).join("") || `<p class="muted" style="margin:0">Nothing in this range. Money counts on its <b>Payment received</b> date; a product on its <b>Product received</b> date.</p>`}</section>
         ${toReturn.length ? `<section class="card"><h2>↩ Products to send back <span class="muted small" style="font-weight:500">· ${toReturn.length}</span></h2><div class="list">${toReturn.map(e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${e.product_value ? esc(e.product_value) + " · " : ""}not counted in Earnings</span></span>${pill(e.status)}</button>`).join("")}</div></section>` : ""}
         <section class="card"><h2>🔮 Incoming <span class="muted small" style="font-weight:500">· tentative · confirmed + ongoing, reel not live yet</span></h2><div class="list">${tent.sort((a, b) => (a.e.post_by || "9999").localeCompare(b.e.post_by || "9999")).map(tentRow).join("") || `<p class="muted" style="margin:0">Nothing in the pipeline.</p>`}</div></section>
         <section class="card"><h2>Still due <span class="muted small" style="font-weight:500">· reel is live, not paid</span></h2><div class="list">${due.sort((a, b) => (a.payment_due || "9999").localeCompare(b.payment_due || "9999")).map(dueRow).join("") || `<p class="muted" style="margin:0">Nothing due 🎉</p>`}</div></section>
@@ -715,6 +725,8 @@
     root.querySelectorAll("[data-go]").forEach(a => a.onclick = e => { e.preventDefault(); q = ""; go(a.dataset.go); });
     root.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { filter = b.dataset.filter; render(); });
     root.querySelectorAll("[data-mrange]").forEach(b => b.onclick = () => { moneyRange = b.dataset.mrange; render(); });
+    root.querySelectorAll("[data-mtype]").forEach(b => b.onclick = () => { moneyType = b.dataset.mtype; render(); });
+    root.querySelectorAll("[data-type]").forEach(b => b.onclick = () => { typeFilter = b.dataset.type; render(); });
     const mf = $("mfrom"), mt = $("mto"); if (mf && mt) { const upd = () => { moneyFrom = mf.value; moneyTo = mt.value; if (moneyFrom && moneyTo && moneyFrom > moneyTo) [moneyFrom, moneyTo] = [moneyTo, moneyFrom]; render(); }; mf.onchange = upd; mt.onchange = upd; }
     root.querySelectorAll("[data-src]").forEach(b => b.onclick = () => { srcFilter = b.dataset.src; render(); });
     root.querySelectorAll("[data-editp]").forEach(b => b.onclick = () => { go("products"); editing = { id: +b.dataset.editp }; render(); $("pf")?.scrollIntoView({ behavior: "smooth" }); });
@@ -808,6 +820,7 @@
         <label>Brand name<input name="brand" list="brandlist" required autocomplete="organization"></label>
         <label>Email<input name="email" type="email"></label>
         ${sourceSelect("us")}
+        ${typeSelect("collab")}
         <label>Package<select name="package"><option value=""></option>${pk.map(p => `<option value="${esc(p.name)}">${esc(p.name)}${p.private ? " (private)" : ""}</option>`).join("")}<option>Not sure yet</option></select></label>
         <label>Agreed price<input name="price" placeholder="filled from the package"></label>
         <label>Payment<select name="payment"><option></option><option>Paid</option><option>Barter</option><option>Pending</option></select></label>
@@ -827,7 +840,7 @@
     const pitchPk = pk.find(p => p.private && /after-live/i.test(p.name));
     const pickPitch = () => { if ((f.reel_pick.value || f.reel_paste.value.trim()) && !f.package.value && pitchPk) { f.package.value = pitchPk.name; f.package.onchange(); } };
     f.reel_pick.onchange = pickPitch; f.reel_paste.oninput = pickPitch;
-    f.package.onchange = () => { const p = pk.find(x => x.name === f.package.value); if (p) { f.price.value = p.price; f.payment.value = p.payment; } };
+    f.package.onchange = () => { const p = pk.find(x => x.name === f.package.value); if (p) { f.price.value = p.price; f.payment.value = p.payment; if (f.deal_type) f.deal_type.value = p.ugc ? "ugc" : "collab"; } };
     f.onsubmit = async ev => {
       ev.preventDefault();
       const patch = Object.fromEntries(new FormData(f)); patch.contacts = readContacts(f);
