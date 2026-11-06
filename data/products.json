@@ -679,5 +679,20 @@
         "image": "https://m.media-amazon.com/images/I/912O6KV6rTL._SL1500_.jpg"
       }
     ]
+  },
+  {
+    "id": 53,
+    "name": "3-in-1 Paint Brush Cleaner",
+    "brand": "Samvardhan Mart",
+    "category": [
+      "diy"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://amzn.in/d/04HZjvVN",
+        "image": "https://m.media-amazon.com/images/I/51B4CE2TByL.jpg"
+      }
+    ]
   }
 ]
