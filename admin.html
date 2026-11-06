@@ -573,13 +573,20 @@
     const day = v => String(v || "").slice(0, 10);
     const agreed = D.enquiries.filter(e => AGREED.includes(e.status));
     const cash = agreed.filter(e => money(e.price) > 0);                        // any deal with an agreed amount (barter + extra payment counts too)
-    const got = cash.filter(e => e.paid_on), due = cash.filter(e => !e.paid_on);
-    const late = due.filter(e => e.payment_due && e.payment_due < now);
+    // confirmed but not started yet = tentative (not counted as due until the work starts)
+    const TENT = ["confirmed", "product"], isTent = e => TENT.includes(e.status);
+    const got = cash.filter(e => e.paid_on), unpaid = cash.filter(e => !e.paid_on), due = unpaid.filter(e => !isTent(e));
+    const late = unpaid.filter(e => e.payment_due && e.payment_due < now);
     // a product counts the day it became yours for free: Product received — or, for a reel pitched after you bought the product, the day they paid you back
     // (a product that's still on its way doesn't count yet)
     const pday = e => day(e.pitched === "1" ? (e.paid_on || e.collab_on || e.created) : (e.received_on || e.live_on || e.collab_on || e.paid_on));
     const prods = agreed.filter(e => money(e.product_value) > 0 && pday(e) && e.return_product !== "1");   // a product that goes back to the brand isn't ours
     const toReturn = agreed.filter(e => e.return_product === "1" && !e.returned_on);
+    // 🔮 incoming (tentative): confirmed deals — their unpaid amount + the product that's still to arrive
+    const tent = agreed.filter(isTent).map(e => ({ e, c: e.paid_on ? 0 : money(e.price), p: e.return_product !== "1" && !pday(e) ? money(e.product_value) : 0 })).filter(x => x.c + x.p > 0);
+    const tentC = tent.reduce((t, x) => t + x.c, 0), tentP = tent.reduce((t, x) => t + x.p, 0);
+    const tentRow = ({ e, c, p }) => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br>
+        <span class="muted small">${[c ? "💸 " + rs(c) : "", p ? "🎁 " + rs(p) + (e.dispatched_on ? " · on its way" : "") : "", e.post_by ? "post by " + dateY(e.post_by) : ""].filter(Boolean).join(" · ")}</span></span><b>${rs(c + p)}</b></button>`;
     // the range
     const first = [...got.map(e => e.paid_on), ...prods.map(pday)].filter(Boolean).sort()[0] || now;
     const back = n => new Date(Date.now() - n * 864e5).toLocaleDateString("en-CA");
@@ -616,8 +623,8 @@
         <div class="stat big"><b>${rs(tot())}</b><span>Total earned · ${esc(lbl)} (money + products)</span></div>
         <div class="stat"><b>${rs(tot("cash"))}</b><span>💸 Money received · ${items.filter(x => x.kind === "cash").length}</span></div>
         <div class="stat"><b>${rs(tot("prod"))}</b><span>🎁 Products worth · ${items.filter(x => x.kind === "prod").length}</span></div>
-        <div class="stat"><b>${rs(due.reduce((t, e) => t + money(e.price), 0))}</b><span>Still due now · ${due.length} deal${due.length === 1 ? "" : "s"}</span></div>
-        <div class="stat ${late.length ? "warn" : ""}"><b>${rs(late.reduce((t, e) => t + money(e.price), 0))}</b><span>Late (past deadline) · ${late.length}</span></div>
+        <div class="stat ${late.length ? "warn" : ""}"><b>${rs(due.reduce((t, e) => t + money(e.price), 0))}</b><span>Still due now · ${due.length} deal${due.length === 1 ? "" : "s"}${late.length ? ` · ⚠️ ${rs(late.reduce((t, e) => t + money(e.price), 0))} late` : ""}</span></div>
+        <div class="stat"><b>${rs(tentC + tentP)}</b><span>🔮 Incoming (tentative) · ${tent.length} confirmed${tentP ? ` · 💸 ${rs(tentC)} + 🎁 ${rs(tentP)}` : ""}</span></div>
         <div class="stat"><b>${rs(allTime)}</b><span>Earned all time (money + products)</span></div>
       </div>
       <section class="card"><h2>Earned per ${unit} <span class="muted small" style="font-weight:500">· ${esc(lbl)} · <span style="color:var(--accent)">■</span> money <span style="color:#d4a62a">■</span> products</span></h2>
@@ -631,9 +638,10 @@
           ${days.map(d => `<div style="padding:8px 0;border-bottom:1px dashed var(--line)"><div class="between"><b>${dateY(d)}</b><b>${rs(byDay[d].reduce((t, x) => t + x.v, 0))}</b></div>
             ${byDay[d].map(x => `<div class="between small" style="cursor:pointer" data-open="${x.e.id}"><span class="muted">${x.kind === "cash" ? "💸" : "🎁"} ${esc(x.e.brand)}${x.kind === "cash" && x.e.txn_id ? " · " + esc(x.e.txn_id) : ""}${x.kind === "prod" && x.e.payment === "Barter" ? " · barter" : ""}</span><span>${rs(x.v)}</span></div>`).join("")}</div>`).join("") || `<p class="muted" style="margin:0">Nothing in this range. Money counts on its <b>Payment received</b> date; a product on its <b>Product received</b> date.</p>`}</section>
         ${toReturn.length ? `<section class="card"><h2>↩ Products to send back <span class="muted small" style="font-weight:500">· ${toReturn.length}</span></h2><div class="list">${toReturn.map(e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${e.product_value ? esc(e.product_value) + " · " : ""}not counted in Earnings</span></span>${pill(e.status)}</button>`).join("")}</div></section>` : ""}
-        <section class="card"><h2>Still due</h2><div class="list">${due.sort((a, b) => (a.payment_due || "9999").localeCompare(b.payment_due || "9999")).map(dueRow).join("") || `<p class="muted" style="margin:0">Nothing due 🎉</p>`}</div></section>
+        <section class="card"><h2>🔮 Incoming <span class="muted small" style="font-weight:500">· tentative · confirmed, not started yet</span></h2><div class="list">${tent.sort((a, b) => (a.e.post_by || "9999").localeCompare(b.e.post_by || "9999")).map(tentRow).join("") || `<p class="muted" style="margin:0">No confirmed deals waiting.</p>`}</div></section>
+        <section class="card"><h2>Still due <span class="muted small" style="font-weight:500">· ongoing + delivered, not paid</span></h2><div class="list">${due.sort((a, b) => (a.payment_due || "9999").localeCompare(b.payment_due || "9999")).map(dueRow).join("") || `<p class="muted" style="margin:0">Nothing due 🎉</p>`}</div></section>
       </div>
-      <p class="muted small" style="margin:0">Counts confirmed, ongoing and delivered deals. Money = Agreed price, counted on its Payment received date (until then it's due). Products = Product value (not ones that go back to the brand), counted on Product received (or the reel's live date if that's empty); for an after-live pitch, on the day they paid.</p>`;
+      <p class="muted small" style="margin:0">Counts confirmed, ongoing and delivered deals. 🔮 Incoming = Confirmed deals that haven't started: their unpaid price + the product still to arrive (it moves to Still due / Products once the product arrives and the deal turns Ongoing). Money = Agreed price, counted on its Payment received date (until then it's due). Products = Product value (not ones that go back to the brand), counted on Product received (or the reel's live date if that's empty); for an after-live pitch, on the day they paid.</p>`;
   }
 
   // ---- Categories: tab → sub-category → products
