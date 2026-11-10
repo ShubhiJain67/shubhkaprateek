@@ -694,5 +694,21 @@
         "image": "https://m.media-amazon.com/images/I/51B4CE2TByL.jpg"
       }
     ]
+  },
+  {
+    "id": 54,
+    "name": "Wooden Tool Kit Set",
+    "brand": "Samvardhan Mart",
+    "category": [
+      "toys",
+      "building-sets"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://amzn.in/d/0gBzCmIt",
+        "image": "https://m.media-amazon.com/images/I/71qWaiXTX4L._SL1500_.jpg"
+      }
+    ]
   }
 ]
