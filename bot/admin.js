@@ -64,9 +64,15 @@ async function packageDefaults(env, h, name) {
 async function onEnquiry(req, env, h) {
   if (!env.STATS) return json(env, { error: "not set up" }, 503);
   let b; try { b = await req.json(); } catch { return json(env, { error: "bad request" }, 400); }
-  if (b.botcheck) return json(env, { ok: true });                                 // a spam bot filled the hidden box
+  if (b.botcheck) {                                                              // a spam bot filled the hidden box: not saved, but you still hear about it
+    await h.notify(env, `🤖 <b>Spam enquiry blocked</b> (not saved) — ${h.esc(clip(b.brand, 120) || "no name")}${b.email ? " · " + h.esc(clip(b.email, 200)) : ""}`).catch(() => {});
+    return json(env, { ok: true });
+  }
   const brand = clip(b.brand, 120).trim(), email = clip(b.email, 200).trim();
-  if (!brand || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json(env, { error: "Please add your brand name and email." }, 400);
+  if (!brand || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    await h.notify(env, `⚠️ <b>Enquiry not saved</b> — missing brand name or a valid email: ${h.esc(brand || "no name")}${email ? " · " + h.esc(email) : ""}`).catch(() => {});
+    return json(env, { error: "Please add your brand name and email." }, 400);
+  }
   await tables(env);
   const t = now();
   const d = await packageDefaults(env, h, clip(b.package, 120));
@@ -193,6 +199,7 @@ async function run(a, env, h) {
       for (const k of DEAL_FIELDS) if (!["brand", "email", "package"].includes(k) && clip(p[k], LONG[k] || 2000).trim()) { sets.push(`${k} = ?`); vals.push(clip(p[k], LONG[k] || 2000)); }
       if (sets.length) await env.STATS.prepare(`UPDATE enquiries SET ${sets.join(", ")} WHERE id = ?`).bind(...vals, id).run();
       await logEvent(env, id, "Added by you");
+      await h.notify(env, `📝 <b>Enquiry added in the dashboard</b> — ${h.esc(clip(p.brand, 120) || "New brand")}${p.package ? "\n" + h.esc(clip(p.package, 120)) : ""}`).catch(() => {});
       // pitched from a reel you already posted: link the reel + its products to this deal
       const pm = String(a.reel || "").match(/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]{5,})/) || String(a.reel || "").match(/^([A-Za-z0-9_-]{5,})$/);
       if (pm) {
