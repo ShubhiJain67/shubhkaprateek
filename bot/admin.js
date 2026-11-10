@@ -122,6 +122,20 @@ async function load(env, h) {
     await store.setSetting(env, "fix:samvardhan-return", new Date().toISOString());
     for (const e of enquiries) if (/^samvardhan/i.test(e.brand || "") && (e.package || "") !== "After-live pitch" && (e.reel_code || "") !== "DfJSWTLSvaV" && e.status !== "declined") e.return_product = "1";
   }
+  // one-time: deals already Delivered / Closed get every deliverable on their checklist ticked done
+  if (!(await store.getSetting(env, "fix:delivered-deliverables", null))) {
+    const ups = [];
+    for (const e of enquiries) {
+      if (!["delivered", "closed"].includes(e.status) || !e.deliverables) continue;
+      let d; try { d = JSON.parse(e.deliverables); } catch { continue; }
+      let n = 0;
+      for (const v of Object.values(d.items || {})) if (v && v.on && !v.done) { v.done = true; n++; }
+      for (const x of d.extra || []) if (x && !x.done) { x.done = true; n++; }
+      if (n) { e.deliverables = JSON.stringify(d); ups.push(env.STATS.prepare("UPDATE enquiries SET deliverables = ? WHERE id = ?").bind(e.deliverables, e.id)); }
+    }
+    if (ups.length) await env.STATS.batch(ups);
+    await store.setSetting(env, "fix:delivered-deliverables", new Date().toISOString());
+  }
   await syncKit(env, h, reels, enquiries);
   return { products, reels, categories, featured, brands, enquiries, events, packages, ideas };
 }

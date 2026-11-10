@@ -418,7 +418,7 @@
         <section class="card" data-fold="history"><h2>History</h2>
           <form id="notef" class="row" style="align-items:end;margin-bottom:10px"><label style="flex:1;min-width:200px">✍️ Add to history<input name="text" placeholder="e.g. Shared product links with the brand" maxlength="300"></label>
             <label style="width:auto">When<input name="at" type="datetime-local" value="${esc(nowLocal())}"></label>
-            <label class="ph-btn" style="width:auto">📎 Photos<input name="photos" type="file" accept="image/*" multiple hidden></label><button class="main" type="submit">+ Add</button>
+            <label class="ph-btn" style="width:auto">📎 Photos<input name="photos" type="file" accept="image/*,.heic,.heif" multiple hidden></label><button class="main" type="submit">+ Add</button>
             <span id="notefiles" class="muted small" style="flex-basis:100%"></span></form>
           ${historyOf(e, ev)}</section>
       </div>
@@ -515,7 +515,7 @@
       <div class="split">
         <div style="flex:0 0 150px;display:grid;gap:8px">
           ${editing.photo || f.image ? `<img class="photo" src="${esc(editing.photo || img(f.image))}" alt="Product photo" referrerpolicy="no-referrer">` : `<div class="photo">Photo appears here after "Fetch details" — or upload one</div>`}
-          <label class="btn" style="justify-content:center">Upload photo<input id="up" type="file" accept="image/*" hidden></label>
+          <label class="btn" style="justify-content:center">Upload photo<input id="up" type="file" accept="image/*,.heic,.heif" hidden></label>
         </div>
         <div style="display:grid;gap:12px">
           <label>Product link<span class="row"><input name="link" value="${esc(f.link)}" placeholder="https://…" style="flex:1 1 200px"><button type="button" data-act="fetch">Fetch details</button></span></label>
@@ -819,7 +819,7 @@
         } catch {}
         render(); }
     });
-    const up = $("up"); if (up) up.onchange = () => { const file = up.files[0]; if (!file) return; readPF(); shrink(file).then(url => { editing.photo = url; render(); }); };
+    const up = $("up"); if (up) up.onchange = () => { const file = up.files[0]; if (!file) return; readPF(); shrink(file).then(url => { editing.photo = url; render(); }).catch(err => toast("⚠ " + err.message)); };
     const pf = $("pf"); if (pf) pf.onsubmit = ev => { ev.preventDefault(); readPF(); const f = editing.form, btn = pf.querySelector("button.main");
       act(btn, async () => { const r = await api("product.save", { product: { id: editing.id, ...f, image: /^https?:|^assets\//.test(f.image) ? f.image : "" }, photo: editing.photo || null, enquiryId: view === "enquiry" ? +openId : null }); editing = null; }, "Saved — on the website in a few seconds"); };
     const deal = $("deal"); if (deal) { wireContacts(deal); deal.onsubmit = ev => { ev.preventDefault(); const patch = Object.fromEntries(new FormData(deal)); patch.contacts = readContacts(deal); patch.contact = "";
@@ -839,7 +839,8 @@
       nf.photos.onchange = () => { const n = nf.photos.files.length; $("notefiles").textContent = n ? `📎 ${n} photo${n > 1 ? "s" : ""} attached${n > 6 ? " — only the first 6 are kept" : ""}` : ""; };
       nf.onsubmit = ev => { ev.preventDefault(); const text = nf.text.value.trim(), at = nf.at.value, files = [...nf.photos.files].slice(0, 6);
         if (!text && !files.length) { toast("Write what happened or attach a photo"); return; }
-        act(nf.querySelector("button.main"), async () => { const photos = await Promise.all(files.map(shrink));
+        if (files.some(isHeic)) $("notefiles").textContent = "Converting iPhone (HEIC) photos…";
+        act(nf.querySelector("button.main"), async () => { let photos; try { photos = await Promise.all(files.map(shrink)); } catch (err) { toast("⚠ " + err.message); $("notefiles").textContent = ""; throw err; }
           await api("enquiry.note", { id: +openId, text, at: at ? new Date(at).toISOString() : "", photos }); }, "✍️ Added to history"); }; }
     root.querySelectorAll("[data-notedel]").forEach(b => b.onclick = () => { if (!confirmTwice(b)) return; act(b, () => api("enquiry.noteDelete", { eventId: +b.dataset.notedel }), "Note deleted"); });
     root.querySelectorAll("[data-recv]").forEach(b => b.onclick = () => act(b, () => api("enquiry.update", { id: +openId, patch: { received_on: nowLocal() } }), "📬 Product received — status: Ongoing"));
@@ -984,7 +985,21 @@
   // destructive buttons need a second tap
   function confirmTwice(b) { if (b.dataset.sure) return true; b.dataset.sure = "1"; const t = b.textContent; b.textContent = "Tap again to confirm"; setTimeout(() => { delete b.dataset.sure; b.textContent = t; }, 3000); return false; }
   // phone photos are big: shrink to 1200 px JPEG before uploading
-  function shrink(file) { return new Promise((ok, no) => { const im = new Image(); im.onload = () => { const s = Math.min(1, 1200 / Math.max(im.width, im.height)); const c = document.createElement("canvas"); c.width = Math.round(im.width * s); c.height = Math.round(im.height * s); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); ok(c.toDataURL("image/jpeg", .85)); URL.revokeObjectURL(im.src); }; im.onerror = no; im.src = URL.createObjectURL(file); }); }
+  // iPhone photos come as HEIC, which Chrome can't open — those are turned into JPEG first (the converter only loads when needed)
+  const isHeic = f => /image\/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name || "");
+  let heicLib = null;
+  const loadHeic = () => heicLib || (heicLib = new Promise((ok, no) => { const sc = document.createElement("script");
+    sc.src = "https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"; sc.onload = () => ok(window.heic2any); sc.onerror = () => { heicLib = null; no(new Error("heic")); }; document.head.appendChild(sc); }));
+  async function toViewable(file) {
+    if (!isHeic(file)) return file;
+    try { const conv = await loadHeic(); const out = await conv({ blob: file, toType: "image/jpeg", quality: .9 }); return Array.isArray(out) ? out[0] : out; }
+    catch { throw new Error("Couldn't read that HEIC photo — open it and save/share it as JPEG, then attach again"); }
+  }
+  async function shrink(file) {
+    const img = await toViewable(file);
+    return new Promise((ok, no) => { const im = new Image(); im.onload = () => { const s = Math.min(1, 1200 / Math.max(im.width, im.height)); const c = document.createElement("canvas"); c.width = Math.round(im.width * s); c.height = Math.round(im.height * s); c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); ok(c.toDataURL("image/jpeg", .85)); URL.revokeObjectURL(im.src); };
+      im.onerror = () => no(new Error(`Couldn't read "${file.name || "that photo"}" — try a JPEG or PNG`)); im.src = URL.createObjectURL(img); });
+  }
 
   root.innerHTML = `<p class="empty">Loading…</p>`;
   try { await api("load"); } catch (e) { if (e.message !== "login") root.innerHTML = `<p class="empty">Couldn't load the dashboard — reload in a minute.</p>`; return; }
