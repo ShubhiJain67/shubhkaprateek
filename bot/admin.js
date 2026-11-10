@@ -28,6 +28,7 @@ async function tables(env) {
     // content ideas: quick notes of reel / video ideas, for any of your accounts
     env.STATS.prepare("CREATE TABLE IF NOT EXISTS ideas (id INTEGER PRIMARY KEY AUTOINCREMENT, created TEXT, updated TEXT, text TEXT, account TEXT, status TEXT, link TEXT, notes TEXT, type TEXT)")
   ]);
+  try { if (!((((await env.STATS.prepare("PRAGMA table_info(events)").all()).results) || []).some(c => c.name === "files"))) await env.STATS.prepare("ALTER TABLE events ADD COLUMN files TEXT").run(); } catch {}   // photos on your history notes
   try { if (!((((await env.STATS.prepare("PRAGMA table_info(ideas)").all()).results) || []).some(c => c.name === "type"))) await env.STATS.prepare("ALTER TABLE ideas ADD COLUMN type TEXT").run(); } catch {}
   // columns added later — only the missing ones are added (one quick look instead of ~25 tries every cold start)
   const have = new Set((((await env.STATS.prepare("PRAGMA table_info(enquiries)").all()).results) || []).map(c => c.name));
@@ -208,19 +209,34 @@ async function run(a, env, h) {
       }
     }
     if (status && STATUSES.includes(status) && status !== e.status) { sets.push("status = ?"); vals.push(status); await logEvent(env, e.id, `Status → ${status}`); }
+    // marked Delivered → every deliverable on the checklist is done
+    if (status === "delivered" && status !== e.status) {
+      let d; try { d = JSON.parse(("deliverables" in p ? p.deliverables : e.deliverables) || "{}"); } catch { d = {}; }
+      if (d && (d.items || d.extra)) {
+        let n = 0;
+        for (const v of Object.values(d.items || {})) if (v && v.on && !v.done) { v.done = true; n++; }
+        for (const x of d.extra || []) if (x && !x.done) { x.done = true; n++; }
+        if (n) { const i = sets.indexOf("deliverables = ?"); if (i >= 0) vals[i] = JSON.stringify(d); else { sets.push("deliverables = ?"); vals.push(JSON.stringify(d)); } await logEvent(env, e.id, `All deliverables ticked done (${n})`); }
+      }
+    }
     if (sets.length) await env.STATS.prepare(`UPDATE enquiries SET ${sets.join(", ")}, updated = ? WHERE id = ?`).bind(...vals, now(), e.id).run();
     return load(env, h);
   }
   // ---- your own notes in a deal's history ("Shared product links with the brand"), at the time you pick
   if (op === "enquiry.note") {
-    const text = clip(a.text, 300).trim(); if (!text) throw new Error("Write what happened first");
+    const photos = [].concat(a.photos || []).filter(x => /^data:image\//.test(String(x))).slice(0, 6);
+    const text = clip(a.text, 300).trim() || (photos.length ? "📎 Photo" + (photos.length > 1 ? "s" : "") : ""); if (!text) throw new Error("Write what happened first");
     const e = await getEnquiry(env, a.id); if (!e) throw new Error("That enquiry is gone");
     const at = !isNaN(Date.parse(a.at)) ? new Date(a.at).toISOString() : now();
-    await env.STATS.batch([env.STATS.prepare("INSERT INTO events (enquiry_id, at, text) VALUES (?, ?, ?)").bind(e.id, at, "✍️ " + text),
+    const files = [];   // supporting photos (screenshots, chats, the parcel…) — stored in the database, under a random name
+    for (const ph of photos) files.push(await store.putImage(env, `note-${e.id}-${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}.jpg`, ph));
+    await env.STATS.batch([env.STATS.prepare("INSERT INTO events (enquiry_id, at, text, files) VALUES (?, ?, ?, ?)").bind(e.id, at, "✍️ " + text, files.length ? JSON.stringify(files) : null),
       env.STATS.prepare("UPDATE enquiries SET updated = ? WHERE id = ?").bind(now(), e.id)]);
     return load(env, h);
   }
   if (op === "enquiry.noteDelete") {
+    const ev = await env.STATS.prepare("SELECT files FROM events WHERE id = ? AND text LIKE '✍️ %'").bind(+a.eventId).first();
+    if (ev && ev.files) try { await store.deleteImageUrls(env, JSON.parse(ev.files)); } catch {}
     await env.STATS.prepare("DELETE FROM events WHERE id = ? AND text LIKE '✍️ %'").bind(+a.eventId).run();
     return load(env, h);
   }
