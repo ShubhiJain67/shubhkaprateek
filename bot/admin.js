@@ -10,7 +10,7 @@
 
 import * as store from "./store.js";
 
-const STATUSES = ["new", "hold", "confirmed", "product", "live", "delivered", "declined"];   // delivered = everything done, deal closed
+const STATUSES = ["new", "hold", "confirmed", "product", "live", "delivered", "closed", "declined"];   // delivered = the work is done · closed = all dues cleared too
 const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels", "show_kit", "kit_views", "return_product", "returned_on", "deal_type"];
 const now = () => new Date().toISOString();
 const clip = (v, n = 2000) => String(v ?? "").slice(0, n);
@@ -135,7 +135,7 @@ async function syncKit(env, h, reels, enquiries) {
   if (!Array.isArray(reels)) return;
   const codeOf = r => ((r.reel || "").match(h.REEL_RE) || [])[1] || "";
   const order = new Map(reels.map(r => [codeOf(r).toLowerCase(), { id: +r.id || 0, code: codeOf(r), cover: r.cover || "" }]));
-  const shown = enquiries.filter(e => ["live", "delivered"].includes(e.status) && e.show_kit !== "0");
+  const shown = enquiries.filter(e => ["live", "delivered", "closed"].includes(e.status) && e.show_kit !== "0");
   const collabs = [], seen = new Set();
   for (const e of shown) {
     let more = []; try { more = JSON.parse(e.reels || "[]"); } catch {}
@@ -209,8 +209,13 @@ async function run(a, env, h) {
       }
     }
     if (status && STATUSES.includes(status) && status !== e.status) { sets.push("status = ?"); vals.push(status); await logEvent(env, e.id, `Status → ${status}`); }
-    // marked Delivered → every deliverable on the checklist is done
-    if (status === "delivered" && status !== e.status) {
+    // marked Closed → all dues cleared: a paid deal that has no Payment received date gets today's
+    if (status === "closed" && status !== e.status && !(p.paid_on || e.paid_on) && (String(p.price ?? e.price ?? "").replace(/[^\d]/g, "") || (p.payment ?? e.payment) === "Paid")) {
+      const i = sets.indexOf("paid_on = ?"), d = now().slice(0, 10); if (i >= 0) vals[i] = d; else { sets.push("paid_on = ?"); vals.push(d); }
+      await logEvent(env, e.id, "Payment marked received (deal closed)");
+    }
+    // marked Delivered (or Closed) → every deliverable on the checklist is done
+    if (["delivered", "closed"].includes(status) && status !== e.status && !(status === "closed" && e.status === "delivered")) {
       let d; try { d = JSON.parse(("deliverables" in p ? p.deliverables : e.deliverables) || "{}"); } catch { d = {}; }
       if (d && (d.items || d.extra)) {
         let n = 0;
@@ -314,7 +319,7 @@ async function run(a, env, h) {
     if (a.enquiryId) {
       // live date: the one picked in the form, else keep the saved one, else today. A closed (delivered) deal stays closed.
       const liveOn = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(a.liveOn || "") ? a.liveOn : null;   // date, or date + time
-      await env.STATS.prepare("UPDATE enquiries SET reel_code = ?, status = CASE WHEN status = 'delivered' THEN status ELSE 'live' END, live_on = COALESCE(?, live_on, date('now')), updated = ? WHERE id = ?").bind(code, liveOn, now(), a.enquiryId).run();
+      await env.STATS.prepare("UPDATE enquiries SET reel_code = ?, status = CASE WHEN status IN ('delivered', 'closed') THEN status ELSE 'live' END, live_on = COALESCE(?, live_on, date('now')), updated = ? WHERE id = ?").bind(code, liveOn, now(), a.enquiryId).run();
       await logEvent(env, a.enquiryId, `Reel live: ${code}`);
     }
     return { ...(await load(env, h)), cover: gotCover };

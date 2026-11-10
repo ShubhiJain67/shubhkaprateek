@@ -56,7 +56,8 @@
   .s-confirmed { background: #2f6fdb; color: #fff; }         /* blue */
   .s-product { background: #7b4fd6; color: #fff; }           /* purple */
   .s-live { background: #e8890c; color: #fff; }              /* orange — ongoing */
-  .s-delivered { background: #1f8a4c; color: #fff; }         /* green — done */
+  .s-delivered { background: #1f8a4c; color: #fff; }         /* green — work done */
+  .s-closed { background: #12372a; color: #fff; }            /* dark green — done + all dues cleared */
   .s-hold { background: #f2c94c; color: #5a4300; }           /* yellow */
   .s-declined { background: #8f8580; color: #fff; }          /* grey */
   .list { display: grid; gap: 10px; }
@@ -206,8 +207,8 @@
   }
 
   // ---------- helpers on the data
-  const STATUS = { new: "New", hold: "On hold", confirmed: "Confirmed", product: "Product added", live: "Ongoing", delivered: "Delivered", declined: "Declined" };
-  const FLOW = ["new", "confirmed", "product", "live", "delivered"];
+  const STATUS = { new: "New", hold: "On hold", confirmed: "Confirmed", product: "Product added", live: "Ongoing", delivered: "Delivered", closed: "Closed", declined: "Declined" };
+  const FLOW = ["new", "confirmed", "product", "live", "delivered", "closed"];
   const today = () => new Date().toLocaleDateString("en-CA");   // YYYY-MM-DD in your time zone
   // date + time, in your time zone: "YYYY-MM-DDTHH:MM" (what the date-and-time boxes use)
   const nowLocal = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16); };
@@ -262,7 +263,7 @@
   const reelsOfDeal = e => { let x = []; try { x = JSON.parse(e.reels || "[]"); } catch {} return [e.reel_code, ...(Array.isArray(x) ? x : [])].filter(Boolean).map(c => String(c).toLowerCase()); };
   const dealOfReel = code => D.enquiries.find(e => e.status !== "declined" && reelsOfDeal(e).includes(String(code || "").toLowerCase()));
   // golden rows: reels that are a brand collab, and products we got without paying (from a deal, not pitched after buying)
-  const AGREED = ["confirmed", "product", "live", "delivered"];
+  const AGREED = ["confirmed", "product", "live", "delivered", "closed"];
   const isCollabReel = code => D.enquiries.some(e => AGREED.includes(e.status) && reelsOfDeal(e).includes(String(code || "").toLowerCase()));
   const isFreeProduct = id => D.enquiries.some(e => AGREED.includes(e.status) && e.pitched !== "1" && e.return_product !== "1" && (e.product_ids || []).includes(+id));
   const dateY = s => s ? new Date(ms(s)).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) + (timeOf(s) ? ", " + timeOf(s) : "") : "";
@@ -302,7 +303,7 @@
     trialsOf(e).filter(t => t.date).forEach(t => real.push({ d: day(t.date), t: `🔁 Trial reel${t.note ? " — " + t.note : ""}`, kind: "real" }));
     // deadlines: upcoming, or late if the thing hasn't happened
     const dues = [["shoot_by", "🎬 Shoot by", "live_on"], ["post_by", "📅 Post by", "live_on"], ["payment_due", "⏳ Payment due", "paid_on"]]
-      .filter(([k, , doneK]) => e[k] && !e[doneK] && !["delivered", "declined"].includes(e.status))
+      .filter(([k, , doneK]) => e[k] && !e[doneK] && !["delivered", "closed", "declined"].includes(e.status))
       .map(([k, t]) => ({ d: day(e[k]), t, kind: day(e[k]) < now ? "late" : "due" }));
     const logs = ev.map(x => /^✍️ /.test(x.text) ? { d: new Date(x.at).toLocaleDateString("en-CA"), at: x.at, t: String(x.text).slice(3), kind: "note", id: x.id, files: (() => { try { return JSON.parse(x.files || "[]"); } catch { return []; } })() } : ({ d: x.at ? new Date(x.at).toLocaleDateString("en-CA") : "", at: x.at, t: String(x.text).replace(/Status → (\w+)/, (m, s) => "Status → " + (STATUS[s] || s)), kind: "log" }));
     const row = x => `<div class="h"><b class="d">${date(x.d)}${timeOf(x.at) ? `<small class="tm">${timeOf(x.at)}</small>` : ""}</b><span class="${x.kind}">${esc(x.t)}${x.kind === "late" ? " — late" : ""}${x.kind === "log" ? ` <span class="small">· logged</span>` : ""}${x.kind === "note" ? ` <button type="button" class="note-x" data-notedel="${x.id}" aria-label="Delete note" title="Delete note">✕</button>` : ""}${(x.files || []).length ? `<span class="note-ph">${x.files.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Photo" loading="lazy"></a>`).join("")}</span>` : ""}</span></div>`;
@@ -370,15 +371,15 @@
   // ---- Enquiries
   function vEnquiries() {
     // tabs: Confirmed also holds "product added"
-    const TAB = { new: ["new"], confirmed: ["confirmed", "product"], live: ["live"], delivered: ["delivered"], declined: ["declined"], hold: ["hold"] };
+    const TAB = { new: ["new"], confirmed: ["confirmed", "product"], live: ["live"], delivered: ["delivered"], closed: ["closed"], declined: ["declined"], hold: ["hold"] };
     const inTab = (e, t) => t === "all" || (TAB[t] || [t]).includes(e.status);
-    // in All: everything open first (newest on top), then on hold, then delivered, then declined
-    const rank = e => ({ hold: 1, delivered: 2, declined: 3 })[e.status] || 0;
+    // in All: everything open first (newest on top), then on hold, then delivered, then closed, then declined
+    const rank = e => ({ hold: 1, delivered: 2, closed: 3, declined: 4 })[e.status] || 0;
     const inType = e => typeFilter === "all" || typeOf(e) === typeFilter;
     const list = D.enquiries.filter(e => inTab(e, filter) && inType(e) && (!q || (e.brand + " " + e.email).toLowerCase().includes(q))).sort((a, b) => rank(a) - rank(b));
     const count = t => D.enquiries.filter(e => inTab(e, t) && inType(e)).length;
     return `<div class="between"><h1>Enquiries</h1><div class="row"><input id="q" placeholder="Search brands…" value="${esc(q)}" style="width:220px"><button class="main" data-act="addEnq">+ Add enquiry</button></div></div>
-      <div class="row">${["all", "new", "confirmed", "live", "delivered", "declined", "hold"].map(s =>
+      <div class="row">${["all", "new", "confirmed", "live", "delivered", "closed", "declined", "hold"].map(s =>
         `<button class="chip ${filter === s ? "on" : ""}" data-filter="${s}">${s === "all" ? "All" : STATUS[s]} ${count(s)}</button>`).join("")}</div>
       ${typeChips(typeFilter, "data-type", k => D.enquiries.filter(e => inTab(e, filter) && (k === "all" || typeOf(e) === k)).length)}
       <div class="list">${list.map(e => `<button class="item" data-open="${e.id}">
@@ -405,8 +406,9 @@
         ${e.status !== "confirmed" && at < 1 ? `<button class="ok" data-status="confirmed">${e.pitched === "1" && e.reel_code ? "Confirm (reel is already live)" : "Confirm"}</button>` : ""}
         ${!e.received_on && e.pitched !== "1" && ["confirmed", "product", "live", "hold"].includes(e.status) ? `<button data-recv>📬 Product received</button>` : ""}
         ${e.status === "live" ? `<button class="ok" data-status="delivered">Mark delivered ✓</button>` : ""}
-        ${e.status === "delivered" ? `<button data-status="live">Reopen (back to Ongoing)</button>` : ""}
-        ${!["hold", "delivered"].includes(e.status) ? `<button data-status="hold">Put on hold</button>` : ""}
+        ${e.status === "delivered" ? `<button class="ok" data-status="closed" title="Marks the payment received if it isn't already">Close deal — all dues cleared ✓</button><button data-status="live">Reopen (back to Ongoing)</button>` : ""}
+        ${e.status === "closed" ? `<button data-status="delivered">Reopen (back to Delivered)</button>` : ""}
+        ${!["hold", "delivered", "closed"].includes(e.status) ? `<button data-status="hold">Put on hold</button>` : ""}
         ${e.status !== "declined" ? `<button class="danger" data-status="declined">Decline</button>` : `<button data-status="new">Reopen</button>`}
         <button class="danger" data-act="delEnq" style="margin-left:auto">Delete</button>
       </div>
@@ -439,7 +441,7 @@
         ${editing ? productForm(e) : ""}
       </section>
       <section class="card" data-fold="reel"><h2>Reel</h2>
-        ${e.reel_code ? `<p style="margin:0 0 10px">${e.pitched === "1" && !["live", "delivered"].includes(e.status) ? "Your reel" : "Reel"}: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a>${moreReels.map(c => ` · <a href="${SITE}/reel/${esc(c)}" target="_blank" rel="noopener">${esc(reelTitle(c))}</a>`).join("")} · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
+        ${e.reel_code ? `<p style="margin:0 0 10px">${e.pitched === "1" && !["live", "delivered", "closed"].includes(e.status) ? "Your reel" : "Reel"}: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a>${moreReels.map(c => ` · <a href="${SITE}/reel/${esc(c)}" target="_blank" rel="noopener">${esc(reelTitle(c))}</a>`).join("")} · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
         ${prods.length ? `<form id="reelf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 210px">Live date &amp; time<input name="live_on" type="datetime-local" value="${esc(dtVal(e.live_on) || nowLocal())}"></label><button class="main">${e.reel_code ? "Update reel" : "Go live →"}</button></form>
           <p class="muted small" style="margin:8px 0 0">Makes the reel page, connects it to their product${prods.length > 1 ? "s" : ""} and publishes the website. Status → Ongoing.</p>` : `<p class="muted" style="margin:0">Add their product first.</p>`}
       </section>
@@ -497,7 +499,7 @@
       ["Product dispatched", dateY(e.dispatched_on)], ["Product received", dateY(e.received_on)], ["Draft submitted", dateY(e.draft_on)],
       ["Reel went live", dateY(e.live_on)], ["Collab added", dateY(e.collab_on)], ["Payment received", dateY(e.paid_on)],
       ["Product", e.return_product === "1" ? (e.returned_on ? `↩ Sent back to the brand on ${dateY(e.returned_on)}` : "↩ Goes back to the brand — not sent yet") : ""],
-      ["Media kit", reelsOfDeal(e).length ? (e.show_kit === "0" ? "Hidden" : ["live", "delivered"].includes(e.status) ? `Shown${e.kit_views ? " · ▶ " + esc(e.kit_views) + " views" : ""}` : "Shows once it's Ongoing") : ""],
+      ["Media kit", reelsOfDeal(e).length ? (e.show_kit === "0" ? "Hidden" : ["live", "delivered", "closed"].includes(e.status) ? `Shown${e.kit_views ? " · ▶ " + esc(e.kit_views) + " views" : ""}` : "Shows once it's Ongoing") : ""],
       ["Transaction ID", esc(e.txn_id)], ["Payment details", esc(e.payment_notes)],
       ["Contacts", cs.map(c => `<span class="ct">${esc([c.name, c.role].filter(Boolean).join(" · "))}${c.phone ? ` · <a href="tel:${esc(c.phone.replace(/\s/g, ""))}">${esc(c.phone)}</a>` : ""}</span>`).join("")],
       ["Product link", link(pl)], ["Their message", esc(e.message)], ["Your notes", esc(e.notes)],
@@ -691,7 +693,7 @@
         <section class="card"><h2>🔮 Incoming <span class="muted small" style="font-weight:500">· tentative · confirmed + ongoing, reel not live yet</span></h2><div class="list">${tent.sort((a, b) => (a.e.post_by || "9999").localeCompare(b.e.post_by || "9999")).map(tentRow).join("") || `<p class="muted" style="margin:0">Nothing in the pipeline.</p>`}</div></section>
         <section class="card"><h2>Still due <span class="muted small" style="font-weight:500">· reel is live, not paid</span></h2><div class="list">${due.sort((a, b) => (a.payment_due || "9999").localeCompare(b.payment_due || "9999")).map(dueRow).join("") || `<p class="muted" style="margin:0">Nothing due 🎉</p>`}</div></section>
       </div>
-      <p class="muted small" style="margin:0">Counts confirmed, ongoing and delivered deals. 🔮 Incoming = Confirmed and Ongoing deals whose reel isn't live yet: their unpaid price + the product still to arrive. When the product arrives it counts as earned; when you set "Reel went live" (or mark Delivered) the money moves to Still due. Money = Agreed price, counted on its Payment received date (until then it's due). Products = Product value (not ones that go back to the brand), counted on Product received (or the reel's live date if that's empty); for an after-live pitch, on the day they paid.</p>`;
+      <p class="muted small" style="margin:0">Counts confirmed, ongoing, delivered and closed deals. 🔮 Incoming = Confirmed and Ongoing deals whose reel isn't live yet: their unpaid price + the product still to arrive. When the product arrives it counts as earned; when you set "Reel went live" (or mark Delivered) the money moves to Still due. Money = Agreed price, counted on its Payment received date (until then it's due). Products = Product value (not ones that go back to the brand), counted on Product received (or the reel's live date if that's empty); for an after-live pitch, on the day they paid.</p>`;
   }
 
   // ---- Categories: tab → sub-category → products
