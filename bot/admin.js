@@ -211,6 +211,19 @@ async function run(a, env, h) {
     if (sets.length) await env.STATS.prepare(`UPDATE enquiries SET ${sets.join(", ")}, updated = ? WHERE id = ?`).bind(...vals, now(), e.id).run();
     return load(env, h);
   }
+  // ---- your own notes in a deal's history ("Shared product links with the brand"), at the time you pick
+  if (op === "enquiry.note") {
+    const text = clip(a.text, 300).trim(); if (!text) throw new Error("Write what happened first");
+    const e = await getEnquiry(env, a.id); if (!e) throw new Error("That enquiry is gone");
+    const at = !isNaN(Date.parse(a.at)) ? new Date(a.at).toISOString() : now();
+    await env.STATS.batch([env.STATS.prepare("INSERT INTO events (enquiry_id, at, text) VALUES (?, ?, ?)").bind(e.id, at, "✍️ " + text),
+      env.STATS.prepare("UPDATE enquiries SET updated = ? WHERE id = ?").bind(now(), e.id)]);
+    return load(env, h);
+  }
+  if (op === "enquiry.noteDelete") {
+    await env.STATS.prepare("DELETE FROM events WHERE id = ? AND text LIKE '✍️ %'").bind(+a.eventId).run();
+    return load(env, h);
+  }
   if (op === "enquiry.delete") {
     await env.STATS.batch([env.STATS.prepare("DELETE FROM enquiries WHERE id = ?").bind(a.id), env.STATS.prepare("DELETE FROM events WHERE enquiry_id = ?").bind(a.id)]);
     return load(env, h);
