@@ -1,5 +1,5 @@
 {
-  "_help": "Media kit at shubhkaprateek.com/mediakit (for pitching, no prices) /collab (collab packages + prices) and /ugc (UGC packages + prices) — not linked anywhere on the site. Anything left empty (\"\" or []) is hidden on the page. brands + brandCollabs are filled automatically from the dashboard (Live/Delivered deals with a reel; untick \"Show on media kit\" on a deal to hide it) — don't edit them here  ·  bestReels / series codes = the part after instagram.com/reel/ (needs a cover in assets/covers)  ·  brandOrder = the order of \"Brands we've worked with\" (most popular first; brands not listed go at the end; spaces/case don't matter)",
+  "_help": "Backup copy — edit the media kit in the dashboard (shubhkaprateek.com/admin → Media kit), not here. Written by make ship.",
   "updated": "November 2026",
   "tagline": "24M+ Organic Reach | Couple Content | Gifting & Surprises",
   "intro": "We're Shubhi & Prateek — a married couple posting a reel every day about our life, games, and gifting each other everything from Marvel merch to the weirdest gadgets on the internet.",
@@ -55,97 +55,6 @@
     "Eazy Arts",
     "Storegenie",
     "Samvardhan Mart"
-  ],
-  "brands": [
-    {
-      "name": "Samvardhan Mart",
-      "link": ""
-    },
-    {
-      "name": "Blix",
-      "link": ""
-    },
-    {
-      "name": "Tipsytap",
-      "link": ""
-    },
-    {
-      "name": "Play Retro",
-      "link": "https://www.instagram.com/playretro.bachpan/"
-    },
-    {
-      "name": "Brickadda",
-      "link": "https://www.instagram.com/brickadda/"
-    },
-    {
-      "name": "WonderBox",
-      "link": "https://www.instagram.com/thewondrbox/"
-    },
-    {
-      "name": "Storegenie",
-      "link": "https://www.instagram.com/storegenie.trends/"
-    },
-    {
-      "name": "Eazy Arts",
-      "link": ""
-    }
-  ],
-  "brandCollabs": [
-    {
-      "brand": "Samvardhan Mart",
-      "code": "DfJSWTLSvaV",
-      "views": ""
-    },
-    {
-      "brand": "Blix",
-      "code": "DfHN_zDSN5X",
-      "views": ""
-    },
-    {
-      "brand": "Tipsytap",
-      "code": "De8uBTrSgB9",
-      "views": ""
-    },
-    {
-      "brand": "Tipsytap",
-      "code": "De6a84ayKwv",
-      "views": ""
-    },
-    {
-      "brand": "Play Retro",
-      "code": "DemM1ceylf2",
-      "views": ""
-    },
-    {
-      "brand": "Brickadda",
-      "code": "DeccYpmSfkN",
-      "views": ""
-    },
-    {
-      "brand": "Brickadda",
-      "code": "DeCzq_uyf92",
-      "views": ""
-    },
-    {
-      "brand": "WonderBox",
-      "code": "DdxwWwSSS8q",
-      "views": ""
-    },
-    {
-      "brand": "Brickadda",
-      "code": "DdrMH5JSjEz",
-      "views": ""
-    },
-    {
-      "brand": "Storegenie",
-      "code": "DdWmp5fyKvb",
-      "views": ""
-    },
-    {
-      "brand": "Eazy Arts",
-      "code": "DV2XLW2EuoN",
-      "views": ""
-    }
   ],
   "bestReels": [
     {
@@ -381,5 +290,108 @@
     "email": "shubhkaprateek412@gmail.com",
     "instagram": "shubhkaprateek",
     "note": "Tell us about your product — we reply within a day."
-  }
+  },
+  "brandCollabs": [
+    {
+      "brand": "Samvardhan Mart",
+      "code": "Dfjmf_VyOoC",
+      "views": "",
+      "cover": "https://shubhkaprateek-bot.shubhkaprateek.workers.dev/img/cover-Dfjmf_VyOoC.jpg"
+    },
+    {
+      "brand": "Samvardhan Mart",
+      "code": "DfY16M7Sv3W",
+      "views": "",
+      "cover": "https://shubhkaprateek-bot.shubhkaprateek.workers.dev/img/cover-DfY16M7Sv3W.jpg"
+    },
+    {
+      "brand": "Samvardhan Mart",
+      "code": "DfJSWTLSvaV",
+      "views": ""
+    },
+    {
+      "brand": "Blix",
+      "code": "DfHN_zDSN5X",
+      "views": ""
+    },
+    {
+      "brand": "Tipsytap",
+      "code": "De8uBTrSgB9",
+      "views": ""
+    },
+    {
+      "brand": "Tipsytap",
+      "code": "De6a84ayKwv",
+      "views": ""
+    },
+    {
+      "brand": "Play Retro",
+      "code": "DemM1ceylf2",
+      "views": ""
+    },
+    {
+      "brand": "Brickadda",
+      "code": "DeccYpmSfkN",
+      "views": ""
+    },
+    {
+      "brand": "Brickadda",
+      "code": "DeCzq_uyf92",
+      "views": ""
+    },
+    {
+      "brand": "WonderBox",
+      "code": "DdxwWwSSS8q",
+      "views": ""
+    },
+    {
+      "brand": "Brickadda",
+      "code": "DdrMH5JSjEz",
+      "views": ""
+    },
+    {
+      "brand": "Storegenie",
+      "code": "DdWmp5fyKvb",
+      "views": ""
+    },
+    {
+      "brand": "Eazy Arts",
+      "code": "DV2XLW2EuoN",
+      "views": ""
+    }
+  ],
+  "brands": [
+    {
+      "name": "Samvardhan Mart",
+      "link": ""
+    },
+    {
+      "name": "Blix",
+      "link": ""
+    },
+    {
+      "name": "Tipsytap",
+      "link": ""
+    },
+    {
+      "name": "Play Retro",
+      "link": "https://www.instagram.com/playretro.bachpan/"
+    },
+    {
+      "name": "Brickadda",
+      "link": "https://www.instagram.com/brickadda/"
+    },
+    {
+      "name": "WonderBox",
+      "link": "https://www.instagram.com/thewondrbox/"
+    },
+    {
+      "name": "Storegenie",
+      "link": "https://www.instagram.com/storegenie.trends/"
+    },
+    {
+      "name": "Eazy Arts",
+      "link": ""
+    }
+  ]
 }
