@@ -367,7 +367,7 @@
     root.innerHTML = `<div class="app"><nav aria-label="Dashboard" class="${navOpen ? "open" : ""}">
       <div class="top"><div class="logo">ShubhKaPrateek</div><button type="button" class="burger" data-burger aria-label="Menu" aria-expanded="${navOpen}">${navOpen ? "✕" : "☰"}</button></div>
       <div class="links">
-      ${[["enquiries", "Enquiries", n], ["ideas", "Content ideas", (D.ideas || []).filter(i => ["idea", "planned", "shot"].includes(i.status)).length], ["money", "Earnings"], ["kit", "Media kit"], ["brands", "Brands"], ["products", "Products"], ["categories", "Categories"], ["reels", "Reels"]].map(([k, t, c]) =>
+      ${[["enquiries", "Enquiries", n], ["ideas", "Content ideas", (D.ideas || []).filter(i => ["idea", "planned", "toshoot", "shot"].includes(i.status)).length], ["money", "Earnings"], ["kit", "Media kit"], ["brands", "Brands"], ["products", "Products"], ["categories", "Categories"], ["reels", "Reels"]].map(([k, t, c]) =>
         `<a href="#${k}" data-go="${k}" class="${view === k || (view === "enquiry" && k === "enquiries") || (view === "brand" && k === "brands") ? "on" : ""}">${t}${c ? `<span class="n">${c}</span>` : ""}</a>`).join("")}
       <a href="${SITE}/" target="_blank" rel="noopener">Open website ↗</a>
       <div class="foot">Saves show on the website within a few seconds.</div></div></nav><main>${body}</main></div>
@@ -421,6 +421,7 @@
       <div class="split">
         <section class="card" data-fold="deal"><div class="between"><h2>The deal</h2>${editBtn("deal")}</div>
         ${editCard.has("deal") ? dealForm(e, prods, pk) : dealView(e, prods)}</section>
+        ${(D.ideas || []).some(i => +i.enquiry_id === e.id) ? `<section class="card" data-fold="ideas"><h2>💡 Content ideas for this collab</h2><div class="list">${D.ideas.filter(i => +i.enquiry_id === e.id).map(i => `<a class="item" href="#ideas" data-go="ideas"><span style="white-space:pre-wrap">${esc(i.text)}</span><span class="small muted" style="white-space:nowrap">${ISTAT[i.status] || ""}</span></a>`).join("")}</div></section>` : ""}
         <section class="card" data-fold="history"><h2>History</h2>
           <form id="notef" class="row" style="align-items:end;margin-bottom:10px"><label style="flex:1;min-width:200px">✍️ Add to history<input name="text" placeholder="e.g. Shared product links with the brand" maxlength="300"></label>
             <label style="width:auto">When<input name="at" type="datetime-local" value="${esc(nowLocal())}"></label>
@@ -600,25 +601,31 @@
   // ---- Content ideas for @shubhkaprateek: jot them down the moment you get them
   const ITYPE = { gadget: "🔌 Gadget", emotion: "💖 Emotion", us: "👫 More about us", "": "— No type" };
   const typeSel = (cur, css = "") => `<select name="type" style="${css}">${Object.entries(ITYPE).map(([k, t]) => `<option value="${k}" ${k === (cur || "") ? "selected" : ""}>${t}</option>`).join("")}</select>`;
-  const ISTAT = { idea: "💡 Idea", planned: "📝 Planned", shot: "🎬 Shot", posted: "✅ Posted", dropped: "🗑 Dropped" };
+  const ISTAT = { idea: "💡 Idea", planned: "📝 Planned", toshoot: "🎥 To be shot", shot: "🎬 Shot", posted: "✅ Posted", dropped: "🗑 Dropped" };
+  // an idea can be for a collab: pick the deal (open ones first)
+  const dealLabel = e => `${e.brand}${e.package ? " · " + e.package : ""}`;
+  const dealSel = cur => { const open = ["new", "confirmed", "product", "live", "hold"], ds = [...D.enquiries].filter(e => e.status !== "declined" || e.id === +cur).sort((a, b) => (open.includes(b.status) - open.includes(a.status)) || b.id - a.id);
+    return `<select name="enquiry_id"><option value="">— Not for a collab —</option>${ds.map(e => `<option value="${e.id}" ${e.id === +cur ? "selected" : ""}>${esc(dealLabel(e))} (${STATUS[e.status] || e.status})</option>`).join("")}</select>`; };
+  const ideaDeal = i => i.enquiry_id ? D.enquiries.find(e => e.id === +i.enquiry_id) : null;
   function vIdeas() {
-    const all = D.ideas || [], open = i => ["idea", "planned", "shot"].includes(i.status);
+    const all = D.ideas || [], open = i => ["idea", "planned", "toshoot", "shot"].includes(i.status);
     const inF = i => (ideaFilter === "open" ? open(i) : ideaFilter === "all" || i.status === ideaFilter) 
       && (ideaType === "all" || (i.type || "") === ideaType)
       && (!q || (i.text + " " + (i.notes || "")).toLowerCase().includes(q));
     const list = all.filter(inF), cnt = f => all.filter(i => f === "open" ? open(i) : f === "all" || i.status === f).length;
     const row = i => ideaEdit === i.id ? `<form class="card idea-edit" data-ideaform="${i.id}" style="display:grid;gap:10px">
         <textarea name="text" rows="3" required>${esc(i.text)}</textarea>
+        <label>🤝 For a collab ${dealSel(i.enquiry_id)}</label>
         <div class="grid2"><label>Type${typeSel(i.type)}</label><label>Status<select name="status">${Object.entries(ISTAT).map(([k, t]) => `<option value="${k}" ${k === i.status ? "selected" : ""}>${t}</option>`).join("")}</select></label></div>
         <label>Link <span class="muted small" style="font-weight:500">(inspiration reel, audio, the posted reel…)</span><input name="link" value="${esc(i.link)}" placeholder="https://…"></label>
         <label>Notes <span class="muted small" style="font-weight:500">(hook, script, props, where to shoot)</span><textarea name="notes" rows="4">${esc(i.notes)}</textarea></label>
         <div class="row"><button class="main" type="submit">Save</button><button type="button" data-ideacancel>Cancel</button><button type="button" data-ideadel="${i.id}" style="margin-left:auto">Delete</button></div></form>`
       : `<div class="item idea-row" style="cursor:default;align-items:flex-start"><span style="flex:1;min-width:0"><span style="white-space:pre-wrap">${esc(i.text)}</span><br>
-        <span class="muted small">${date(i.created)}${i.link ? ` · <a href="${esc(i.link)}" target="_blank" rel="noopener">link ↗</a>` : ""}${i.notes ? " · 📝 notes" : ""}</span></span>
+        <span class="muted small">${ideaDeal(i) ? `<a href="#enquiry/${i.enquiry_id}" data-open="${i.enquiry_id}">🤝 ${esc(ideaDeal(i).brand)}</a> · ` : ""}${date(i.created)}${i.link ? ` · <a href="${esc(i.link)}" target="_blank" rel="noopener">link ↗</a>` : ""}${i.notes ? " · 📝 notes" : ""}</span></span>
         <span class="row" style="gap:6px;flex-wrap:wrap"><select data-ideatype="${i.id}" aria-label="Type" style="width:auto">${Object.entries(ITYPE).map(([k, t]) => `<option value="${k}" ${k === (i.type || "") ? "selected" : ""}>${t}</option>`).join("")}</select><select data-ideastat="${i.id}" aria-label="Status" style="width:auto">${Object.entries(ISTAT).map(([k, t]) => `<option value="${k}" ${k === i.status ? "selected" : ""}>${t}</option>`).join("")}</select><button type="button" data-ideaedit="${i.id}">Edit</button></span></div>`;
     return `<div class="between"><h1>Content ideas</h1><input id="q" placeholder="Search ideas…" value="${esc(q)}" style="width:220px"></div>
       <form id="ideaadd" class="card" style="display:grid;gap:10px"><textarea name="text" rows="2" placeholder="Got an idea? Write it down… (⌘/Ctrl + Enter to save)" required></textarea>
-        <div class="row" style="align-items:center">${typeSel("", "width:auto")}<input name="link" placeholder="Link (optional)" style="flex:1;min-width:160px"><button class="main" type="submit">+ Add idea</button></div></form>
+        <div class="row" style="align-items:center">${typeSel("", "width:auto")}${dealSel("").replace('<select name="enquiry_id">', '<select name="enquiry_id" style="width:auto;max-width:260px">')}<input name="link" placeholder="Link (optional)" style="flex:1;min-width:160px"><button class="main" type="submit">+ Add idea</button></div></form>
       <div class="row">${[["open", "Open"], ...Object.entries(ISTAT), ["all", "All"]].map(([k, t]) => `<button class="chip ${ideaFilter === k ? "on" : ""}" data-ifilter="${k}">${t} ${cnt(k)}</button>`).join("")}</div>
       <div class="row">${[["all", "All types"], ...Object.entries(ITYPE).filter(([k]) => k)].map(([k, t]) => `<button class="chip ${ideaType === k ? "on" : ""}" data-itype="${k}">${t}</button>`).join("")}</div>
       <div class="list">${list.map(row).join("") || `<p class="empty">${all.length ? "No ideas here." : "No ideas yet — the next one you get, put it here."}</p>`}</div>`;
