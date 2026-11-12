@@ -14,7 +14,7 @@
 // KV namespace DRAFTS = a short cache for the brand pages; D1 database STATS = clicks, enquiries, deals.
 
 import { reportHttp, hitHttp } from "./report.js";
-import { adminHttp } from "./admin.js";
+import { adminHttp, kitFile } from "./admin.js";
 import * as store from "./store.js";      // 🗄 products, brands, reels, categories, photos — the database behind the website   // 🗂 the dashboard (shubhkaprateek.com/admin) + the media kit's enquiry form
 import { DATA_FILES, dataJs } from "../tools/data.mjs"; // builds assets/js/data.js — same code `make ship` uses
 
@@ -35,8 +35,10 @@ export default {
     }
     if (url.pathname.startsWith("/img/") && req.method === "GET") return store.imageHttp(env, decodeURIComponent(url.pathname.slice(5)));   // uploaded photos + reel covers
     if (url.pathname === "/kit" && req.method === "GET") {            // the media kit's brand collabs + brands (from your deals)
-      let kit = null; try { await store.ensure(env, H); kit = await store.getSetting(env, "kit", null); } catch {}
-      return new Response(JSON.stringify(kit || {}), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=60" } });
+      // everything the media kit shows: your content (edited in the dashboard) + brand collabs and brands (from your deals)
+      let kit = {}; try { await store.ensure(env, H); kit = { ...(await kitFile(env, H)), ...((await store.getSetting(env, "kit", null)) || {}) };
+        kit.covers = Object.fromEntries((await store.readReels(env)).map(r => [((r.reel || "").match(REEL_RE) || [])[1], r.cover]).filter(([c, v]) => c && v)); } catch {}   // reel covers saved in the database
+      return new Response(JSON.stringify(kit), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": "no-cache" } });
     }
     const admin = await adminHttp(req, env, url, { readJson, commitFiles, pretty, gh, enrichProduct, enrichReel, guessCategories, flattenCats,
       guessBrand, REEL_RE, fetchBytes, planDelete, applyDelete, esc, slug, notify });

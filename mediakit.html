@@ -123,15 +123,16 @@
   const main = document.getElementById("mk");
   const UGC = /^\/ugc/.test(location.pathname);                  // /ugc: the UGC rate card (content for the brand's own page / ads)
   const RATES = UGC || /^\/collab/.test(location.pathname);   // /collab + /ugc show packages + prices; /mediakit doesn't
-  let k;
-  try { k = await (await fetch("/data/portfolio.json", { cache: "no-cache" })).json(); }
+  // everything comes live from the database (edited in the dashboard → Media kit) through the bot;
+  // data/portfolio.json is the backup copy (written by make ship), used only if the bot can't be reached
+  let k = null;
+  try { const r = await fetch("https://shubhkaprateek-bot.shubhkaprateek.workers.dev/kit", { cache: "no-cache", signal: AbortSignal.timeout(5000) }); const j = await r.json(); if (j && j.tagline !== undefined) k = j; } catch {}
+  if (!k) try { k = await (await fetch("/data/portfolio.json", { cache: "no-cache" })).json(); }
   catch { main.innerHTML = `<p class="empty">Couldn't load — <a href="">try again</a>.</p>`; return; }
   const u = k.ugc || {};
   const c = k.contact || {}, ig = has(c.instagram) ? `https://www.instagram.com/${c.instagram}/` : "";
-  // brand collabs + brands we've worked with come live from your deals (the dashboard, through the bot); the copy in
-  // data/portfolio.json is only used if the bot can't be reached
-  try { const live = await (await fetch("https://shubhkaprateek-bot.shubhkaprateek.workers.dev/kit", { cache: "no-cache" })).json(); if (live && Array.isArray(live.brandCollabs)) { k.brandCollabs = live.brandCollabs; k.brands = live.brands || []; } } catch {}
-  const covers = Object.fromEntries((k.brandCollabs || []).filter(b => b.cover).map(b => [b.code, b.cover]));   // reels added from the dashboard keep their cover in the database
+
+  const covers = { ...(k.covers || {}), ...Object.fromEntries((k.brandCollabs || []).filter(b => b.cover).map(b => [b.code, b.cover])) };   // reels added from the dashboard keep their cover in the database
   const cover = code => covers[code] || `/assets/covers/${encodeURIComponent(code)}.jpg`;
   const reels = (k.bestReels || []).filter(r => has(r.code));   // only used for the 3 fanned covers at the top
   const btns = `<div class="hero-btns">

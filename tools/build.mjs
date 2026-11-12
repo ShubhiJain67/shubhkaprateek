@@ -3,6 +3,7 @@
 //     GET /data) — the page shows this copy instantly and if the bot is ever down. Products, reels, brands and
 //     categories live in the database now: add/edit them in the dashboard (shubhkaprateek.com/admin), not in files.
 //   • also saves that copy into data/categories.json, products.json, reels.json — a backup you can read, never edited by hand
+//   • saves the media kit's content (edited in the dashboard) into data/portfolio.json as a backup
 //   • copies mediakit.html → collab.html, and bumps the ?v= numbers in index.html + 404.html so browsers fetch new CSS/JS
 import fs from "fs";
 import path from "path";
@@ -32,6 +33,13 @@ try {
   }
 }
 fs.writeFileSync(path.join(root, "assets/js/data.js"), dataJs(data));
+// the media kit's content lives in the database (dashboard → Media kit): keep a backup copy in data/portfolio.json,
+// which /mediakit, /collab and /ugc use only if the bot is down
+try {
+  const r = await fetch(BOT + "/kit", { signal: AbortSignal.timeout(15000) });
+  const k = r.ok ? await r.json() : null;
+  if (k && k.tagline !== undefined) { const { covers, ...rest } = k; fs.writeFileSync(file("portfolio"), JSON.stringify({ _help: "Backup copy — edit the media kit in the dashboard (shubhkaprateek.com/admin → Media kit), not here. Written by make ship.", ...rest }, null, 2) + "\n"); console.log("✓ media kit backup saved"); }
+} catch (e) { console.warn(`⚠ Couldn't back up the media kit (${e.message}) — keeping the old data/portfolio.json`); }
 // shubhkaprateek.com/collab is the media kit with packages + prices: the same page, so it's copied from mediakit.html
 fs.copyFileSync(path.join(root, "mediakit.html"), path.join(root, "collab.html"));
 fs.copyFileSync(path.join(root, "mediakit.html"), path.join(root, "ugc.html"));   // shubhkaprateek.com/ugc — the UGC rate card, same page

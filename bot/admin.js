@@ -106,11 +106,16 @@ export async function adminHttp(req, env, url, h) {
   }
 }
 
-// data/portfolio.json (packages for the deal forms) — read from GitHub at most every 10 minutes
-async function kitFile(env, h) {
-  try { const c = env.DRAFTS && await env.DRAFTS.get("file:portfolio"); if (c) return JSON.parse(c); } catch {}
-  let k = {}; try { k = await h.readJson(env, "data/portfolio.json"); if (env.DRAFTS) await env.DRAFTS.put("file:portfolio", JSON.stringify(k), { expirationTtl: 600 }); } catch {}
-  return k;
+// the media kit's content (/mediakit, /collab, /ugc — text, numbers, packages…) lives in the database (settings → "portfolio"),
+// edited from the dashboard's Media kit page. The first time, it's copied from data/portfolio.json on GitHub.
+// (brands + brandCollabs aren't in it: those come from your deals, see syncKit)
+export async function kitFile(env, h) {
+  const k = await store.getSetting(env, "portfolio", null);
+  if (k && typeof k === "object") return k;
+  let f = {}; try { f = await h.readJson(env, "data/portfolio.json"); } catch { return {}; }
+  const { _help, brands, brandCollabs, ...rest } = f || {};
+  if (Object.keys(rest).length) await store.setSetting(env, "portfolio", rest);
+  return rest;
 }
 
 async function load(env, h) {
@@ -143,7 +148,8 @@ async function load(env, h) {
     await store.setSetting(env, "fix:delivered-deliverables", new Date().toISOString());
   }
   await syncKit(env, h, reels, enquiries);
-  return { products, reels, categories, featured, brands, enquiries, events, packages, ideas };
+  const kitAuto = await store.getSetting(env, "kit", {});
+  return { products, reels, categories, featured, brands, enquiries, events, packages, ideas, kit, kitAuto };
 }
 const readIdeas = async env => (await env.STATS.prepare("SELECT * FROM ideas ORDER BY id DESC").all()).results || [];
 
@@ -376,6 +382,23 @@ async function run(a, env, h) {
     return load(env, h);
   }
   // ---- brands: rename / Instagram + website (page numbers never change)
+  // ---- the media kit's content, saved instantly (the pages read it live through GET /kit)
+  if (op === "kit.save") {
+    const k = a.kit;
+    if (!k || typeof k !== "object" || Array.isArray(k)) throw new Error("Nothing to save");
+    const { _help, brands, brandCollabs, covers, ...rest } = k;
+    if (rest.ugc && typeof rest.ugc === "object") delete rest.ugc._help;
+    rest.updated = new Date(Date.now() + 5.5 * 3600e3).toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: "UTC" });
+    const txt = JSON.stringify(rest); if (txt.length > 200000) throw new Error("That's too much text for the media kit");
+    // promised commercials stay as promised: a deal with no Agreed price of its own gets its package's price as it was
+    // BEFORE this change written into the deal, so new prices only apply to deals made from now on
+    const old = await kitFile(env, h), oldPk = [...(old.packages || []), ...(old.privatePackages || []), ...((old.ugc || {}).packages || [])];
+    const rows = (await env.STATS.prepare("SELECT id, package, price, payment FROM enquiries WHERE COALESCE(TRIM(price), '') = '' AND COALESCE(payment, '') <> 'Barter'").all()).results || [];
+    const freeze = rows.map(e => ({ e, p: oldPk.find(x => x.name === e.package && String(x.price || "").trim()) })).filter(x => x.p);
+    if (freeze.length) await env.STATS.batch(freeze.map(({ e, p }) => env.STATS.prepare("UPDATE enquiries SET price = ? WHERE id = ?").bind(p.price, e.id)));
+    await store.setSetting(env, "portfolio", rest);
+    return load(env, h);
+  }
   // ---- content ideas (saved instantly; only the ideas list comes back)
   if (op === "idea.save") {
     await tables(env);

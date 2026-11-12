@@ -138,6 +138,12 @@
   .hist .h { display: grid; grid-template-columns: 70px 1fr; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
   .hist .h b.d { color: var(--ink); font-size: 13px; } .hist .h b.d .tm { display: block; font-weight: 500; color: var(--muted); font-size: 11.5px; }
   .hist .log { color: var(--muted); font-size: 13px; }
+  .kit-row { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; margin: 8px 0; background: #fff; }
+  .kit-3 { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; align-items: end; }
+  @media (max-width: 760px) { .kit-3 { grid-template-columns: 1fr; } }
+  .kit-form { display: grid; gap: 10px; margin-top: 12px; } .kit-form h3 { margin: 10px 0 0; }
+  .kit-view { margin-top: 10px; } .kit-pk { padding: 8px 0; border-bottom: 1px dashed var(--line); }
+  .kit-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; } .kit-stats .stat b { font-size: 20px; }
   .hist .note-ph { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; } .hist .note-ph img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); display: block; }
   #notef .ph-btn { cursor: pointer; background: var(--field); border-radius: 12px; padding: 11px 12px; font-weight: 600; }
   .hist .note { font-weight: 600; } .hist .note-x { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 0 4px; font-size: 12px; } .hist .note-x:hover { color: #9b2c2c; }
@@ -357,11 +363,11 @@
 
   function shell(body) {
     const n = D.enquiries.filter(e => ["new", "confirmed", "product", "live"].includes(e.status)).length;   // open deals: new + confirmed + ongoing
-    const cur = { enquiry: "enquiries", brand: "brands" }[view] || view, curName = { enquiries: "Enquiries", ideas: "Content ideas", money: "Earnings", brands: "Brands", products: "Products", categories: "Categories", reels: "Reels" }[cur] || "";
+    const cur = { enquiry: "enquiries", brand: "brands" }[view] || view, curName = { enquiries: "Enquiries", ideas: "Content ideas", money: "Earnings", kit: "Media kit", brands: "Brands", products: "Products", categories: "Categories", reels: "Reels" }[cur] || "";
     root.innerHTML = `<div class="app"><nav aria-label="Dashboard" class="${navOpen ? "open" : ""}">
       <div class="top"><div class="logo">ShubhKaPrateek</div><button type="button" class="burger" data-burger aria-label="Menu" aria-expanded="${navOpen}">${navOpen ? "✕" : "☰"}</button></div>
       <div class="links">
-      ${[["enquiries", "Enquiries", n], ["ideas", "Content ideas", (D.ideas || []).filter(i => ["idea", "planned", "shot"].includes(i.status)).length], ["money", "Earnings"], ["brands", "Brands"], ["products", "Products"], ["categories", "Categories"], ["reels", "Reels"]].map(([k, t, c]) =>
+      ${[["enquiries", "Enquiries", n], ["ideas", "Content ideas", (D.ideas || []).filter(i => ["idea", "planned", "shot"].includes(i.status)).length], ["money", "Earnings"], ["kit", "Media kit"], ["brands", "Brands"], ["products", "Products"], ["categories", "Categories"], ["reels", "Reels"]].map(([k, t, c]) =>
         `<a href="#${k}" data-go="${k}" class="${view === k || (view === "enquiry" && k === "enquiries") || (view === "brand" && k === "brands") ? "on" : ""}">${t}${c ? `<span class="n">${c}</span>` : ""}</a>`).join("")}
       <a href="${SITE}/" target="_blank" rel="noopener">Open website ↗</a>
       <div class="foot">Saves show on the website within a few seconds.</div></div></nav><main>${body}</main></div>
@@ -618,6 +624,80 @@
       <div class="list">${list.map(row).join("") || `<p class="empty">${all.length ? "No ideas here." : "No ideas yet — the next one you get, put it here."}</p>`}</div>`;
   }
 
+  // ---- Media kit: the content of /mediakit, /collab and /ugc — saved instantly, the pages read it live
+  let kitEdit = new Set(), kitWork = {};
+  const getP = (o, p) => p.split(".").reduce((x, k) => x == null ? x : x[k], o);
+  const setP = (o, p, v) => { const ks = p.split("."); let x = o; ks.forEach((k, i) => { if (i === ks.length - 1) x[k] = v; else { if (x[k] == null || typeof x[k] !== "object") x[k] = /^\d+$/.test(ks[i + 1]) ? [] : {}; x = x[k]; } }); };
+  const KIT_NEW = { stats: { value: "", label: "", note: "" }, bestReels: { code: "", views: "" }, series: { title: "", description: "", codes: [], views: "" },
+    packages: { name: "", price: "", items: [] }, privatePackages: { name: "", price: "", items: [] }, "ugc.packages": { name: "", price: "", items: [] },
+    terms: { title: "", text: "" }, "ugc.terms": { title: "", text: "" }, "ugc.samples": { brand: "", code: "", url: "", views: "" } };
+  const filled = v => v == null ? false : Array.isArray(v) ? v.some(filled) : typeof v === "object" ? Object.values(v).some(filled) : String(v).trim() !== "";
+  // read a section's form into a full copy of the kit (its own lists are rebuilt from the form)
+  function kitFromForm(f) {
+    const out = JSON.parse(JSON.stringify(kitWork[f.dataset.kitsec] || D.kit || {}));
+    (f.dataset.owns || "").split(",").filter(Boolean).forEach(p => setP(out, p, []));
+    f.querySelectorAll("[name]").forEach(el => { if (el.type === "file") return; setP(out, el.name, el.dataset.lines !== undefined ? el.value.split("\n").map(x => x.trim()).filter(Boolean) : el.value); });
+    (f.dataset.owns || "").split(",").filter(Boolean).forEach(p => { const a = getP(out, p); if (Array.isArray(a)) setP(out, p, a.filter(x => x != null)); });
+    out.series = (out.series || []).map(x => ({ ...x, codes: [].concat(x.codes || []).filter(Boolean) }));
+    return out;
+  }
+  const kitClean = k => { ["stats", "bestReels", "series", "packages", "privatePackages", "terms", "ugc.packages", "ugc.terms", "ugc.samples"].forEach(p => { const a = getP(k, p); if (Array.isArray(a)) setP(k, p, a.filter(filled)); }); return k; };
+  function vKit() {
+    const K = D.kit || {}, src = s => kitWork[s] || K, ed = s => kitEdit.has(s);
+    const reelOpts = cur => `<option value="">— pick a reel —</option>${D.reels.map(r => { const c = codeOf(r); return c ? `<option value="${esc(c)}" ${c === cur ? "selected" : ""}>${esc(r.title || c)}</option>` : ""; }).join("")}${cur && !D.reels.some(r => codeOf(r) === cur) ? `<option value="${esc(cur)}" selected>${esc(cur)}</option>` : ""}`;
+    const tools = (p, i, n) => `<span class="row" style="gap:4px;flex-wrap:nowrap"><button type="button" data-kop="up" data-kpath="${p}" data-ki="${i}" ${i ? "" : "disabled"} aria-label="Move up">↑</button><button type="button" data-kop="down" data-kpath="${p}" data-ki="${i}" ${i < n - 1 ? "" : "disabled"} aria-label="Move down">↓</button><button type="button" data-kop="del" data-kpath="${p}" data-ki="${i}" aria-label="Remove">✕</button></span>`;
+    const add = (p, t) => `<button type="button" data-kop="add" data-kpath="${p}">+ ${t}</button>`;
+    const inp = (name, v, ph = "", extra = "") => `<input name="${name}" value="${esc(v ?? "")}" placeholder="${esc(ph)}" ${extra}>`;
+    const lines = (name, arr, rows = 4, ph = "One per line") => `<textarea name="${name}" data-lines rows="${rows}" placeholder="${esc(ph)}">${esc((arr || []).join("\n"))}</textarea>`;
+    const rowBox = inner => `<div class="kit-row">${inner}</div>`;
+    const card = (s, title, view, form, owns = "") => `<section class="card"><div class="between"><h2 style="margin:0">${title}</h2>${ed(s) ? `<button type="button" data-kitcancel="${s}">Cancel</button>` : `<button type="button" data-kitedit="${s}">Edit</button>`}</div>
+      ${ed(s) ? `<form class="kit-form" data-kitsec="${s}" data-owns="${owns}">${form(src(s))}<div class="row"><button class="main" type="submit">Save</button><button type="button" data-kitcancel="${s}">Cancel</button></div></form>` : `<div class="kit-view">${view(K)}</div>`}</section>`;
+    const ul = a => (a || []).length ? `<ul class="vlist">${a.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : `<p class="muted" style="margin:0">—</p>`;
+    const pkgEditor = (p, list) => `${(list || []).map((x, i, a) => rowBox(`<div class="between"><b class="small">#${i + 1}</b>${tools(p, i, a.length)}</div>
+        <div class="grid2"><label>Name${inp(`${p}.${i}.name`, x.name, "Option 1 — …")}</label><label>Price${inp(`${p}.${i}.price`, x.price, "₹1,500")}</label></div>
+        <label>What's included${lines(`${p}.${i}.items`, x.items, 4)}</label>`)).join("")}${add(p, "Add package")}`;
+    const pkgView = list => (list || []).length ? (list || []).map(x => `<div class="kit-pk"><b>${esc(x.name)}</b> <span class="muted">· ${esc(x.price || "Price on request")}</span>${ul(x.items)}</div>`).join("") : `<p class="muted" style="margin:0">—</p>`;
+    const termsEditor = (p, list) => `${(list || []).map((x, i, a) => rowBox(`<div class="grid2" style="align-items:end"><label>Title${inp(`${p}.${i}.title`, x.title)}</label>${tools(p, i, a.length)}</div><label>Text<textarea name="${p}.${i}.text" rows="2">${esc(x.text)}</textarea></label>`)).join("")}${add(p, "Add term")}`;
+    const termsView = list => (list || []).length ? `<ul class="vlist">${list.map(x => `<li><b>${esc(x.title)}:</b> ${esc(x.text)}</li>`).join("")}</ul>` : `<p class="muted" style="margin:0">—</p>`;
+    const autoBrands = (D.kitAuto || {}).brands || [];
+    const bkey = n => String(n).toLowerCase().replace(/[^a-z0-9]/g, "");
+    const brandList = k => { const order = (k.brandOrder || []).filter(Boolean); const names = [...order]; autoBrands.forEach(b => { if (!names.some(n => bkey(n) === bkey(b.name))) names.push(b.name); }); return names; };
+    const site = SITE;
+    return `<div class="between"><h1>Media kit</h1><div class="row"><a class="btn" href="${site}/mediakit" target="_blank" rel="noopener">/mediakit ↗</a><a class="btn" href="${site}/collab" target="_blank" rel="noopener">/collab ↗</a><a class="btn" href="${site}/ugc" target="_blank" rel="noopener">/ugc ↗</a></div></div>
+      <p class="muted small" style="margin:0">Saves go live on the pages straight away. Brand collabs and "Brands we've worked with" come from your deals. ${K.updated ? `Last saved ${esc(K.updated)}.` : ""}</p>
+      ${card("basics", "Basics", k => kv([["Tagline", esc(k.tagline)], ["Intro", esc(k.intro)], ["Organic line", esc(k.organic)], ["Email", esc((k.contact || {}).email)], ["Instagram", esc((k.contact || {}).instagram)], ["Reply note", esc((k.contact || {}).note)]]),
+        k => `<label>Tagline${inp("tagline", k.tagline)}</label><label>Intro<textarea name="intro" rows="3">${esc(k.intro)}</textarea></label><label>Organic line${inp("organic", k.organic, "100% organic — no paid boosts…")}</label>
+          <div class="grid2"><label>Email${inp("contact.email", (k.contact || {}).email)}</label><label>Instagram handle${inp("contact.instagram", (k.contact || {}).instagram, "shubhkaprateek")}</label></div>
+          <label>Reply note <span class="muted small" style="font-weight:500">(above the enquiry form)</span>${inp("contact.note", (k.contact || {}).note)}</label>`)}
+      ${card("stats", "In numbers", k => (k.stats || []).length ? `<div class="kit-stats">${k.stats.map(x => `<div class="stat"><b>${esc(x.value || "—")}</b><span>${esc(x.label)}</span>${x.note ? `<small class="muted"> · ${esc(x.note)}</small>` : ""}</div>`).join("")}</div><p class="muted small" style="margin:8px 0 0">Empty numbers are hidden on the page. The first 3 also show on /collab.</p>` : `<p class="muted" style="margin:0">—</p>`,
+        k => `${(k.stats || []).map((x, i, a) => rowBox(`<div class="kit-3"><label>Number${inp(`stats.${i}.value`, x.value, "24M+")}</label><label>Label${inp(`stats.${i}.label`, x.label, "Reach")}</label><label>Note${inp(`stats.${i}.note`, x.note, "in the last 7 days")}</label>${tools("stats", i, a.length)}</div>`)).join("")}${add("stats", "Add number")}`, "stats")}
+      ${card("brands", "Brands we've worked with — order", k => `<ol class="vlist" style="padding-left:20px">${brandList(k).map(n => `<li>${esc(n)}</li>`).join("")}</ol><p class="muted small" style="margin:6px 0 0">Most popular first. Brands come from your live/delivered deals with a reel.</p>`,
+        k => `${brandList(k).map((n, i, a) => rowBox(`<div class="between"><span><input type="hidden" name="brandOrder.${i}" value="${esc(n)}">${i + 1}. <b>${esc(n)}</b></span>${tools("brandOrder", i, a.length).replace(/<button type="button" data-kop="del"[^>]*>✕<\/button>/, "")}</div>`)).join("")}`, "brandOrder")}
+      ${card("reels", "Reels on the media kit", k => `<p style="margin:0 0 6px"><b>Top 3 covers (hero):</b> ${(k.bestReels || []).slice(0, 3).map(x => esc(reelTitle(x.code))).join(", ") || "—"}</p>${(k.series || []).map(x => `<div class="kit-pk"><b>${esc(x.title)}</b>${x.views ? ` <span class="muted">· ▶ ${esc(x.views)}</span>` : ""}<br><span class="muted small">${esc(x.description || "")}</span><br><span class="small">${(x.codes || []).map(c => esc(reelTitle(c))).join(" · ") || "no reels picked"}</span></div>`).join("")}`,
+        k => `<h3 class="small" style="margin:0">Best reels <span class="muted" style="font-weight:500">(the first 3 are the covers at the top of /mediakit)</span></h3>
+          ${(k.bestReels || []).map((x, i, a) => rowBox(`<div class="kit-3"><label>Reel<select name="bestReels.${i}.code">${reelOpts(x.code)}</select></label><label>Views${inp(`bestReels.${i}.views`, x.views, "1.2M")}</label><span></span>${tools("bestReels", i, a.length)}</div>`)).join("")}${add("bestReels", "Add reel")}
+          <h3 class="small" style="margin:14px 0 0">Series</h3>
+          ${(k.series || []).map((x, i, a) => rowBox(`<div class="between"><b class="small">Series ${i + 1}</b>${tools("series", i, a.length)}</div><div class="grid2"><label>Title${inp(`series.${i}.title`, x.title)}</label><label>Views${inp(`series.${i}.views`, x.views, "5M")}</label></div>
+            <label>Description<textarea name="series.${i}.description" rows="2">${esc(x.description)}</textarea></label>
+            <div class="kit-3">${[0, 1, 2].map(j => `<label>Reel ${j + 1}<select name="series.${i}.codes.${j}">${reelOpts((x.codes || [])[j] || "")}</select></label>`).join("")}</div>`)).join("")}${add("series", "Add series")}`, "bestReels,series")}
+      ${card("why", "Why choose us — Collab vs UGC", k => `<div class="split"><div><b>${esc(((k.why || {}).collab || {}).title || "Collab")}</b>${ul(((k.why || {}).collab || {}).points)}</div><div><b>${esc(((k.why || {}).ugc || {}).title || "UGC")}</b>${ul(((k.why || {}).ugc || {}).points)}</div></div>`,
+        k => ["collab", "ugc"].map(w => `<div class="kit-row"><label>${w === "ugc" ? "UGC" : "Collab"} title${inp(`why.${w}.title`, ((k.why || {})[w] || {}).title)}</label><label>Points${lines(`why.${w}.points`, ((k.why || {})[w] || {}).points, 4)}</label></div>`).join(""))}
+      ${card("collab", "Collab packages (/collab)", k => `${pkgView(k.packages)}<h3 class="small">Barter</h3>${k.barter && k.barter.title ? `<div class="kit-pk"><b>${esc(k.barter.title)}</b> <span class="muted">· ${esc(k.barter.price)}</span>${ul(k.barter.items)}</div>` : "—"}
+          <h3 class="small">Private packages <span class="muted" style="font-weight:500">(not shown on the page — for your deal forms)</span></h3>${pkgView(k.privatePackages)}<h3 class="small">Payment &amp; timeline</h3>${termsView(k.terms)}<h3 class="small">Content guidelines</h3>${ul(k.guidelines)}`,
+        k => `<h3 class="small" style="margin:0">Packages</h3>${pkgEditor("packages", k.packages)}
+          <h3 class="small">Barter</h3><div class="kit-row"><div class="grid2"><label>Title${inp("barter.title", (k.barter || {}).title, "Barter")}</label><label>Price line${inp("barter.price", (k.barter || {}).price, "Product only")}</label></div><label>Details${lines("barter.items", (k.barter || {}).items, 3)}</label></div>
+          <h3 class="small">Private packages</h3>${pkgEditor("privatePackages", k.privatePackages)}
+          <h3 class="small">Payment &amp; timeline</h3>${termsEditor("terms", k.terms)}
+          <h3 class="small">Content guidelines</h3>${lines("guidelines", k.guidelines, 6)}`, "packages,privatePackages,terms")}
+      ${card("ugc", "UGC packages (/ugc)", k => { const u = k.ugc || {}; return `<p style="margin:0 0 8px">${esc(u.intro || "")}</p>${pkgView(u.packages)}<h3 class="small">Our setup</h3>${ul(u.gear)}<h3 class="small">Payment &amp; delivery</h3>${termsView(u.terms)}<h3 class="small">Guidelines</h3>${ul(u.guidelines)}<h3 class="small">UGC samples <span class="muted" style="font-weight:500">(shown once there are more than 5)</span></h3>${(u.samples || []).length ? `<ul class="vlist">${u.samples.map(x => `<li>${esc(x.brand)} · ${link(x.url || `https://www.instagram.com/reel/${x.code}/`)}</li>`).join("")}</ul>` : "—"}`; },
+        k => { const u = k.ugc || {}; return `<label>Intro${inp("ugc.intro", u.intro)}</label><h3 class="small">Packages</h3>${pkgEditor("ugc.packages", u.packages)}
+          <h3 class="small">Our setup (gear)</h3>${lines("ugc.gear", u.gear, 4)}
+          <h3 class="small">Payment &amp; delivery</h3>${termsEditor("ugc.terms", u.terms)}
+          <h3 class="small">Guidelines</h3>${lines("ugc.guidelines", u.guidelines, 5)}
+          <h3 class="small">UGC samples</h3>${(u.samples || []).map((x, i, a) => rowBox(`<div class="kit-3"><label>Brand${inp(`ugc.samples.${i}.brand`, x.brand)}</label><label>Post link${inp(`ugc.samples.${i}.url`, x.url, "https://www.instagram.com/p/…")}</label><label>Code <span class="muted small" style="font-weight:500">(after /p/ or /reel/)</span>${inp(`ugc.samples.${i}.code`, x.code)}</label>${tools("ugc.samples", i, a.length)}</div>`)).join("")}${add("ugc.samples", "Add sample")}`; },
+        "ugc.packages,ugc.terms,ugc.samples")}`;
+  }
+
   function vMoney() {
     const rs = n => "₹" + Math.round(n).toLocaleString("en-IN"), now = today();
     const short = n => n >= 1e5 ? "₹" + (n / 1e5).toFixed(n % 1e5 ? 1 : 0) + "L" : n >= 1000 ? "₹" + (n / 1000).toFixed(n % 1000 ? 1 : 0) + "k" : "₹" + Math.round(n);
@@ -748,7 +828,7 @@
 
   function render() {
     if (!D) return;
-    const body = view === "enquiry" ? vEnquiry() : view === "products" ? vProducts() : view === "reels" ? vReels() : view === "brands" ? vBrands() : view === "brand" ? vBrand() : view === "categories" ? vCategories() : view === "money" ? vMoney() : view === "ideas" ? vIdeas() : vEnquiries();
+    const body = view === "enquiry" ? vEnquiry() : view === "products" ? vProducts() : view === "reels" ? vReels() : view === "brands" ? vBrands() : view === "brand" ? vBrand() : view === "categories" ? vCategories() : view === "money" ? vMoney() : view === "ideas" ? vIdeas() : view === "kit" ? vKit() : vEnquiries();
     shell(body);
     if (view === "enquiry") applyFolds();
     const qi = $("q"); if (qi) { qi.oninput = () => { q = qi.value.trim().toLowerCase(); const pos = qi.selectionStart; render(); const n = $("q"); n.focus(); n.setSelectionRange(pos, pos); }; }
@@ -765,6 +845,17 @@
     root.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { filter = b.dataset.filter; render(); });
     root.querySelectorAll("[data-mrange]").forEach(b => b.onclick = () => { moneyRange = b.dataset.mrange; render(); });
     root.querySelectorAll("[data-mtype]").forEach(b => b.onclick = () => { moneyType = b.dataset.mtype; render(); });
+    // media kit
+    root.querySelectorAll("[data-kitedit]").forEach(b => b.onclick = () => { kitEdit.add(b.dataset.kitedit); render(); });
+    root.querySelectorAll("[data-kitcancel]").forEach(b => b.onclick = () => { kitEdit.delete(b.dataset.kitcancel); delete kitWork[b.dataset.kitcancel]; render(); });
+    root.querySelectorAll("[data-kop]").forEach(b => b.onclick = () => { const f = b.closest("form"), sec = f.dataset.kitsec, w = kitFromForm(f), p = b.dataset.kpath, i = +b.dataset.ki;
+      const a = [...(getP(w, p) || [])];
+      if (b.dataset.kop === "add") a.push(JSON.parse(JSON.stringify(KIT_NEW[p] || {})));
+      else if (b.dataset.kop === "del") a.splice(i, 1);
+      else { const j = b.dataset.kop === "up" ? i - 1 : i + 1; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; }
+      setP(w, p, a); kitWork[sec] = w; render(); });
+    root.querySelectorAll("form[data-kitsec]").forEach(f => f.onsubmit = ev => { ev.preventDefault(); const sec = f.dataset.kitsec, kit = kitClean(kitFromForm(f));
+      act(f.querySelector("button.main"), async () => { await api("kit.save", { kit }); kitEdit.delete(sec); delete kitWork[sec]; }, "Saved — live on the media kit"); });
     // content ideas
     const saveIdea = idea => api("idea.save", { idea }).then(j => { D.ideas = j.ideas; });
     const ia = $("ideaadd"); if (ia) { ia.onsubmit = ev => { ev.preventDefault(); const v = Object.fromEntries(new FormData(ia)); if (!v.text.trim()) return;
