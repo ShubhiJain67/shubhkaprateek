@@ -29,6 +29,7 @@
   nav .top { display: flex; align-items: center; justify-content: space-between; }
   nav .burger { display: none; background: transparent; border: 1px solid rgba(245,236,230,.35); color: #f5ece6; width: 44px; height: 44px; border-radius: 10px; font-size: 20px; padding: 0; }
   @media (max-width: 760px) {
+    .app { align-content: flex-start; }   /* the top bar stays its own height on short pages */
     nav { max-width: none; flex: none; width: 100%; box-sizing: border-box; padding: 10px 14px; position: sticky; top: 0; z-index: 20; }
     nav .logo { margin: 0; } nav .burger { display: inline-grid; place-items: center; } nav .foot { display: none; }
     nav .links { display: none; flex-direction: column; gap: 2px; padding-top: 10px; } nav.open .links { display: flex; }
@@ -67,6 +68,7 @@
   .tablebox { overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: 14px; }
   .table th { text-align: left; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--field); padding: 10px 12px; white-space: nowrap; }
   .table td { padding: 10px 12px; border-top: 1px solid var(--line); vertical-align: middle; }
+  @media (max-width: 760px) { .table { font-size: 13px; } .table th { padding: 8px; font-size: 11px; letter-spacing: .03em; } .table td { padding: 8px; } }
   .thumb { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; background: var(--field); display: block; }
   .cover { width: 44px; height: 70px; border-radius: 8px; object-fit: cover; background: var(--dark); display: block; }
   .steps { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; font-weight: 700; }
@@ -163,7 +165,7 @@
   .checks { display: grid; gap: 6px; max-height: 220px; overflow: auto; background: var(--field); border-radius: 10px; padding: 8px; }
   .checks label { display: flex; gap: 8px; align-items: center; font-weight: 500; }
   .checks input { width: auto; }
-  @media (max-width: 760px) { .idea-row { flex-direction: column; gap: 10px; } }
+  @media (max-width: 760px) { .idea-row { grid-template-columns: 1fr; gap: 10px; } .idea-row select { flex: 1 1 140px; } }
 </style>
 </head>
 <body>
@@ -668,7 +670,7 @@
     const termsView = list => (list || []).length ? `<ul class="vlist">${list.map(x => `<li><b>${esc(x.title)}:</b> ${esc(x.text)}</li>`).join("")}</ul>` : `<p class="muted" style="margin:0">—</p>`;
     const autoBrands = (D.kitAuto || {}).brands || [];
     const bkey = n => String(n).toLowerCase().replace(/[^a-z0-9]/g, "");
-    const brandList = k => { const order = (k.brandOrder || []).filter(Boolean); const names = [...order]; autoBrands.forEach(b => { if (!names.some(n => bkey(n) === bkey(b.name))) names.push(b.name); }); return names; };
+    const brandList = k => { const order = (k.brandOrder || []).filter(Boolean); const names = [...order]; [...autoBrands, ...((D.kitAuto || {}).current || [])].forEach(b => { if (!names.some(n => bkey(n) === bkey(b.name))) names.push(b.name); }); return names; };
     const site = SITE;
     return `<div class="between"><h1>Media kit</h1><div class="row"><a class="btn" href="${site}/mediakit" target="_blank" rel="noopener">/mediakit ↗</a><a class="btn" href="${site}/collab" target="_blank" rel="noopener">/collab ↗</a><a class="btn" href="${site}/ugc" target="_blank" rel="noopener">/ugc ↗</a></div></div>
       <p class="muted small" style="margin:0">Saves go live on the pages straight away. Brand collabs and "Brands we've worked with" come from your deals. ${K.updated ? `Last saved ${esc(K.updated)}.` : ""}</p>
@@ -678,7 +680,7 @@
           <label>Reply note <span class="muted small" style="font-weight:500">(above the enquiry form)</span>${inp("contact.note", (k.contact || {}).note)}</label>`)}
       ${card("stats", "In numbers", k => (k.stats || []).length ? `<div class="kit-stats">${k.stats.map(x => `<div class="stat"><b>${esc(x.value || "—")}</b><span>${esc(x.label)}</span>${x.note ? `<small class="muted"> · ${esc(x.note)}</small>` : ""}</div>`).join("")}</div><p class="muted small" style="margin:8px 0 0">Empty numbers are hidden on the page. The first 3 also show on /collab.</p>` : `<p class="muted" style="margin:0">—</p>`,
         k => `${(k.stats || []).map((x, i, a) => rowBox(`<div class="kit-3"><label>Number${inp(`stats.${i}.value`, x.value, "24M+")}</label><label>Label${inp(`stats.${i}.label`, x.label, "Reach")}</label><label>Note${inp(`stats.${i}.note`, x.note, "in the last 7 days")}</label>${tools("stats", i, a.length)}</div>`)).join("")}${add("stats", "Add number")}`, "stats")}
-      ${card("brands", "Brands we've worked with — order", k => `<ol class="vlist" style="padding-left:20px">${brandList(k).map(n => `<li>${esc(n)}</li>`).join("")}</ol><p class="muted small" style="margin:6px 0 0">Most popular first. Brands come from your live/delivered deals with a reel.</p>`,
+      ${card("brands", "Brands we've worked with — order", k => `<ol class="vlist" style="padding-left:20px">${brandList(k).map(n => `<li>${esc(n)}</li>`).join("")}</ol><p class="muted small" style="margin:6px 0 0">Most popular first — used for both "Brands we've worked with" (live/delivered deals with a reel) and "Currently working with" (confirmed/ongoing deals not posted yet: ${esc(((D.kitAuto || {}).current || []).map(b => b.name).join(", ") || "none right now")}).</p>`,
         k => `${brandList(k).map((n, i, a) => rowBox(`<div class="between"><span><input type="hidden" name="brandOrder.${i}" value="${esc(n)}">${i + 1}. <b>${esc(n)}</b></span>${tools("brandOrder", i, a.length).replace(/<button type="button" data-kop="del"[^>]*>✕<\/button>/, "")}</div>`)).join("")}`, "brandOrder")}
       ${card("reels", "Reels on the media kit", k => `<p style="margin:0 0 6px"><b>Top 3 covers (hero):</b> ${(k.bestReels || []).slice(0, 3).map(x => esc(reelTitle(x.code))).join(", ") || "—"}</p>${(k.series || []).map(x => `<div class="kit-pk"><b>${esc(x.title)}</b>${x.views ? ` <span class="muted">· ▶ ${esc(x.views)}</span>` : ""}<br><span class="muted small">${esc(x.description || "")}</span><br><span class="small">${(x.codes || []).map(c => esc(reelTitle(c))).join(" · ") || "no reels picked"}</span></div>`).join("")}`,
         k => `<h3 class="small" style="margin:0">Best reels <span class="muted" style="font-weight:500">(the first 3 are the covers at the top of /mediakit)</span></h3>

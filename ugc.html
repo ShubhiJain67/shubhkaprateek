@@ -155,7 +155,8 @@
   const collabs = (k.brandCollabs || []).filter(b => has(b.code)).map(b => ({ ...b, label: b.brand }));
   const series = (k.series || []).filter(x => has(x.title));
   if (UGC) (u.samples || []).forEach(x => { if (has(x.brand) && !brands.some(b => b.name.toLowerCase() === x.brand.toLowerCase())) brands.push({ name: x.brand, link: "" }); });   // /ugc: collab brands + UGC brands
-  brands.sort((a, b) => brank(a.name) - brank(b.name));   // most popular first (portfolio.json → brandOrder)
+  brands.sort((a, b) => brank(a.name) - brank(b.name));
+  const current = (k.current || []).filter(b => has(b.name)).sort((a, b) => brank(a.name) - brank(b.name));   // open collabs, from your deals   // most popular first (portfolio.json → brandOrder)
   const samples = UGC ? (u.samples || []).filter(x => has(x.code)).map(x => ({ ...x, label: x.brand })) : [];   // UGC videos posted by the brands
   const packages = UGC ? [...(u.packages || [])] : RATES ? [...(k.packages || [])] : [], barter = RATES && !UGC && k.barter && has(k.barter.title) ? k.barter : null;
   const guides = UGC ? (u.guidelines || []) : (k.guidelines || []).filter(g => RATES || !/barter|₹/i.test(g));   // money talk only on the rate cards
@@ -204,6 +205,8 @@
       `<div class="stats">${stats.map(s => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span>${has(s.note) ? `<small>${esc(s.note)}</small>` : ""}</div>`).join("")}</div>${organic}`) : ""}
     ${(!RATES || UGC) && brands.length ? section("Trusted by", "Brands we've worked with",
       `<div class="brands">${brands.map(b => has(b.link) ? `<a class="brand-chip" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<span class="brand-chip">${esc(b.name)}</span>`).join("")}</div>`) : ""}
+    ${(!RATES || UGC) && current.length ? section("Right now", "Brands we're currently working with",
+      `<div class="brands">${current.map(b => has(b.link) ? `<a class="brand-chip" href="${esc(b.link)}" target="_blank" rel="noopener">${esc(b.name)}</a>` : `<span class="brand-chip">${esc(b.name)}</span>`).join("")}</div>`) : ""}
     ${!RATES && collabs.length ? section("Brand collabs", "Top performing brand collabs", carousel(collabs)) : ""}
     ${!RATES && series.length ? section("Series", "Top performing series", `<div class="two">${series.map(x => `<div class="card-mk series">
         ${(x.codes || []).length ? `<div class="series-covers">${x.codes.slice(0, 3).map(code => `<a href="https://www.instagram.com/reel/${esc(code)}/" target="_blank" rel="noopener"><img loading="lazy" src="${cover(code)}" alt="" onerror="this.parentNode.remove()"></a>`).join("")}</div>` : ""}

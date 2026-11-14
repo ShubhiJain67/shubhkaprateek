@@ -180,7 +180,15 @@ async function syncKit(env, h, reels, enquiries) {
     brandsSeen.set(c.brand.toLowerCase(), { name: c.brand, link: e ? ig(e.instagram) : "" });
   }
   const brandsList = [...brandsSeen.values()];
-  const next = { brandCollabs, brands: brandsList };
+  // "Brands we're currently working with": open deals (confirmed / ongoing) whose reel isn't out yet — untick "Show on media kit" to hide one
+  const current = new Map();
+  for (const e of enquiries) {
+    const name = String(e.brand || "").trim();
+    if (!name || !["confirmed", "product", "live"].includes(e.status) || e.live_on || e.show_kit === "0" || current.has(name.toLowerCase())) continue;
+    const withIg = enquiries.find(x => String(x.brand || "").trim().toLowerCase() === name.toLowerCase() && x.instagram);
+    current.set(name.toLowerCase(), { name, link: withIg ? ig(withIg.instagram) : "" });
+  }
+  const next = { brandCollabs, brands: brandsList, current: [...current.values()] };
   if (JSON.stringify(await store.getSetting(env, "kit", null)) !== JSON.stringify(next)) await store.setSetting(env, "kit", next);   // the media kit reads it at GET /kit
 }
 
