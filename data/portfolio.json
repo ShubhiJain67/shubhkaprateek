@@ -6,43 +6,43 @@
   "organic": "100% organic — no paid boosts, no ads, no giveaways.",
   "stats": [
     {
+      "value": "27M+",
       "label": "Reach",
-      "value": "24M+",
       "note": "in the last 7 days"
     },
     {
-      "label": "Views in 24 hours",
       "value": "9M+",
+      "label": "Views in 24 hours",
       "note": "on 2 reels"
     },
     {
+      "value": "",
       "label": "Average reach",
-      "value": "",
       "note": "last 10 posts"
     },
     {
+      "value": "",
       "label": "Engagement rate",
-      "value": "",
       "note": "last 10 posts"
     },
     {
-      "label": "Audience",
       "value": "50 / 50",
+      "label": "Audience",
       "note": "men and women"
     },
     {
+      "value": "",
       "label": "Brands collaborated with",
-      "value": "",
       "note": ""
     },
     {
+      "value": "",
       "label": "Instagram followers",
-      "value": "",
       "note": ""
     },
     {
-      "label": "New reel",
       "value": "Every day",
+      "label": "New reel",
       "note": "for months, without a break"
     }
   ],
@@ -184,7 +184,6 @@
     ]
   },
   "ugc": {
-    "_help": "shubhkaprateek.com/ugc — content we make for the brand to post on their own page / run as ads (not posted on ours). DRAFT prices — edit before you ship.  ·  samples = UGC videos posted by the brand (code + link; cover in assets/covers/<code>.jpg)",
     "intro": "Content made for your page and your ads — shot by us, posted by you.",
     "samples": [
       {
@@ -293,6 +292,12 @@
   },
   "brandCollabs": [
     {
+      "brand": "Jellico",
+      "code": "DftW3p_SFfL",
+      "views": "",
+      "cover": "https://shubhkaprateek-bot.shubhkaprateek.workers.dev/img/cover-DftW3p_SFfL.jpg"
+    },
+    {
       "brand": "Samvardhan Mart",
       "code": "Dfjmf_VyOoC",
       "views": "",
@@ -362,20 +367,24 @@
   ],
   "brands": [
     {
+      "name": "Jellico",
+      "link": "https://www.instagram.com/jellico_in/"
+    },
+    {
       "name": "Samvardhan Mart",
-      "link": ""
+      "link": "https://www.instagram.com/samvardhan_mart/"
     },
     {
       "name": "Blix",
-      "link": ""
+      "link": "https://www.instagram.com/blix.robotix/"
     },
     {
       "name": "Tipsytap",
-      "link": ""
+      "link": "https://www.instagram.com/tipsytap.co/"
     },
     {
       "name": "Play Retro",
-      "link": "https://www.instagram.com/playretro.bachpan/"
+      "link": "https://www.instagram.com/playretro.india/"
     },
     {
       "name": "Brickadda",
@@ -391,7 +400,7 @@
     },
     {
       "name": "Eazy Arts",
-      "link": ""
+      "link": "https://www.instagram.com/eazyartsin/"
     }
   ]
 }
