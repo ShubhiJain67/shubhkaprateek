@@ -725,5 +725,21 @@
         "image": "https://shubhkaprateek-bot.shubhkaprateek.workers.dev/img/p55-jellico-luxe-gift-box-mwfyrkr9.jpg"
       }
     ]
+  },
+  {
+    "id": 56,
+    "name": "DIY Build a Mini Wooden Cottage Kit",
+    "brand": "",
+    "category": [
+      "building-sets",
+      "date-night"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B0gIY8fSL",
+        "image": "https://m.media-amazon.com/images/W/BW_MEDIAX_AVIF_MEASUREMENT_1306696-T4/images/I/7139T-2S-sL._SL1500_.jpg"
+      }
+    ]
   }
 ]

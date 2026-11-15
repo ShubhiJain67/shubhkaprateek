@@ -100,12 +100,6 @@
         "De4VkzLS1tE"
       ],
       "views": ""
-    },
-    {
-      "title": "Game Night Wars",
-      "description": "A 30-day couple game challenge — one game a night, scores carried day to day.",
-      "codes": [],
-      "views": ""
     }
   ],
   "why": {
@@ -269,7 +263,8 @@
     "Product gifting is separate from the collaboration fee.",
     "Barter collaborations are considered only for products worth ₹10,000 or more.",
     "Advertising usage rights are valid for 3 months from the date of content delivery.",
-    "Any additional deliverables or extended usage rights can be discussed separately."
+    "Any additional deliverables or extended usage rights can be discussed separately.",
+    "50% Payment to be done once we share the final draft and rest 50% once we go live."
   ],
   "terms": [
     {
@@ -401,6 +396,28 @@
     {
       "name": "Eazy Arts",
       "link": "https://www.instagram.com/eazyartsin/"
+    }
+  ],
+  "current": [
+    {
+      "name": "KartDriftz",
+      "link": ""
+    },
+    {
+      "name": "Perfora",
+      "link": "https://www.instagram.com/perforaofficial/"
+    },
+    {
+      "name": "Apex Light",
+      "link": "https://www.instagram.com/apexlight.in/"
+    },
+    {
+      "name": "Quackapo",
+      "link": "https://www.instagram.com/quackapo/"
+    },
+    {
+      "name": "Samvardhan Mart",
+      "link": "https://www.instagram.com/samvardhan_mart/"
     }
   ]
 }
