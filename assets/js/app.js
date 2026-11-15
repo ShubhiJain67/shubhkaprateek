@@ -185,7 +185,7 @@
     const buy = e.target.closest("a.buy");
     if (buy) {
       const box = buy.closest("[data-key]"), p = box && pmap.get(box.dataset.key);
-      const where = buy.closest(".feat-tile") ? "featured" : buy.closest(".pd-grid") ? "product page" : buy.closest(".item") ? "reel list" : buy.closest("#view-reel") ? "reel page" : "products";
+      const where = buy.closest(".feat-tile") ? "featured" : buy.closest(".nf-row") ? "newly discovered" : buy.closest(".pd-grid") ? "product page" : buy.closest(".item") ? "reel list" : buy.closest("#view-reel") ? "reel page" : "products";
       track("buy", { product: p ? p.name : "?", id: p && p.id != null ? p.id : "?", store: storeOf(buy.href), where });
       if (p && p.id != null) hit(where === "product page" ? "buy_page" : "buy", "p:" + p.id);   // product page vs anywhere else
       return;
@@ -275,6 +275,18 @@
     // one section, one "Featured" label, the product(s) inside it
     box.innerHTML = `<div class="feat-box"><span class="feat-label">⭐ Featured product${list.length > 1 ? "s" : ""}</span>
       <div class="feat-grid${list.length > 1 ? " two" : ""}">${list.map(featuredTile).join("")}</div></div>`;
+    box.dataset.ready = "1";
+    watchMedia(box);
+  }
+
+  // ---------- Newly discovered: the products added most recently (newest first), a swipeable row on the landing page ----------
+  const NEW_COUNT = 8;
+  function renderNewfound() {
+    const box = $("newfound"); if (!box) return;
+    const list = [...pmap.values()].filter(p => p.id != null).sort((a, b) => +b.id - +a.id).slice(0, NEW_COUNT);
+    if (!list.length) return;
+    box.innerHTML = `<div class="nf-head"><span class="feat-label">🆕 Newly discovered</span><span class="nf-hint">Just added — swipe →</span></div>
+      <div class="nf-row">${list.map(productCard).join("")}</div>`;
     box.dataset.ready = "1";
     watchMedia(box);
   }
@@ -457,6 +469,7 @@
     }
     // featured tile only on the plain landing page (not while searching or filtering)
     $("featured").hidden = !$("featured").dataset.ready || !!raw || active !== "all";
+    if ($("newfound")) $("newfound").hidden = !$("newfound").dataset.ready || !!raw || active !== "all" || view === "reels";
     renderChips();
     draw();
     const u = new URLSearchParams();
@@ -780,6 +793,7 @@
   });
 
   renderFeatured();
+  renderNewfound();
   // Reel CTA links: shubhkaprateek.com/?from=<reel code> opens that reel's page and records which reel sent the
   // visitor (Umami → Events → "from-reel"). The bot sends this link after you add a reel; /link gets it any time.
   // Tracking links: shubhkaprateek.com/?from=<any name you like> (e.g. ?from=queaky in an auto-DM).
