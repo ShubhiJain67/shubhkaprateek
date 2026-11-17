@@ -31,6 +31,7 @@ export async function ensure(env, h) {
     db.prepare("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)"),
     db.prepare("CREATE TABLE IF NOT EXISTS images (key TEXT PRIMARY KEY, type TEXT, data TEXT, created TEXT)"),
   ]);
+  try { if (!((((await db.prepare("PRAGMA table_info(brands)").all()).results) || []).some(c => c.name === "ads"))) await db.prepare("ALTER TABLE brands ADD COLUMN ads TEXT").run(); } catch {}   // link to their Meta Ad Library
   const flags = new Set((((await db.prepare("SELECT key FROM settings WHERE key IN ('imported', 'fix:brands:1')").all()).results) || []).map(r => r.key));
   if (!flags.has("imported")) await importFromFiles(env, h);
   // one-time tidy-ups of brand names (runs once, the first time after this is deployed)
@@ -76,7 +77,7 @@ async function importFromFiles(env, h) {
 export async function readBrands(env) {
   const rows = (await env.STATS.prepare("SELECT * FROM brands ORDER BY slug").all()).results || [];
   const site = env.SITE_URL || "https://shubhkaprateek.com";
-  return Object.fromEntries(rows.map(b => [b.slug, { name: b.name, id: b.number, link: `${site}/brand/${b.number}`, instagram: b.instagram || "", website: b.website || "", dbId: b.id }]));
+  return Object.fromEntries(rows.map(b => [b.slug, { name: b.name, id: b.number, link: `${site}/brand/${b.number}`, instagram: b.instagram || "", website: b.website || "", ads: b.ads || "", dbId: b.id }]));
 }
 // the brand's row for a name, created (with its fixed 5-digit page number) if it's new
 export async function brandId(env, name) {
@@ -90,14 +91,14 @@ export async function brandId(env, name) {
   return r.meta.last_row_id;
 }
 // rename a brand / its Instagram + website (the page number never changes)
-export async function saveBrand(env, slug, { name, instagram, website }) {
+export async function saveBrand(env, slug, { name, instagram, website, ads }) {
   const db = env.STATS; let b = await db.prepare("SELECT * FROM brands WHERE slug = ?").bind(slug).first();
   if (!b && name) { await brandId(env, name); b = await db.prepare("SELECT * FROM brands WHERE slug = ?").bind(slugOf(name)).first(); }
   if (!b) throw new Error("That brand is gone");
   const nn = String(name ?? b.name).trim() || b.name, ns = slugOf(nn);
   if (ns !== b.slug && await db.prepare("SELECT 1 FROM brands WHERE slug = ?").bind(ns).first()) return mergeBrand(env, b.slug, ns);   // renamed to a brand you already have → they become one
   await db.batch([
-    db.prepare("UPDATE brands SET name = ?, slug = ?, instagram = ?, website = ? WHERE id = ?").bind(nn, ns, String(instagram ?? b.instagram ?? "").trim(), String(website ?? b.website ?? "").trim(), b.id),
+    db.prepare("UPDATE brands SET name = ?, slug = ?, instagram = ?, website = ?, ads = ? WHERE id = ?").bind(nn, ns, String(instagram ?? b.instagram ?? "").trim(), String(website ?? b.website ?? "").trim(), String(ads ?? b.ads ?? "").trim(), b.id),
     db.prepare("UPDATE enquiries SET brand = ? WHERE lower(trim(brand)) = lower(?)").bind(nn, b.name),
   ]);
   await invalidate(env);

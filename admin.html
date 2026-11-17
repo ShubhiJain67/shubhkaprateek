@@ -259,6 +259,9 @@
   const reelsOf = id => D.reels.filter(r => (r.products || []).includes(+id));
   // the brand's record (page number, Instagram, website) — products link to it, deals match it by name
   const brandRec = name => { const k = String(name || "").trim().toLowerCase(); const e = Object.entries(D.brands || {}).find(([, b]) => b.name.toLowerCase() === k); return e ? { slug: e[0], ...e[1] } : null; };
+  // their ads on Meta (Facebook + Instagram): the link you saved, else a search for the brand's name in the Ad Library
+  const adsSearch = name => `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=IN&media_type=all&search_type=keyword_unordered&q=${encodeURIComponent(String(name || "").trim())}`;
+  const adsLink = name => { const b = brandRec(name); return (b && b.ads) || adsSearch(name); };
   const brandLink = name => { const b = Object.values(D.brands || {}).find(b => b.name.toLowerCase() === String(name || "").trim().toLowerCase()); return b ? b.link : ""; };
   const date = s => s ? new Date(s).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "";
   // who started it: "brand" = they reached out to us, "us" = we reached out (older ones came from the website form)
@@ -914,7 +917,7 @@
     const list = brandList().filter(b => !q || b.name.toLowerCase().includes(q));
     return `<div class="between"><h1>Brands <span class="muted" style="font:500 16px Inter,sans-serif">${list.length}</span></h1><input id="q" placeholder="Search brands…" value="${esc(q)}" style="width:220px"></div>
       <div class="tablebox"><table class="table"><thead><tr><th>Brand</th><th>Collabs</th><th>Products</th><th>Paid deals</th><th>Barter deals</th><th>Brand page</th></tr></thead><tbody>
-      ${list.map(b => `<tr style="cursor:pointer" data-brand="${esc(b.name)}"><td><b>${esc(b.name)}</b></td><td>${b.enquiries.length}</td><td>${b.products.length}</td>
+      ${list.map(b => `<tr style="cursor:pointer" data-brand="${esc(b.name)}"><td><b>${esc(b.name)}</b> <a class="small" href="${esc(adsLink(b.name))}" target="_blank" rel="noopener" title="Their ads in the Meta Ad Library">📢 Ads</a></td><td>${b.enquiries.length}</td><td>${b.products.length}</td>
         ${(m => `<td>${m.paidN ? `₹${m.paid.toLocaleString("en-IN")} <span class="muted small">· ${m.paidN}</span>` : `<span class="muted small">—</span>`}</td><td>${m.barterN ? `₹${m.barter.toLocaleString("en-IN")} <span class="muted small">· ${m.barterN}</span>` : `<span class="muted small">—</span>`}</td>`)(brandMoney(b))}
         <td>${brandLink(b.name) ? `<a href="${esc(brandLink(b.name))}" target="_blank" rel="noopener">${esc(brandLink(b.name).replace(/^https:\/\//, ""))}</a>` : `<span class="muted small">after first product</span>`}</td></tr>`).join("")}
       </tbody></table></div>`;
@@ -925,7 +928,7 @@
     const m = brandMoney(b);
     const reels = [...new Set(b.products.flatMap(p => reelsOf(p.id)))];
     return `<a href="#brands" data-go="brands" class="small" style="font-weight:600;text-decoration:none">← Brands</a>
-      <div class="between"><h1>${esc(b.name)}</h1><span class="row">${brandRec(b.name) ? `<button data-brandedit="${esc(brandRec(b.name).slug)}">Edit brand</button>` : ""}${brandLink(b.name) ? `<a class="btn main" href="${esc(brandLink(b.name))}" target="_blank" rel="noopener">Their brand page ↗</a>` : ""}</span></div>
+      <div class="between"><h1>${esc(b.name)}</h1><span class="row"><a class="btn" href="${esc(adsLink(b.name))}" target="_blank" rel="noopener">📢 Ads ↗</a>${brandRec(b.name) ? `<button data-brandedit="${esc(brandRec(b.name).slug)}">Edit brand</button>` : `<button data-brandnew="${esc(b.name)}">Edit brand</button>`}${brandLink(b.name) ? `<a class="btn main" href="${esc(brandLink(b.name))}" target="_blank" rel="noopener">Their brand page ↗</a>` : ""}</span></div>
       <div class="grid2">
         <div class="card"><b style="font:700 26px Fraunces,serif">${b.enquiries.length}</b><br><span class="muted small">Collabs / enquiries</span></div>
         <div class="card"><b style="font:700 26px Fraunces,serif">₹${m.paid.toLocaleString("en-IN")}</b><br><span class="muted small">Paid deals · ${m.paidN}${m.pending ? ` · ₹${m.pending.toLocaleString("en-IN")} not received yet` : ""}</span></div>
@@ -1053,6 +1056,7 @@
     root.querySelectorAll("[data-foldall]").forEach(b => b.onclick = () => { const c = b.dataset.foldall === "1", s2 = {};
       root.querySelectorAll("[data-fold]").forEach(sec => { sec.classList.toggle("closed", c); s2[sec.dataset.fold] = c; }); try { localStorage.setItem("skp-fold", JSON.stringify(s2)); } catch {} });
     root.querySelectorAll("[data-brandedit]").forEach(b => b.onclick = () => openBrandDialog(b.dataset.brandedit));
+    root.querySelectorAll("[data-brandnew]").forEach(b => b.onclick = () => openBrandDialog("", b.dataset.brandnew));   // a brand that's only in your deals so far
     root.querySelectorAll("[data-catedit]").forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); openCatDialog(b.dataset.catedit, null); });
     root.querySelectorAll("[data-catadd]").forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); openCatDialog(null, b.dataset.catadd); });
     root.querySelectorAll("tr[data-href]").forEach(tr => tr.onclick = ev => { if (ev.target.closest("button, a, input, select, label")) return; window.open(tr.dataset.href, "_blank", "noopener"); });
@@ -1139,8 +1143,8 @@
     dlg.showModal(); pickPitch(); f.brand.focus();
   }
   // rename a brand, set its Instagram + website
-  function openBrandDialog(slug) {
-    const b = (D.brands || {})[slug]; if (!b) return;
+  function openBrandDialog(slug, newName) {
+    const b = (D.brands || {})[slug] || (newName ? { name: newName, instagram: (D.enquiries.find(e => e.brand.trim().toLowerCase() === newName.toLowerCase() && e.instagram) || {}).instagram || "", website: "", ads: "", id: "new" } : null); if (!b) return;
     const dlg = document.createElement("dialog");
     dlg.style.cssText = "border:0;border-radius:18px;padding:0;width:min(520px,94vw);max-height:90vh;box-shadow:0 20px 60px rgba(43,31,26,.25)";
     dlg.innerHTML = `<form method="dialog" style="padding:22px;display:grid;gap:12px">
@@ -1149,15 +1153,17 @@
         <label>Name<input name="name" required value="${esc(b.name)}"></label>
         <label>Instagram<input name="instagram" value="${esc(b.instagram)}" placeholder="@brand"></label>
         <label style="grid-column:1/-1">Website<input name="website" value="${esc(b.website)}" placeholder="https://…"></label>
+        <label style="grid-column:1/-1">📢 Meta Ad Library link <a class="small" href="${esc(adsSearch(b.name))}" target="_blank" rel="noopener">search it ↗</a><input name="ads" value="${esc(b.ads || "")}" placeholder="https://www.facebook.com/ads/library/?…&view_all_page_id=…"></label>
+        <p class="muted small" style="grid-column:1/-1;margin:0">Open "search it", pick their page, copy that address and paste it here. Left empty, the Ads button just searches their name.</p>
       </div>
-      <p class="muted small" style="margin:0">Renaming updates its products and deals. Its brand page number (${esc(b.id)}) stays the same.</p>
+      <p class="muted small" style="margin:0">${b.id === "new" ? "Saving gives this brand its record (and a brand page number)." : `Renaming updates its products and deals. Its brand page number (${esc(b.id)}) stays the same.`}</p>
       <div class="row"><button class="main" type="submit">Save</button><button type="button" data-x>Cancel</button></div>
 </form>`;
     document.body.appendChild(dlg);
     const f = dlg.querySelector("form"), close = () => { dlg.close(); dlg.remove(); };
     dlg.querySelectorAll("[data-x]").forEach(x => x.onclick = close); dlg.addEventListener("cancel", close);
     f.onsubmit = async ev => { ev.preventDefault(); const btn = f.querySelector("button.main"); btn.disabled = true;
-      try { await api("brand.save", { slug, brand: { name: f.name.value, instagram: f.instagram.value, website: f.website.value } }); close(); toast("Brand saved");
+      try { await api("brand.save", { slug, brand: { name: f.name.value, instagram: f.instagram.value, website: f.website.value, ads: f.ads.value } }); close(); toast("Brand saved");
         if (view === "brand") { openId = f.name.value.trim(); location.hash = "brand/" + encodeURIComponent(openId); } render(); } catch { btn.disabled = false; } };
     dlg.showModal(); f.name.focus();
   }
