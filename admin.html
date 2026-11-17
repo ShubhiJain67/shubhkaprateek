@@ -265,11 +265,13 @@
   const SOURCES = { brand: "They reached out", us: "We reached out" };
   const srcOf = e => e.source === "us" ? "us" : "brand";
   // deal type: Collab (a reel on our page) or UGC (videos for the brand's own page)
-  const typeOf = e => e.deal_type === "ugc" || (!e.deal_type && /^UGC/i.test(e.package || "")) ? "ugc" : "collab";
-  const TYPES = { collab: "🎬 Collab", ugc: "📹 UGC" };
-  const typeBadge = e => typeOf(e) === "ugc" ? `<span class="pill" style="background:#e8f0fe;color:#1a4fa3">UGC</span> ` : "";
+  const TYPES = { collab: "🎬 Collab", campaign: "📣 Campaign", ugc: "📹 UGC", shoutout: "📢 Shoutout" };
+  const TYPE_SHORT = { collab: "Collab", campaign: "Campaign", ugc: "UGC", shoutout: "Shoutout" };
+  const typeOf = e => TYPES[e.deal_type] ? e.deal_type : /^UGC/i.test(e.package || "") ? "ugc" : "collab";
+  const TYPE_PILL = { campaign: "background:#fdeee0;color:#8a4a12", ugc: "background:#e8f0fe;color:#1a4fa3", shoutout: "background:#f3e8fd;color:#5b2a8a" };
+  const typeBadge = e => typeOf(e) !== "collab" ? `<span class="pill" style="${TYPE_PILL[typeOf(e)]}">${TYPE_SHORT[typeOf(e)]}</span> ` : "";
   const typeSelect = cur => `<label>Deal type<select name="deal_type">${Object.entries(TYPES).map(([k, t]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
-  const typeChips = (cur, attr, n) => `<div class="row">${[["all", "All types"], ["collab", "🎬 Collab"], ["ugc", "📹 UGC"]].map(([k, t]) => `<button class="chip ${cur === k ? "on" : ""}" ${attr}="${k}">${t}${n ? " " + n(k) : ""}</button>`).join("")}</div>`;
+  const typeChips = (cur, attr, n) => `<div class="row">${[["all", "All types"], ...Object.entries(TYPES)].map(([k, t]) => `<button class="chip ${cur === k ? "on" : ""}" ${attr}="${k}">${t}${n ? " " + n(k) : ""}</button>`).join("")}</div>`;
   const sourceSelect = cur => `<label>Who reached out<select name="source">${Object.entries(SOURCES).map(([k, t]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
   // ---- deliverables: ticked from the package's list, then yours to change
   const DELIV = [
@@ -441,6 +443,9 @@
         ${e.status === "live" ? `<button class="ok" data-status="delivered">Mark delivered ✓</button>` : ""}
         ${e.status === "delivered" ? `<button class="ok" data-status="closed" title="Marks the payment received if it isn't already">Close deal — all dues cleared ✓</button><button data-status="live">Reopen (back to Ongoing)</button>` : ""}
         ${e.status === "closed" ? `<button data-status="delivered">Reopen (back to Delivered)</button>` : ""}
+        ${e.status === "hold" ? (() => { // back to where it was before it went on hold
+          const st = ev.map(x => (String(x.text).match(/^Status → (\w+)/) || [])[1]).filter(Boolean), i = st.indexOf("hold"), prev = (i >= 0 && st.slice(i + 1).find(x => x !== "hold")) || "new";
+          return `<button class="ok" data-status="${esc(prev)}">↺ Reopen (back to ${esc(STATUS[prev] || prev)})</button>`; })() : ""}
         ${!["hold", "delivered", "closed"].includes(e.status) ? `<button data-status="hold">Put on hold</button>` : ""}
         ${e.status !== "declined" ? `<button class="danger" data-status="declined">Decline</button>` : `<button data-status="new">Reopen</button>`}
         <button class="danger" data-act="delEnq" style="margin-left:auto">Delete</button>
@@ -745,7 +750,7 @@
     const deals = D.enquiries.filter(open);
     const sched = [], tray = [];
     ideas.forEach(i => (i.post_on ? sched : tray).push({ key: "idea:" + i.id, kind: "idea", id: i.id, day: i.post_on || "", label: i.text, sub: (ISTAT[i.status] || "") + (i.type ? " · " + ITYPE[i.type] : ""), cls: "c-idea" }));
-    deals.forEach(e => (e.post_by ? sched : tray).push({ key: "deal:" + e.id, kind: "deal", id: e.id, day: day10(e.post_by), label: `🤝 ${e.brand}`, sub: `${e.package || (typeOf(e) === "ugc" ? "UGC" : "Collab")} · ${STATUS[e.status]}`, cls: "c-deal" }));
+    deals.forEach(e => (e.post_by ? sched : tray).push({ key: "deal:" + e.id, kind: "deal", id: e.id, day: day10(e.post_by), label: `🤝 ${e.brand}`, sub: `${e.package || TYPE_SHORT[typeOf(e)]} · ${STATUS[e.status]}`, cls: "c-deal" }));
     // posted: every reel on the website, on the day it went up on Instagram; plus collab reels that went live without a website reel
     const posted = [], seen = new Set();
     D.reels.forEach(r => { const c = codeOf(r), d = postedDay(c); if (!c || !d) return; seen.add(c.toLowerCase());
@@ -857,7 +862,7 @@
       ${moneyRange === "custom" ? `<div class="row" style="align-items:end"><label class="small">From<input type="date" id="mfrom" value="${esc(from)}" max="${esc(now)}"></label><label class="small">To<input type="date" id="mto" value="${esc(to)}" max="${esc(now)}"></label></div>` : ""}
       ${typeChips(moneyType, "data-mtype")}
       <div class="stats4">
-        <div class="stat big"><b>${rs(tot())}</b><span>Total earned · ${esc(lbl)} (money + products)${moneyType === "all" && items.some(x => typeOf(x.e) === "ugc") ? `<br>🎬 Collab ${rs(items.filter(x => typeOf(x.e) === "collab").reduce((t, x) => t + x.v, 0))} · 📹 UGC ${rs(items.filter(x => typeOf(x.e) === "ugc").reduce((t, x) => t + x.v, 0))}` : ""}</span></div>
+        <div class="stat big"><b>${rs(tot())}</b><span>Total earned · ${esc(lbl)} (money + products)${moneyType === "all" && items.some(x => typeOf(x.e) !== "collab") ? `<br>${Object.keys(TYPES).map(t => [t, items.filter(x => typeOf(x.e) === t).reduce((a, x) => a + x.v, 0)]).filter(([, v]) => v).map(([t, v]) => `${TYPES[t]} ${rs(v)}`).join(" · ")}` : ""}</span></div>
         <div class="stat"><b>${rs(tot("cash"))}</b><span>💸 Money received · ${items.filter(x => x.kind === "cash").length}</span></div>
         <div class="stat"><b>${rs(tot("prod"))}</b><span>🎁 Products worth · ${items.filter(x => x.kind === "prod").length}</span></div>
         <div class="stat ${late.length ? "warn" : ""}"><b>${rs(due.reduce((t, e) => t + price(e), 0))}</b><span>Still due now · ${due.length} deal${due.length === 1 ? "" : "s"}${late.length ? ` · ⚠️ ${rs(late.reduce((t, e) => t + price(e), 0))} late` : ""}</span></div>
@@ -873,7 +878,7 @@
       <div class="split">
         <section class="card"><h2>Day by day</h2>
           ${days.map(d => `<div style="padding:8px 0;border-bottom:1px dashed var(--line)"><div class="between"><b>${dateY(d)}</b><b>${rs(byDay[d].reduce((t, x) => t + x.v, 0))}</b></div>
-            ${byDay[d].map(x => `<div class="between small" style="cursor:pointer" data-open="${x.e.id}"><span class="muted">${x.kind === "cash" ? "💸" : "🎁"} ${esc(x.e.brand)}${typeOf(x.e) === "ugc" ? " · UGC" : ""}${x.kind === "cash" && x.e.txn_id ? " · " + esc(x.e.txn_id) : ""}${x.kind === "prod" && x.e.payment === "Barter" ? " · barter" : ""}</span><span>${rs(x.v)}</span></div>`).join("")}</div>`).join("") || `<p class="muted" style="margin:0">Nothing in this range. Money counts on its <b>Payment received</b> date; a product on its <b>Product received</b> date.</p>`}</section>
+            ${byDay[d].map(x => `<div class="between small" style="cursor:pointer" data-open="${x.e.id}"><span class="muted">${x.kind === "cash" ? "💸" : "🎁"} ${esc(x.e.brand)}${typeOf(x.e) !== "collab" ? " · " + TYPE_SHORT[typeOf(x.e)] : ""}${x.kind === "cash" && x.e.txn_id ? " · " + esc(x.e.txn_id) : ""}${x.kind === "prod" && x.e.payment === "Barter" ? " · barter" : ""}</span><span>${rs(x.v)}</span></div>`).join("")}</div>`).join("") || `<p class="muted" style="margin:0">Nothing in this range. Money counts on its <b>Payment received</b> date; a product on its <b>Product received</b> date.</p>`}</section>
         ${toReturn.length ? `<section class="card"><h2>↩ Products to send back <span class="muted small" style="font-weight:500">· ${toReturn.length}</span></h2><div class="list">${toReturn.map(e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${e.product_value ? esc(e.product_value) + " · " : ""}not counted in Earnings</span></span>${pill(e.status)}</button>`).join("")}</div></section>` : ""}
         <section class="card"><h2>🔮 Incoming <span class="muted small" style="font-weight:500">· tentative · confirmed + ongoing, reel not live yet</span></h2><div class="list">${tent.sort((a, b) => (a.e.post_by || "9999").localeCompare(b.e.post_by || "9999")).map(tentRow).join("") || `<p class="muted" style="margin:0">Nothing in the pipeline.</p>`}</div></section>
         <section class="card"><h2>Still due <span class="muted small" style="font-weight:500">· reel is live, not paid</span></h2><div class="list">${due.sort((a, b) => (a.payment_due || "9999").localeCompare(b.payment_due || "9999")).map(dueRow).join("") || `<p class="muted" style="margin:0">Nothing due 🎉</p>`}</div></section>
