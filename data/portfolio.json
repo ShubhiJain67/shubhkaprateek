@@ -125,7 +125,7 @@
   "packages": [
     {
       "name": "Option 1 — Basic Reel Collaboration",
-      "price": "₹2,000",
+      "price": "₹3,000",
       "items": [
         "1 Instagram Collaborative Reel",
         "1 Instagram Story with brand mention"
@@ -133,7 +133,7 @@
     },
     {
       "name": "Option 2 — Reel Collaboration",
-      "price": "₹3,000",
+      "price": "₹3,500",
       "items": [
         "1 Instagram Collaborative Reel",
         "2 Instagram Stories with brand mention",
@@ -264,7 +264,9 @@
     "Barter collaborations are considered only for products worth ₹10,000 or more.",
     "Advertising usage rights are valid for 3 months from the date of content delivery.",
     "Any additional deliverables or extended usage rights can be discussed separately.",
-    "50% Payment to be done once we share the final draft and rest 50% once we go live."
+    "50% Payment to be done once we share the final draft and rest 50% once we go live.",
+    "We do not guarantee any specific reach, views, engagement, impressions, or conversions.",
+    "No refunds or additional deliverables will be provided based on content performance."
   ],
   "terms": [
     {
@@ -399,6 +401,14 @@
     }
   ],
   "current": [
+    {
+      "name": "Tac Tow",
+      "link": "https://www.instagram.com/tactow.in/"
+    },
+    {
+      "name": "Toujoo",
+      "link": "https://www.instagram.com/toujootoys/"
+    },
     {
       "name": "KartDriftz",
       "link": ""
