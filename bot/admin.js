@@ -30,7 +30,8 @@ async function tables(env) {
   ]);
   try { if (!((((await env.STATS.prepare("PRAGMA table_info(events)").all()).results) || []).some(c => c.name === "files"))) await env.STATS.prepare("ALTER TABLE events ADD COLUMN files TEXT").run(); } catch {}   // photos on your history notes
   try { if (!((((await env.STATS.prepare("PRAGMA table_info(ideas)").all()).results) || []).some(c => c.name === "type"))) await env.STATS.prepare("ALTER TABLE ideas ADD COLUMN type TEXT").run(); } catch {}
-  try { if (!((((await env.STATS.prepare("PRAGMA table_info(ideas)").all()).results) || []).some(c => c.name === "enquiry_id"))) await env.STATS.prepare("ALTER TABLE ideas ADD COLUMN enquiry_id INTEGER").run(); } catch {}   // idea → the collab it's for
+  try { if (!((((await env.STATS.prepare("PRAGMA table_info(ideas)").all()).results) || []).some(c => c.name === "enquiry_id"))) await env.STATS.prepare("ALTER TABLE ideas ADD COLUMN enquiry_id INTEGER").run(); } catch {}
+  try { if (!((((await env.STATS.prepare("PRAGMA table_info(ideas)").all()).results) || []).some(c => c.name === "post_on"))) await env.STATS.prepare("ALTER TABLE ideas ADD COLUMN post_on TEXT").run(); } catch {}   // the day it's planned to go live (content calendar)   // idea → the collab it's for
   // columns added later — only the missing ones are added (one quick look instead of ~25 tries every cold start)
   const have = new Set((((await env.STATS.prepare("PRAGMA table_info(enquiries)").all()).results) || []).map(c => c.name));
   for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT", "show_kit TEXT", "kit_views TEXT", "return_product TEXT", "returned_on TEXT", "deal_type TEXT"]) { if (!have.has(col.split(" ")[0])) try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
@@ -150,7 +151,8 @@ async function load(env, h) {
   }
   await syncKit(env, h, reels, enquiries);
   const kitAuto = await store.getSetting(env, "kit", {});
-  return { products, reels, categories, featured, brands, enquiries, events, packages, ideas, kit, kitAuto };
+  const featuredPlan = await store.getSetting(env, "featuredPlan", []);
+  return { products, reels, categories, featured, brands, enquiries, events, packages, ideas, kit, kitAuto, featuredPlan };
 }
 const readIdeas = async env => (await env.STATS.prepare("SELECT * FROM ideas ORDER BY id DESC").all()).results || [];
 
@@ -414,9 +416,32 @@ async function run(a, env, h) {
     const i = a.idea || {}, t = now();
     const v = { text: clip(i.text, 2000).trim(), account: clip(i.account, 40), status: ["idea", "planned", "toshoot", "shot", "posted", "dropped"].includes(i.status) ? i.status : "idea", link: clip(i.link, 500).trim(), notes: clip(i.notes, 4000), type: ["gadget", "emotion", "us"].includes(i.type) ? i.type : "", enquiry_id: +i.enquiry_id || null };
     if (!v.text) throw new Error("Write the idea first");
+    const postOn = /^\d{4}-\d{2}-\d{2}$/.test(i.post_on || "") ? i.post_on : null;
+    if (i.id && "post_on" in i) await env.STATS.prepare("UPDATE ideas SET post_on = ? WHERE id = ?").bind(postOn, +i.id).run();
     if (i.id) await env.STATS.prepare("UPDATE ideas SET updated = ?, text = ?, account = ?, status = ?, link = ?, notes = ?, type = ?, enquiry_id = ? WHERE id = ?").bind(t, v.text, v.account, v.status, v.link, v.notes, v.type, v.enquiry_id, +i.id).run();
-    else await env.STATS.prepare("INSERT INTO ideas (created, updated, text, account, status, link, notes, type, enquiry_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(t, t, v.text, v.account, v.status, v.link, v.notes, v.type, v.enquiry_id).run();
+    else await env.STATS.prepare("INSERT INTO ideas (created, updated, text, account, status, link, notes, type, enquiry_id, post_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(t, t, v.text, v.account, v.status, v.link, v.notes, v.type, v.enquiry_id, postOn).run();
     return { ideas: await readIdeas(env) };
+  }
+  // ---- content calendar: drop an idea or a deal on a day (date "" = back to the "to schedule" tray)
+  if (op === "cal.move") {
+    const d = /^\d{4}-\d{2}-\d{2}$/.test(a.date || "") ? a.date : null;
+    if (a.kind === "idea") await env.STATS.prepare("UPDATE ideas SET post_on = ?, updated = ? WHERE id = ?").bind(d, now(), +a.id).run();
+    else if (a.kind === "deal") {
+      const e = await getEnquiry(env, a.id); if (!e) throw new Error("That deal is gone");
+      await env.STATS.prepare("UPDATE enquiries SET post_by = ?, updated = ? WHERE id = ?").bind(d, now(), e.id).run();
+      await logEvent(env, e.id, d ? `📅 Post date set to ${d} (calendar)` : "📅 Post date removed (calendar)");
+    } else throw new Error("Nothing to move");
+    return load(env, h);
+  }
+  // ---- featured-product slots (a planner: the website's Featured is still set with ⭐ on Products)
+  if (op === "feat.plan") {
+    const iso = v => /^\d{4}-\d{2}-\d{2}$/.test(v || "") ? v : "";
+    const plan = [].concat(a.plan || []).map(b => ({ id: String(b.id || crypto.randomUUID().slice(0, 8)), product: +b.product || null, slot: +b.slot === 2 ? 2 : 1, from: iso(b.from), to: iso(b.to), deal: +b.deal || null, note: clip(b.note, 200) }))
+      .filter(b => b.product && b.from && b.to);
+    for (const b of plan) if (b.to < b.from) throw new Error("A booking ends before it starts");
+    for (const b of plan) { const clash = plan.find(x => x !== b && x.slot === b.slot && x.from <= b.to && b.from <= x.to); if (clash) throw new Error(`Slot ${b.slot} is already booked ${clash.from} → ${clash.to}`); }
+    await store.setSetting(env, "featuredPlan", plan);
+    return load(env, h);
   }
   if (op === "idea.delete") { await tables(env); await env.STATS.prepare("DELETE FROM ideas WHERE id = ?").bind(+a.id).run(); return { ideas: await readIdeas(env) }; }
   if (op === "brand.save") { await store.saveBrand(env, String(a.slug || ""), a.brand || {}); return load(env, h); }
