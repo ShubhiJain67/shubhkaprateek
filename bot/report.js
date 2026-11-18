@@ -142,12 +142,12 @@ export async function reportHttp(req, env, url, helpers) {
   const slug = (Object.entries(list).find(([, b]) => b.id === asked) || [""])[0];
   if (!slug) return new Response('{"error":"not found"}', { status: 404, headers: cors });
   const cacheKey = `reportcache:${slug}:${days}`;
-  // ?fresh=1 skips the 5-minute cache — handy while testing
+  // ?fresh=1 skips the 1-hour cache — handy while testing
   const hit = url.searchParams.get("fresh") ? null : await env.DRAFTS.get(cacheKey);
   if (hit) return new Response(hit, { headers: cors });
   try {
     const body = JSON.stringify({ ...(await buildReport(env, helpers, slug, days)), updated: new Date().toISOString() });
-    await env.DRAFTS.put(cacheKey, body, { expirationTtl: 300 });           // numbers refresh every 5 minutes
+    await env.DRAFTS.put(cacheKey, body, { expirationTtl: 3600 });          // numbers refresh every hour
     return new Response(body, { headers: cors });
   } catch (e) {
     console.error(e);
