@@ -165,6 +165,9 @@
     .cday { min-height: 0; flex-direction: row; flex-wrap: wrap; align-items: center; } .cdn { width: 100%; } .cdn .cwd { display: inline; color: var(--muted); }
     .cday .cchip, .cday .cfree { flex: 1 1 100%; } .cfeat { width: 100%; grid-auto-flow: column; justify-content: start; gap: 10px; }
   }
+  .itbox { display: grid; gap: 8px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  .itrow { display: grid; grid-template-columns: 1.2fr 1.6fr .7fr auto; gap: 8px; margin-bottom: 8px; }
+  @media (max-width: 760px) { .itrow { grid-template-columns: 1fr 1fr auto; } .itrow [data-il] { grid-column: 1 / -1; order: 3; } }
   .kit-row { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; margin: 8px 0; background: #fff; }
   .kit-3 { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; align-items: end; }
   @media (max-width: 760px) { .kit-3 { grid-template-columns: 1fr; } }
@@ -442,7 +445,7 @@
       <div class="row">
         <a class="btn" href="${mail}">Reply by email</a>
         ${e.status !== "confirmed" && at < 1 ? `<button class="ok" data-status="confirmed">${e.pitched === "1" && e.reel_code ? "Confirm (reel is already live)" : "Confirm"}</button>` : ""}
-        ${!e.received_on && e.pitched !== "1" && ["confirmed", "product", "live", "hold"].includes(e.status) ? `<button data-recv>📬 Product received</button>` : ""}
+        ${!e.received_on && e.pitched !== "1" && e.no_product !== "1" && ["confirmed", "product", "live", "hold"].includes(e.status) ? `<button data-recv>📬 Product received</button>` : ""}
         ${e.status === "live" ? `<button class="ok" data-status="delivered">Mark delivered ✓</button>` : ""}
         ${e.status === "delivered" ? `<button class="ok" data-status="closed" title="Marks the payment received if it isn't already">Close deal — all dues cleared ✓</button><button data-status="live">Reopen (back to Ongoing)</button>` : ""}
         ${e.status === "closed" ? `<button data-status="delivered">Reopen (back to Delivered)</button>` : ""}
@@ -485,7 +488,8 @@
       <section class="card" data-fold="reel"><h2>Reel</h2>
         ${e.reel_code ? `<p style="margin:0 0 10px">${e.pitched === "1" && !["live", "delivered", "closed"].includes(e.status) ? "Your reel" : "Reel"}: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a>${moreReels.map(c => ` · <a href="${SITE}/reel/${esc(c)}" target="_blank" rel="noopener">${esc(reelTitle(c))}</a>`).join("")} · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
         ${prods.length ? `<form id="reelf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 210px">Live date &amp; time<input name="live_on" type="datetime-local" value="${esc(dtVal(e.live_on) || nowLocal())}"></label><button class="main">${e.reel_code ? "Update reel" : "Go live →"}</button></form>
-          <p class="muted small" style="margin:8px 0 0">Makes the reel page, connects it to their product${prods.length > 1 ? "s" : ""} and publishes the website. Status → Ongoing.</p>` : `<p class="muted" style="margin:0">Add their product first.</p>`}
+          <p class="muted small" style="margin:8px 0 0">Makes the reel page, connects it to their product${prods.length > 1 ? "s" : ""} and publishes the website. Status → Ongoing.</p>` : `<form id="reelnf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 210px">Live date &amp; time<input name="live_on" type="datetime-local" value="${esc(dtVal(e.live_on) || nowLocal())}"></label><button class="main">Save reel</button></form>
+          <p class="muted small" style="margin:8px 0 0">No website product in this collab, so this just records the reel link + live date (no reel page on the website). Add a product above to get a reel page.</p>`}
       </section>
       <section class="card" data-fold="trials"><h2>Trial reels <span class="hint">${trialsOf(e).length || ""}</span><span class="muted small" style="font-weight:500">· just for your record, no page on the website</span></h2>
         ${!editCard.has("trials") ? `${trialsOf(e).length ? `<ul class="vlist">${trialsOf(e).map(t => `<li><b>${dateY(t.date) || "—"}</b> ${link(t.link)} ${t.note ? `<span class="muted">· ${esc(t.note)}</span>` : ""}</li>`).join("")}</ul>` : `<p class="muted" style="margin:0">No trial reels yet.</p>`}<div style="margin-top:10px">${editBtn("trials")}</div>` : `<form id="trf" style="display:grid;gap:8px"><div class="tlist" style="display:grid;gap:8px">${(trialsOf(e).length ? trialsOf(e) : [{ date: today() }]).map(trialRow).join("")}</div>
@@ -505,7 +509,6 @@
           <label>Agreed price${pk.private ? ` <span class="muted small" style="font-weight:500">— extra payment only, the refund is in Deliverables</span>` : ""}<input name="price" value="${esc(e.price || pk.price)}" placeholder="${pk.private ? "₹0 if it's only the refund" : "₹3,000"}"></label>
           <label>Payment<select name="payment">${["Paid", "Barter", "Pending"].map(o => `<option ${o === (e.payment || pk.payment) ? "selected" : ""}>${o}</option>`).join("")}</select></label>
           <label>Payment deadline<input name="payment_due" type="date" value="${esc(e.payment_due)}"></label>
-          <label>Product value<input name="product_value" value="${esc(e.product_value)}" placeholder="₹4,999"></label>
           <label>Shoot by<input name="shoot_by" type="date" value="${esc(e.shoot_by)}"></label>
           <label>Post by<input name="post_by" type="date" value="${esc(e.post_by)}"></label>
           <b class="small" style="grid-column:1/-1;margin-top:4px">What actually happened</b>
@@ -525,18 +528,41 @@
             <label>Transaction ID<input name="txn_id" value="${esc(e.txn_id)}" placeholder="UPI / bank ref"></label>
             <label>Other details<textarea name="payment_notes" rows="2" placeholder="Paid to which account, invoice no., TDS…">${esc(e.payment_notes)}</textarea></label></div>
           ${contactsBlock(contactsOf(e))}
-          <label>Their product link ${e.product_link || prods[0] ? `<a class="small" href="${esc(e.product_link || prods[0].variants[0]?.link || "")}" target="_blank" rel="noopener">open ↗</a>` : ""}<input name="product_link" value="${esc(e.product_link || (prods[0] && prods[0].variants[0]?.link) || "")}" placeholder="filled from their product on the website"></label>
+          ${itemsBlock(e, prods)}
+          <label hidden>Their product link ${e.product_link || prods[0] ? `<a class="small" href="${esc(e.product_link || prods[0].variants[0]?.link || "")}" target="_blank" rel="noopener">open ↗</a>` : ""}<input name="product_link_old" value="${esc(e.product_link || (prods[0] && prods[0].variants[0]?.link) || "")}" placeholder="filled from their product on the website"></label>
           <label style="grid-column:1/-1">Their message<textarea name="message" rows="2">${esc(e.message)}</textarea></label>
           <label style="grid-column:1/-1">Your notes<textarea name="notes" rows="2">${esc(e.notes)}</textarea></label>
           <div class="row"><button class="main">Save deal</button><button type="button" data-cancelcard="deal">Cancel</button></div></form>`;
   }
   // the deal as you'd read it: only what's filled in
+  // the products in a collab: any number of them, each with its own link + worth — or none at all
+  // (older deals have a single Product link / Product value: shown as one row until you save)
+  const itemsOf = (e, prods = []) => { try { const a = JSON.parse(e.deal_items || "null"); if (Array.isArray(a)) return a; } catch {}
+    if (e.no_product === "1") return [];
+    return e.product_value || e.product_link ? [{ name: (prods[0] && prods[0].name) || "", link: e.product_link || "", value: e.product_value || "" }] : []; };
+  const itemsRows = items => items.map((x, i) => `<div class="itrow" data-itrow><input data-in placeholder="Product name" value="${esc(x.name)}"><input data-il placeholder="https://… (link)" value="${esc(x.link)}"><input data-iv placeholder="₹ worth" value="${esc(x.value)}"><button type="button" data-itdel aria-label="Remove product">✕</button></div>`).join("");
+  const itemsBlock = (e, prods) => { const items = itemsOf(e, prods), none = e.no_product === "1";
+    return `<div class="itbox" style="grid-column:1/-1"><div class="between"><b class="small">📦 Products in this collab</b><label class="small" style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-noprod style="width:auto" ${none ? "checked" : ""}> No product involved</label></div>
+      <div data-itlist ${none ? "hidden" : ""}>${itemsRows(items.length ? items : [{ name: "", link: "", value: "" }])}<button type="button" data-itadd>+ Add another product</button>
+      <p class="muted small" style="margin:6px 0 0">Total worth <b data-ittotal></b> — this is what counts in Earnings.</p></div></div>`; };
+  const readItems = f => { const none = f.querySelector("[data-noprod]")?.checked;
+    const items = none ? [] : [...f.querySelectorAll("[data-itrow]")].map(r => ({ name: r.querySelector("[data-in]").value.trim(), link: r.querySelector("[data-il]").value.trim(), value: r.querySelector("[data-iv]").value.trim() })).filter(x => x.name || x.link || x.value);
+    const total = items.reduce((t, x) => t + money(x.value), 0);
+    return { deal_items: JSON.stringify(items), no_product: none ? "1" : "0", product_value: total ? "₹" + total.toLocaleString("en-IN") : "", product_link: (items.find(x => x.link) || {}).link || "" }; };
+  const wireItems = f => { const box = f.querySelector(".itbox"); if (!box) return; const list = box.querySelector("[data-itlist]");
+    const total = () => { const t = [...box.querySelectorAll("[data-iv]")].reduce((a, i) => a + money(i.value), 0); box.querySelector("[data-ittotal]").textContent = t ? "₹" + t.toLocaleString("en-IN") : "₹0"; };
+    const hook = () => { box.querySelectorAll("[data-itdel]").forEach(b => b.onclick = () => { b.closest("[data-itrow]").remove(); total(); }); box.querySelectorAll("[data-iv]").forEach(i => i.oninput = total); };
+    box.querySelector("[data-itadd]").onclick = () => { box.querySelector("[data-itadd]").insertAdjacentHTML("beforebegin", itemsRows([{ name: "", link: "", value: "" }])); hook(); };
+    box.querySelector("[data-noprod]").onchange = ev => { list.hidden = ev.target.checked; };
+    hook(); total(); };
   function dealView(e, prods) {
     const st = statsOf(e), cs = contactsOf(e), pl = e.product_link || (prods[0] && prods[0].variants[0]?.link) || "";
     return kv([
       ["Brand", esc(e.brand)], ["Email", e.email ? `<a href="mailto:${esc(e.email)}">${esc(e.email)}</a>` : ""],
       ["Instagram", e.instagram ? link(igUrl(e.instagram), e.instagram) : ""], ["Who reached out", e.pitched === "1" ? "🎯 We pitched a posted reel" : SOURCES[srcOf(e)]],
-      ["Deal type", TYPES[typeOf(e)]], ["Package", esc(e.package)], ["Agreed price", esc(e.price)], ["Payment", esc(e.payment)], ["Product value", esc(e.product_value)],
+      ["Deal type", TYPES[typeOf(e)]], ["Package", esc(e.package)], ["Agreed price", esc(e.price)], ["Payment", esc(e.payment)],
+      ["Products", e.no_product === "1" ? "No product involved" : itemsOf(e, prods).map(x => `${x.link ? link(x.link, x.name || "Product") : esc(x.name || "Product")}${x.value ? ` <span class="muted">· ${esc(x.value)}</span>` : ""}`).join("<br>")],
+      ["Total product worth", itemsOf(e, prods).length > 1 ? esc(e.product_value) : ""],
       ["Payment deadline", dateY(e.payment_due)], ["Shoot by", dateY(e.shoot_by)], ["Post by", dateY(e.post_by)],
       ["Product dispatched", dateY(e.dispatched_on)], ["Product received", dateY(e.received_on)], ["Draft submitted", dateY(e.draft_on)],
       ["Reel went live", dateY(e.live_on)], ["Collab added", dateY(e.collab_on)], ["Payment received", dateY(e.paid_on)],
@@ -544,7 +570,7 @@
       ["Media kit", reelsOfDeal(e).length ? (e.show_kit === "0" ? "Hidden" : ["live", "delivered", "closed"].includes(e.status) ? `Shown${e.kit_views ? " · ▶ " + esc(e.kit_views) + " views" : ""}` : "Shows once it's Ongoing") : ""],
       ["Transaction ID", esc(e.txn_id)], ["Payment details", esc(e.payment_notes)],
       ["Contacts", cs.map(c => `<span class="ct">${esc([c.name, c.role].filter(Boolean).join(" · "))}${c.phone ? ` · <a href="tel:${esc(c.phone.replace(/\s/g, ""))}">${esc(c.phone)}</a>` : ""}</span>`).join("")],
-      ["Product link", link(pl)], ["Their message", esc(e.message)], ["Your notes", esc(e.notes)],
+      ["Their message", esc(e.message)], ["Your notes", esc(e.notes)],
     ]);
   }
   // the product form (used inside an enquiry and on the Products page)
@@ -829,6 +855,11 @@
     // 🔮 incoming (tentative): deals whose reel isn't out yet — their unpaid amount + the product that's still to arrive
     const tent = agreed.filter(isTent).map(e => ({ e, c: e.paid_on ? 0 : price(e), p: e.return_product !== "1" && !pday(e) ? money(e.product_value) : 0 })).filter(x => x.c + x.p > 0);
     const tentC = tent.reduce((t, x) => t + x.c, 0), tentP = tent.reduce((t, x) => t + x.p, 0);
+    // 🌱 tentative: new enquiries, not agreed yet — what they'd bring if they say yes (their price, or the package's; + product worth)
+    const enq = D.enquiries.filter(e => e.status === "new" && (moneyType === "all" || typeOf(e) === moneyType)).map(e => ({ e, c: price(e), p: e.no_product === "1" ? 0 : money(e.product_value) }));
+    const enqC = enq.reduce((t, x) => t + x.c, 0), enqP = enq.reduce((t, x) => t + x.p, 0);
+    const enqRow = ({ e, c, p }) => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br>
+        <span class="muted small">${[c ? "💸 " + rs(c) + (guessed(e) ? " (package price)" : "") : "", p ? "🎁 " + rs(p) : "", !c && !p ? "No price yet" : "", date(e.created)].filter(Boolean).join(" · ")}</span></span><b>${c + p ? rs(c + p) : "—"}</b></button>`;
     const tentRow = ({ e, c, p }) => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br>
         <span class="muted small">${[pill(e.status), c ? "💸 " + rs(c) + (guessed(e) ? " (package price — no Agreed price set)" : "") : "", p ? "🎁 " + rs(p) + (e.dispatched_on ? " · on its way" : "") : "", e.post_by ? "post by " + dateY(e.post_by) : ""].filter(Boolean).join(" · ")}</span></span><b>${rs(c + p)}</b></button>`;
     // the range
@@ -869,7 +900,8 @@
         <div class="stat"><b>${rs(tot("cash"))}</b><span>💸 Money received · ${items.filter(x => x.kind === "cash").length}</span></div>
         <div class="stat"><b>${rs(tot("prod"))}</b><span>🎁 Products worth · ${items.filter(x => x.kind === "prod").length}</span></div>
         <div class="stat ${late.length ? "warn" : ""}"><b>${rs(due.reduce((t, e) => t + price(e), 0))}</b><span>Still due now · ${due.length} deal${due.length === 1 ? "" : "s"}${late.length ? ` · ⚠️ ${rs(late.reduce((t, e) => t + price(e), 0))} late` : ""}</span></div>
-        <div class="stat"><b>${rs(tentC + tentP)}</b><span>🔮 Incoming (tentative) · ${tent.length} deal${tent.length === 1 ? "" : "s"}${tentP ? ` · 💸 ${rs(tentC)} + 🎁 ${rs(tentP)}` : ""}</span></div>
+        <div class="stat"><b>${rs(tentC + tentP)}</b><span>🔒 Contingent · ${tent.length} confirmed deal${tent.length === 1 ? "" : "s"}${tentP ? ` · 💸 ${rs(tentC)} + 🎁 ${rs(tentP)}` : ""}</span></div>
+        <div class="stat"><b>${rs(enqC + enqP)}</b><span>🌱 Tentative · ${enq.length} new enquir${enq.length === 1 ? "y" : "ies"}${enqP ? ` · 💸 ${rs(enqC)} + 🎁 ${rs(enqP)}` : ""}</span></div>
         <div class="stat"><b>${rs(allTime)}</b><span>Earned all time (money + products)</span></div>
       </div>
       <section class="card"><h2>Earned per ${unit} <span class="muted small" style="font-weight:500">· ${esc(lbl)} · <span style="color:var(--accent)">■</span> money <span style="color:#d4a62a">■</span> products</span></h2>
@@ -883,10 +915,11 @@
           ${days.map(d => `<div style="padding:8px 0;border-bottom:1px dashed var(--line)"><div class="between"><b>${dateY(d)}</b><b>${rs(byDay[d].reduce((t, x) => t + x.v, 0))}</b></div>
             ${byDay[d].map(x => `<div class="between small" style="cursor:pointer" data-open="${x.e.id}"><span class="muted">${x.kind === "cash" ? "💸" : "🎁"} ${esc(x.e.brand)}${typeOf(x.e) !== "collab" ? " · " + TYPE_SHORT[typeOf(x.e)] : ""}${x.kind === "cash" && x.e.txn_id ? " · " + esc(x.e.txn_id) : ""}${x.kind === "prod" && x.e.payment === "Barter" ? " · barter" : ""}</span><span>${rs(x.v)}</span></div>`).join("")}</div>`).join("") || `<p class="muted" style="margin:0">Nothing in this range. Money counts on its <b>Payment received</b> date; a product on its <b>Product received</b> date.</p>`}</section>
         ${toReturn.length ? `<section class="card"><h2>↩ Products to send back <span class="muted small" style="font-weight:500">· ${toReturn.length}</span></h2><div class="list">${toReturn.map(e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${e.product_value ? esc(e.product_value) + " · " : ""}not counted in Earnings</span></span>${pill(e.status)}</button>`).join("")}</div></section>` : ""}
-        <section class="card"><h2>🔮 Incoming <span class="muted small" style="font-weight:500">· tentative · confirmed + ongoing, reel not live yet</span></h2><div class="list">${tent.sort((a, b) => (a.e.post_by || "9999").localeCompare(b.e.post_by || "9999")).map(tentRow).join("") || `<p class="muted" style="margin:0">Nothing in the pipeline.</p>`}</div></section>
+        <section class="card"><h2>🔒 Contingent <span class="muted small" style="font-weight:500">· confirmed + ongoing, reel not live yet</span></h2><div class="list">${tent.sort((a, b) => (a.e.post_by || "9999").localeCompare(b.e.post_by || "9999")).map(tentRow).join("") || `<p class="muted" style="margin:0">Nothing in the pipeline.</p>`}</div></section>
+        <section class="card"><h2>🌱 Tentative <span class="muted small" style="font-weight:500">· new enquiries, not confirmed yet</span></h2><div class="list">${enq.sort((a, b) => b.e.id - a.e.id).map(enqRow).join("") || `<p class="muted" style="margin:0">No new enquiries right now.</p>`}</div></section>
         <section class="card"><h2>Still due <span class="muted small" style="font-weight:500">· reel is live, not paid</span></h2><div class="list">${due.sort((a, b) => (a.payment_due || "9999").localeCompare(b.payment_due || "9999")).map(dueRow).join("") || `<p class="muted" style="margin:0">Nothing due 🎉</p>`}</div></section>
       </div>
-      <p class="muted small" style="margin:0">Counts confirmed, ongoing, delivered and closed deals. 🔮 Incoming = Confirmed and Ongoing deals whose reel isn't live yet: their unpaid price + the product still to arrive. When the product arrives it counts as earned; when you set "Reel went live" (or mark Delivered) the money moves to Still due. Money = Agreed price, counted on its Payment received date (until then it's due). Products = Product value (not ones that go back to the brand), counted on Product received (or the reel's live date if that's empty); for an after-live pitch, on the day they paid.</p>`;
+      <p class="muted small" style="margin:0">Counts confirmed, ongoing, delivered and closed deals. 🌱 Tentative = new enquiries (price or package price + product worth, if they say yes). 🔒 Contingent = Confirmed and Ongoing deals whose reel isn't live yet: their unpaid price + the product still to arrive. When the product arrives it counts as earned; when you set "Reel went live" (or mark Delivered) the money moves to Still due. Money = Agreed price, counted on its Payment received date (until then it's due). Products = Product value (not ones that go back to the brand), counted on Product received (or the reel's live date if that's empty); for an after-live pitch, on the day they paid.</p>`;
   }
 
   // ---- Categories: tab → sub-category → products
@@ -1046,7 +1079,10 @@
     const up = $("up"); if (up) up.onchange = () => { const file = up.files[0]; if (!file) return; readPF(); shrink(file).then(url => { editing.photo = url; render(); }).catch(err => toast("⚠ " + err.message)); };
     const pf = $("pf"); if (pf) pf.onsubmit = ev => { ev.preventDefault(); readPF(); const f = editing.form, btn = pf.querySelector("button.main");
       act(btn, async () => { const r = await api("product.save", { product: { id: editing.id, ...f, image: /^https?:|^assets\//.test(f.image) ? f.image : "" }, photo: editing.photo || null, enquiryId: view === "enquiry" ? +openId : null }); editing = null; }, "Saved — on the website in a few seconds"); };
-    const deal = $("deal"); if (deal) { wireContacts(deal); deal.onsubmit = ev => { ev.preventDefault(); const patch = Object.fromEntries(new FormData(deal)); patch.contacts = readContacts(deal); patch.contact = "";
+    const rnf = $("reelnf"); if (rnf) rnf.onsubmit = ev => { ev.preventDefault(); const link = rnf.link.value.trim(), m = link.match(/\/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]{5,})/);
+      if (!m) { toast("Paste the reel's Instagram link"); return; } const e0 = D.enquiries.find(x => x.id === +openId) || {};
+      act(rnf.querySelector("button"), () => api("enquiry.update", { id: +openId, patch: { reel_code: m[1], live_on: rnf.live_on.value, ...(["confirmed", "product", "hold", "new"].includes(e0.status) ? { status: "live" } : {}) } }), "Reel saved 🚀"); };
+    const deal = $("deal"); if (deal) { wireContacts(deal); wireItems(deal); deal.onsubmit = ev => { ev.preventDefault(); const patch = Object.fromEntries(new FormData(deal)); delete patch.product_link_old; Object.assign(patch, readItems(deal)); patch.contacts = readContacts(deal); patch.contact = "";
       { const e0 = D.enquiries.find(x => x.id === +openId) || {};   // an old date-only value you didn't touch stays date-only (no made-up 12:00)
         for (const k of ["dispatched_on", "received_on", "draft_on", "live_on", "collab_on", "returned_on", "paid_on"]) if (String(e0[k] || "").length === 10 && patch[k] === e0[k] + "T12:00") patch[k] = e0[k]; } act(deal.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch }); editCard.delete("deal"); }, "Deal saved"); }; }
     // payment details open once it's paid: a "Payment received" date, or Payment switched to Paid
