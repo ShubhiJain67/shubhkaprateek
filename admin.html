@@ -786,10 +786,11 @@
   const ymd = d => d.toLocaleDateString("en-CA");
   function calItems() {
     const open = e => ["confirmed", "product", "live"].includes(e.status) && !e.live_on;
-    const ideas = (D.ideas || []).filter(i => ["idea", "planned", "toshoot", "shot"].includes(i.status));
+    // open ideas go in the tray until they get a date; a posted idea shows on its date (it isn't waiting any more)
+    const ideas = (D.ideas || []).filter(i => ["idea", "planned", "toshoot", "shot"].includes(i.status) || (i.status === "posted" && i.post_on));
     const deals = D.enquiries.filter(open);
     const sched = [], tray = [];
-    ideas.forEach(i => (i.post_on ? sched : tray).push({ key: "idea:" + i.id, kind: "idea", id: i.id, day: i.post_on || "", label: i.text, sub: (ISTAT[i.status] || "") + (i.type ? " · " + ITYPE[i.type] : ""), cls: "c-idea" }));
+    ideas.forEach(i => (i.post_on ? sched : tray).push({ key: "idea:" + i.id, kind: "idea", id: i.id, day: i.post_on || "", label: i.text, sub: (ISTAT[i.status] || "") + (i.type ? " · " + ITYPE[i.type] : ""), cls: i.status === "posted" ? "c-posted" : "c-idea", done: i.status === "posted" }));
     deals.forEach(e => (e.post_by ? sched : tray).push({ key: "deal:" + e.id, kind: "deal", id: e.id, day: day10(e.post_by), label: `🤝 ${e.brand}`, sub: `${e.package || TYPE_SHORT[typeOf(e)]} · ${STATUS[e.status]}`, cls: "c-deal" }));
     // posted: every reel on the website, on the day it went up on Instagram; plus collab reels that went live without a website reel
     const posted = [], seen = new Set();
@@ -815,10 +816,11 @@
     // free days left this month (from today on, no reel)
     const free = days.filter(d => d.slice(0, 7) === calMonth && d >= today && !all.some(it => it.day === d)).length;
     const freeFeat = s => days.filter(d => d.slice(0, 7) === calMonth && d >= today && !featOn(d, s)).length;
-    const cell = d => { const its = all.filter(it => it.day === d), out = d.slice(0, 7) !== calMonth, past = d < today;
+    const cell = d => { const its0 = all.filter(it => it.day === d), hasReel = its0.some(it => it.kind === "reel" || it.kind === "live");
+      const its = its0.filter(it => !(it.done && hasReel)).concat(its0.filter(it => it.done && hasReel)), slots = its0.filter(it => !(it.done && hasReel)).length, out = d.slice(0, 7) !== calMonth, past = d < today;
       const f1 = featOn(d, 1), f2 = featOn(d, 2);
-      return `<div class="cday${out ? " out" : ""}${d === today ? " today" : ""}${its.length > 1 ? " over" : ""}${!its.length && !past ? " free" : ""}" data-day="${d}">
-        <div class="cdn"><b>${+d.slice(8)}</b><span class="cwd">${new Date(d + "T12:00:00").toLocaleDateString("en-IN", { weekday: "short", month: "short" })}</span>${its.length > 1 ? `<span class="cwarn" title="More than one reel on this day">${its.length} reels</span>` : ""}</div>
+      return `<div class="cday${out ? " out" : ""}${d === today ? " today" : ""}${slots > 1 ? " over" : ""}${!its.length && !past ? " free" : ""}" data-day="${d}">
+        <div class="cdn"><b>${+d.slice(8)}</b><span class="cwd">${new Date(d + "T12:00:00").toLocaleDateString("en-IN", { weekday: "short", month: "short" })}</span>${slots > 1 ? `<span class="cwarn" title="More than one reel on this day">${slots} reels</span>` : ""}</div>
         ${its.map(chip).join("") || (past ? "" : `<div class="cfree">${calPick ? "Place here" : "Free"}</div>`)}
         <div class="cfeat"><span class="${f1 ? "on" : ""}" title="${f1 ? "Featured slot 1: " + esc(pname(f1.product)) : "Featured slot 1 free"}">⭐1 ${f1 ? esc(pname(f1.product)) : "—"}</span><span class="${f2 ? "on" : ""}" title="${f2 ? "Featured slot 2: " + esc(pname(f2.product)) : "Featured slot 2 free"}">⭐2 ${f2 ? esc(pname(f2.product)) : "—"}</span></div>
       </div>`; };
