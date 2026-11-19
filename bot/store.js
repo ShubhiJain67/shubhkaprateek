@@ -227,7 +227,8 @@ export async function snapshot(env, h) {
   if (!site || Date.now() - fresh > 10 * 60e3) {          // data/site.json (title, links, form…) is still a file — re-read it every 10 minutes
     try { site = await h.readJson(env, "data/site.json"); await setSetting(env, "site:file", site); await setSetting(env, "site:at", Date.now()); } catch { site = site || {}; }
   }
-  const [categories, products, reels, featured] = await Promise.all([readCategories(env), readProducts(env), readReels(env), getFeatured(env)]);
+  const [categories, allProducts, reels, featured] = await Promise.all([readCategories(env), readProducts(env), readReels(env), getFeatured(env)]);
+  const products = allProducts.filter(p => !p.hidden);   // a collab's product stays off the website until its reel goes live
   const body = JSON.stringify({ site: { ...site, site: { ...(site.site || {}), featured } }, categories, products, reels });
   if (env.DRAFTS) try { await env.DRAFTS.put(SNAP, body, { expirationTtl: 600 }); } catch {}
   return body;

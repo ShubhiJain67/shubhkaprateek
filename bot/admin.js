@@ -309,6 +309,9 @@ async function run(a, env, h) {
     if (a.photo) image = await store.putImage(env, `p${p.id}-${h.slug(x.name)}-${Date.now().toString(36)}.jpg`, a.photo);   // uploaded from the phone (base64 jpg)
     const variants = (p.variants && p.variants.length ? p.variants : [{ name: "Default" }]).map((v, i) => i ? v : { ...v, link: clip(x.link, 1000), image });
     Object.assign(p, { name: clip(x.name, 200).trim(), brand: clip(x.brand, 120).trim(), category: [].concat(x.category || []).map(c => clip(c, 60)), variants });
+    // a new product added for a collab whose reel isn't live yet stays off the website until the reel goes live
+    if (isNew && a.enquiryId) { const e0 = await getEnquiry(env, a.enquiryId); if (e0 && !e0.live_on && !e0.reel_code) p.hidden = true; }
+    if ("hidden" in x) { if (x.hidden) p.hidden = true; else delete p.hidden; }   // the "Hidden from the website" box in the product form
     await store.writeProducts(env, products);
     if (oldImage && oldImage !== image) await store.deleteImageUrls(env, [oldImage]);
     if (a.enquiryId) {                                                 // part of a collab → link it + move the status on
@@ -354,6 +357,9 @@ async function run(a, env, h) {
       if (a.title) r.title = clip(a.title, 200);
     }
     await store.writeReels(env, reels);
+    // the reel is live → its products go live on the website too
+    { const { products } = await S(); const shown = products.filter(q => ids.includes(+q.id) && q.hidden); if (shown.length) { shown.forEach(q => delete q.hidden); await store.writeProducts(env, products);
+      if (a.enquiryId) await logEvent(env, a.enquiryId, `Now on the website: ${shown.map(q => q.name).join(", ")}`); } }
     if (a.enquiryId) {
       // live date: the one picked in the form, else keep the saved one, else today. A closed (delivered) deal stays closed.
       const liveOn = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(a.liveOn || "") ? a.liveOn : null;   // date, or date + time

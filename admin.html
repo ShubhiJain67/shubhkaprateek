@@ -492,7 +492,7 @@
           <label>Script<textarea name="script" rows="8" placeholder="Hook…&#10;Scene 1…">${esc(e.script)}</textarea></label>
           <div class="row"><button class="main">Save brief</button><button type="button" data-cancelcard="brief">Cancel</button></div></form>`}</section>
       <section class="card" data-fold="products"><div class="between"><h2>Their products<span class="hint">${prods.length}</span></h2><button data-act="newProd">+ Add product</button></div>
-        ${prods.length ? `<div class="list">${prods.map(p => `<div class="row"><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" referrerpolicy="no-referrer"><b>${esc(p.name)}</b><span class="muted small">${(p.category || []).map(catName).map(esc).join(" · ")}</span><button data-edit="${p.id}">Edit</button></div>`).join("")}</div>` : `<p class="muted" style="margin:0">Confirm the collab, then add the product they're sending: paste its link and the photo, name and categories fill in.</p>`}
+        ${prods.length ? `<div class="list">${prods.map(p => `<div class="row"><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" referrerpolicy="no-referrer"><b>${esc(p.name)}</b>${p.hidden ? ` <span class="pill" style="background:#f1ece8;color:#6b5a52" title="Not on the website yet — goes live with its collab reel">🙈 Hidden until reel is live</span>` : ""}<span class="muted small">${(p.category || []).map(catName).map(esc).join(" · ")}</span><button data-edit="${p.id}">Edit</button></div>`).join("")}</div>` : `<p class="muted" style="margin:0">Confirm the collab, then add the product they're sending: paste its link and the photo, name and categories fill in.</p>`}
         ${editing ? productForm(e) : ""}
       </section>
       <section class="card" data-fold="reel"><h2>Reel</h2>
@@ -599,6 +599,7 @@
           <label>Product link<span class="row"><input name="link" value="${esc(f.link)}" placeholder="https://…" style="flex:1 1 200px"><button type="button" data-act="fetch">Fetch details</button></span></label>
           <label>Name<input name="name" value="${esc(f.name)}" required></label>
           <label>Brand<input name="brand" list="brandlist" value="${esc(f.brand)}" placeholder="e.g. Deciwood"></label>
+          ${p ? `<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="hidden" value="1" style="width:auto" ${(editing.form.hidden ?? !!p.hidden) ? "checked" : ""}> 🙈 Hidden from the website <span class="muted small" style="font-weight:500">(collab products stay hidden until their reel is live)</span></label>` : (e && !e.live_on && !e.reel_code ? `<p class="muted small" style="margin:0">🙈 This product stays off the website until the collab's reel goes live.</p>` : "")}
           <label>Photo link (optional)<input name="image" value="${esc(/^https?:/.test(f.image) ? f.image : "")}" placeholder="https://…jpg"></label>
           <div><b class="small">Categories</b><div class="ctree">${(D.categories || []).map(c => { const box = (x, cls = "") => `<label class="${cls}"><input type="checkbox" name="cat" value="${esc(x.id)}" ${f.category.includes(x.id) ? "checked" : ""}>${x.emoji ? esc(x.emoji) + " " : ""}${esc(x.name)}</label>`;
             return `<div class="grp">${box(c, "top")}${(c.sub || []).length ? `<div class="kids">${c.sub.map(x => box(x)).join("")}</div>` : ""}</div>`; }).join("")}</div></div>
@@ -618,7 +619,7 @@
       ${editing ? productForm(null) : ""}
       <div class="tablebox"><table class="table"><thead><tr><th></th><th>Product</th><th>Brand</th><th>Categories</th><th>Reels</th><th>Featured</th><th></th></tr></thead><tbody>
       ${list.map(p => `<tr class="click ${isFreeProduct(p.id) ? "gold" : ""}" data-href="${SITE}/product/${p.id}" title="Open the product page"><td><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" loading="lazy" referrerpolicy="no-referrer"></td>
-        <td><b>${esc(p.name)}</b><br><span class="muted small">#${p.id}</span></td>
+        <td><b>${esc(p.name)}</b>${p.hidden ? ` <span class="pill" style="background:#f1ece8;color:#6b5a52" title="Not on the website yet — goes live with its collab reel">🙈 Hidden until reel is live</span>` : ""}<br><span class="muted small">#${p.id}</span></td>
         <td>${p.brand ? esc(p.brand) : `<span class="muted small">—</span>`}</td>
         <td class="small">${(p.category || []).map(catName).map(esc).join(" · ") || "—"}</td>
         <td>${reelsOf(p.id).length}</td>
@@ -1007,7 +1008,7 @@
 
   // read the product form into editing.form (so re-renders keep what was typed)
   const readPF = () => { const f = $("pf"); if (!f) return; const fd = new FormData(f);
-    editing.form = { name: fd.get("name") || "", brand: fd.get("brand") || "", link: fd.get("link") || "", image: fd.get("image") || (editing.form || {}).image || "", category: fd.getAll("cat") }; };
+    editing.form = { name: fd.get("name") || "", brand: fd.get("brand") || "", link: fd.get("link") || "", image: fd.get("image") || (editing.form || {}).image || "", category: fd.getAll("cat"), ...(f.querySelector('[name="hidden"]') ? { hidden: fd.get("hidden") === "1" } : {}) }; };
 
   function wire() {
     root.querySelectorAll("[data-burger]").forEach(b => b.onclick = () => { navOpen = !navOpen; render(); });
@@ -1102,7 +1103,7 @@
     });
     const up = $("up"); if (up) up.onchange = () => { const file = up.files[0]; if (!file) return; readPF(); shrink(file).then(url => { editing.photo = url; render(); }).catch(err => toast("⚠ " + err.message)); };
     const pf = $("pf"); if (pf) pf.onsubmit = ev => { ev.preventDefault(); readPF(); const f = editing.form, btn = pf.querySelector("button.main");
-      act(btn, async () => { const r = await api("product.save", { product: { id: editing.id, ...f, image: /^https?:|^assets\//.test(f.image) ? f.image : "" }, photo: editing.photo || null, enquiryId: view === "enquiry" ? +openId : null }); editing = null; }, "Saved — on the website in a few seconds"); };
+      act(btn, async () => { const r = await api("product.save", { product: { id: editing.id, ...f, image: /^https?:|^assets\//.test(f.image) ? f.image : "" }, photo: editing.photo || null, enquiryId: view === "enquiry" ? +openId : null }); editing = null; }, f.hidden || (view === "enquiry" && !editing.id && !((D.enquiries.find(x => x.id === +openId) || {}).live_on)) ? "Saved — hidden until the reel is live" : "Saved — on the website in a few seconds"); };
     const rnf = $("reelnf"); if (rnf) rnf.onsubmit = ev => { ev.preventDefault(); const link = rnf.link.value.trim(), m = link.match(/\/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]{5,})/);
       if (!m) { toast("Paste the reel's Instagram link"); return; } const e0 = D.enquiries.find(x => x.id === +openId) || {};
       act(rnf.querySelector("button"), () => api("enquiry.update", { id: +openId, patch: { reel_code: m[1], live_on: rnf.live_on.value, ...(["confirmed", "product", "hold", "new"].includes(e0.status) ? { status: "live" } : {}) } }), "Reel saved 🚀"); };
