@@ -11,7 +11,7 @@
 import * as store from "./store.js";
 
 const STATUSES = ["new", "hold", "confirmed", "product", "live", "delivered", "closed", "declined"];   // delivered = the work is done · closed = all dues cleared too
-const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels", "show_kit", "kit_views", "return_product", "returned_on", "deal_type", "deal_items", "no_product", "reel_code"];
+const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels", "show_kit", "kit_views", "return_product", "returned_on", "deal_type", "deal_items", "no_product", "reel_code", "reel_days"];
 const now = () => new Date().toISOString();
 const clip = (v, n = 2000) => String(v ?? "").slice(0, n);
 const LONG = { script: 20000, non_negotiables: 5000, contacts: 5000, deliverables: 5000, trial_reels: 10000 };   // fields allowed to be longer than 2,000 characters
@@ -34,7 +34,7 @@ async function tables(env) {
   try { if (!((((await env.STATS.prepare("PRAGMA table_info(ideas)").all()).results) || []).some(c => c.name === "post_on"))) await env.STATS.prepare("ALTER TABLE ideas ADD COLUMN post_on TEXT").run(); } catch {}   // the day it's planned to go live (content calendar)   // idea → the collab it's for
   // columns added later — only the missing ones are added (one quick look instead of ~25 tries every cold start)
   const have = new Set((((await env.STATS.prepare("PRAGMA table_info(enquiries)").all()).results) || []).map(c => c.name));
-  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT", "show_kit TEXT", "kit_views TEXT", "return_product TEXT", "returned_on TEXT", "deal_type TEXT", "deal_items TEXT", "no_product TEXT"]) { if (!have.has(col.split(" ")[0])) try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
+  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT", "show_kit TEXT", "kit_views TEXT", "return_product TEXT", "returned_on TEXT", "deal_type TEXT", "deal_items TEXT", "no_product TEXT", "reel_days TEXT"]) { if (!have.has(col.split(" ")[0])) try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
   // there's no "replied" status any more: those go back to New, and their "Status → replied" log lines are dropped
   // there's no "Product received" status: those deals are Ongoing
   try { await env.STATS.batch([env.STATS.prepare("UPDATE enquiries SET status = 'live' WHERE status = 'received'"),
@@ -246,6 +246,11 @@ async function run(a, env, h) {
         else await store.brandId(env, e.brand);                            // gives the brand its page number if it's new
       }
     }
+    // a deal can't be marked Delivered / Closed until its reel link + live date are in (Decline it if it's dropped)
+    if (["delivered", "closed"].includes(status) && status !== e.status && !["delivered", "closed"].includes(e.status)) {
+      const code = "reel_code" in p ? p.reel_code : e.reel_code, live = "live_on" in p ? p.live_on : e.live_on;
+      if (!code || !live) throw new Error("Add the reel link and its live date first (Reel card) — or Decline the deal if it was dropped");
+    }
     if (status && STATUSES.includes(status) && status !== e.status) { sets.push("status = ?"); vals.push(status); await logEvent(env, e.id, `Status → ${status}`); }
     // marked Closed → all dues cleared: a paid deal that has no Payment received date gets today's
     if (status === "closed" && status !== e.status && !(p.paid_on || e.paid_on) && (String(p.price ?? e.price ?? "").replace(/[^\d]/g, "") || (p.payment ?? e.payment) === "Paid")) {
@@ -434,8 +439,14 @@ async function run(a, env, h) {
     if (a.kind === "idea") await env.STATS.prepare("UPDATE ideas SET post_on = ?, updated = ? WHERE id = ?").bind(d, now(), +a.id).run();
     else if (a.kind === "deal") {
       const e = await getEnquiry(env, a.id); if (!e) throw new Error("That deal is gone");
-      await env.STATS.prepare("UPDATE enquiries SET post_by = ?, updated = ? WHERE id = ?").bind(d, now(), e.id).run();
-      await logEvent(env, e.id, d ? `📅 Post date set to ${d} (calendar)` : "📅 Post date removed (calendar)");
+      const slot = Math.max(0, Math.min(19, +a.slot || 0)), tag = slot ? ` for reel ${slot + 1}` : "";
+      if (!slot) await env.STATS.prepare("UPDATE enquiries SET post_by = ?, updated = ? WHERE id = ?").bind(d, now(), e.id).run();
+      else {   // reel 2, 3… of the same deal: reel_days[slot - 1]
+        let days = []; try { days = JSON.parse(e.reel_days || "[]"); } catch {} if (!Array.isArray(days)) days = [];
+        while (days.length < slot) days.push(null); days[slot - 1] = d;
+        await env.STATS.prepare("UPDATE enquiries SET reel_days = ?, updated = ? WHERE id = ?").bind(JSON.stringify(days), now(), e.id).run();
+      }
+      await logEvent(env, e.id, d ? `📅 Post date${tag} set to ${d} (calendar)` : `📅 Post date${tag} removed (calendar)`);
     } else throw new Error("Nothing to move");
     return load(env, h);
   }

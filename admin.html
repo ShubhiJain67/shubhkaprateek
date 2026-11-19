@@ -573,7 +573,7 @@
       ["Deal type", TYPES[typeOf(e)]], ["Package", esc(e.package)], ["Agreed price", esc(e.price)], ["Payment", esc(e.payment)],
       ["Products", e.no_product === "1" ? "No product involved" : itemsOf(e, prods).map(x => `${x.link ? link(x.link, x.name || "Product") : esc(x.name || "Product")}${x.value ? ` <span class="muted">· ${esc(x.value)}</span>` : ""}`).join("<br>")],
       ["Total product worth", itemsOf(e, prods).length > 1 ? esc(e.product_value) : ""],
-      ["Payment deadline", dateY(e.payment_due)], ["Shoot by", dateY(e.shoot_by)], ["Post by", dateY(e.post_by)],
+      ["Payment deadline", dateY(e.payment_due)], ["Shoot by", dateY(e.shoot_by)], ["Post by" + (reelsOwed(e) > 1 ? " (reel 1)" : ""), dateY(e.post_by)], ...reelDays(e).slice(0, reelsOwed(e) - 1).map((d, k) => [`Post by (reel ${k + 2})`, dateY(d)]),
       ["Product dispatched", dateY(e.dispatched_on)], ["Product received", dateY(e.received_on)], ["Draft submitted", dateY(e.draft_on)],
       ["Reel went live", dateY(e.live_on)], ["Collab added", dateY(e.collab_on)], ["Payment received", dateY(e.paid_on)],
       ["Product", e.return_product === "1" ? (e.returned_on ? `↩ Sent back to the brand on ${dateY(e.returned_on)}` : "↩ Goes back to the brand — not sent yet") : ""],
@@ -791,7 +791,10 @@
     const deals = D.enquiries.filter(open);
     const sched = [], tray = [];
     ideas.forEach(i => (i.post_on ? sched : tray).push({ key: "idea:" + i.id, kind: "idea", id: i.id, day: i.post_on || "", label: i.text, sub: (ISTAT[i.status] || "") + (i.type ? " · " + ITYPE[i.type] : ""), cls: i.status === "posted" ? "c-posted" : "c-idea", done: i.status === "posted" }));
-    deals.forEach(e => (e.post_by ? sched : tray).push({ key: "deal:" + e.id, kind: "deal", id: e.id, day: day10(e.post_by), label: `🤝 ${e.brand}`, sub: `${e.package || TYPE_SHORT[typeOf(e)]} · ${STATUS[e.status]}`, cls: "c-deal" }));
+    // a deal gets one calendar slot per reel it owes (Deliverables → Collaborative reels × N); reel 1 is the deal's "Post by", the rest live in reel_days
+    deals.forEach(e => { const n = reelsOwed(e), extra = reelDays(e);
+      for (let k = 0; k < n; k++) { const day = k ? day10(extra[k - 1]) : day10(e.post_by);
+        (day ? sched : tray).push({ key: `deal:${e.id}:${k}`, kind: "deal", id: e.id, day, label: `🤝 ${e.brand}${n > 1 ? ` · reel ${k + 1}/${n}` : ""}`, sub: `${e.package || TYPE_SHORT[typeOf(e)]} · ${STATUS[e.status]}`, cls: "c-deal" }); } });
     // posted: every reel on the website, on the day it went up on Instagram; plus collab reels that went live without a website reel
     const posted = [], seen = new Set();
     D.reels.forEach(r => { const c = codeOf(r), d = postedDay(c); if (!c || !d) return; seen.add(c.toLowerCase());
@@ -801,6 +804,8 @@
     return { sched, tray, posted };
   }
   const day10 = v => String(v || "").slice(0, 10);
+  const reelsOwed = e => { const r = (delivOf(e).items || {}).reel; return r && r.on ? Math.max(1, Math.min(20, +r.count || 1)) : 1; };
+  const reelDays = e => { try { const x = JSON.parse(e.reel_days || "[]"); return Array.isArray(x) ? x : []; } catch { return []; } };
   function vCal() {
     const today = ymd(new Date()); if (!calMonth) calMonth = today.slice(0, 7);
     const [y, m] = calMonth.split("-").map(Number), first = new Date(y, m - 1, 1, 12), last = new Date(y, m, 0, 12);
@@ -831,7 +836,7 @@
     const openDeals = D.enquiries.filter(e => !["declined"].includes(e.status));
     return `<div class="between"><h1>Content calendar</h1><div class="row"><button data-cmonth="${shift(-1)}" aria-label="Previous month">‹</button><b style="min-width:150px;text-align:center">${esc(monthName)}</b><button data-cmonth="${shift(1)}" aria-label="Next month">›</button>${calMonth !== today.slice(0, 7) ? `<button data-cmonth="${today.slice(0, 7)}">Today</button>` : ""}</div></div>
       <div class="row small"><span class="pill" style="background:#e8f6ee;color:#1f6b40">${free} free reel day${free === 1 ? "" : "s"} left this month</span><span class="pill" style="background:#fff4d6;color:#7a5a00">⭐ slot 1: ${freeFeat(1)} free days · slot 2: ${freeFeat(2)} free days</span>
-        <span class="muted">Drag onto a day — on a phone, tap an item, then tap a day.</span></div>
+        <span class="muted">Drag onto a day — on a phone, tap an item, then tap a day. A collab with more reels gets one card per reel (set the count in its Deliverables).</span></div>
       ${picked ? `<div class="card cpickbar"><span>Placing <b>${esc(picked.label)}</b> — tap a day</span><span class="row"><button data-cunplan>Back to “to schedule”</button>${picked.kind === "deal" ? `<button data-open="${picked.id}">Open deal ↗</button>` : `<button data-go="ideas">Open ideas ↗</button>`}<button data-cpick="">Cancel</button></span></div>` : ""}
       <div class="calwrap">
         <aside class="card ctray" data-day=""><h2 style="margin:0 0 8px">To schedule <span class="muted small">${tray.length}</span></h2>
@@ -1019,8 +1024,8 @@
     root.querySelectorAll("[data-mrange]").forEach(b => b.onclick = () => { moneyRange = b.dataset.mrange; render(); });
     root.querySelectorAll("[data-mtype]").forEach(b => b.onclick = () => { moneyType = b.dataset.mtype; render(); });
     // content calendar
-    const calMove = (key, day) => { const [kind, id] = key.split(":"); calPick = "";
-      act(null, () => api("cal.move", { kind, id: +id, date: day }), day ? "📅 Scheduled for " + date(day) : "Back to “to schedule”"); };
+    const calMove = (key, day) => { const [kind, id, slot] = key.split(":"); calPick = "";
+      act(null, () => api("cal.move", { kind, id: +id, slot: +slot || 0, date: day }), day ? "📅 Scheduled for " + date(day) : "Back to “to schedule”"); };
     root.querySelectorAll("[data-cmonth]").forEach(b => b.onclick = () => { calMonth = b.dataset.cmonth; render(); });
     root.querySelectorAll("[data-ckey]").forEach(c => {
       c.ondragstart = ev => { ev.dataTransfer.setData("text/plain", c.dataset.ckey); ev.dataTransfer.effectAllowed = "move"; };
@@ -1080,7 +1085,12 @@
       if (ids.length > 2) return toast("Up to 2 featured — un-star one first");
       act(b, () => api("featured", { ids }), "Featured updated — on the website in a few seconds");
     });
-    root.querySelectorAll("[data-status]").forEach(b => b.onclick = () => act(b, () => api("enquiry.update", { id: +openId, patch: { status: b.dataset.status } }), "Status: " + STATUS[b.dataset.status]));
+    root.querySelectorAll("[data-status]").forEach(b => b.onclick = () => {
+      const e0 = D.enquiries.find(x => x.id === +openId) || {};
+      if (b.dataset.status === "delivered" && !["delivered", "closed"].includes(e0.status) && (!e0.reel_code || !e0.live_on)) {
+        toast("⚠ Add the reel link + live date first (Reel card) — or Decline if it was dropped");
+        const rc = document.querySelector('[data-fold="reel"]'); if (rc) { rc.classList.remove("closed"); rc.scrollIntoView({ behavior: "smooth", block: "center" }); } return; }
+      act(b, () => api("enquiry.update", { id: +openId, patch: { status: b.dataset.status } }), "Status: " + STATUS[b.dataset.status]); });
     root.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { if (!confirmTwice(b)) return; act(b, async () => { await api("product.delete", { id: +b.dataset.del }); editing = null; }, "Product removed — gone from the site in a few seconds"); });
     root.querySelectorAll("[data-delreel]").forEach(b => b.onclick = () => { if (!confirmTwice(b)) return; act(b, async () => { await api("reel.delete", { code: b.dataset.delreel }); reelEdit = null; }, "Reel removed"); });
     root.querySelectorAll("[data-act]").forEach(b => b.onclick = async ev => {
