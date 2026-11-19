@@ -741,5 +741,95 @@
         "image": "https://m.media-amazon.com/images/W/BW_MEDIAX_AVIF_MEASUREMENT_1306696-T4/images/I/7139T-2S-sL._SL1500_.jpg"
       }
     ]
+  },
+  {
+    "id": 57,
+    "name": "Football Club",
+    "brand": "Toujoo",
+    "category": [
+      "games"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://toujoo.com/products/football-club",
+        "image": "https://toujoo.com/cdn/shop/files/toujoo_football_club_new_1.webp?v=1791456557&width=1100"
+      }
+    ]
+  },
+  {
+    "id": 58,
+    "name": "Perfora Teeth Whitening Strips",
+    "brand": "Perfora",
+    "category": [
+      "quirky"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://perforacare.com/products/purple-magic-teeth-whitening-strips",
+        "image": "https://perforacare.com/cdn/shop/files/01_02a4e53e-4c35-42ce-adc9-83b07bafce21.jpg?v=1794997167&width=1920"
+      }
+    ]
+  },
+  {
+    "id": 59,
+    "name": "Bouquet Plush – Comfort Crew",
+    "brand": "Jellico",
+    "category": [
+      "plushies"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://jellico.in/collections/comfort-crew/products/bouqet",
+        "image": "https://jellico.in/cdn/shop/files/3AFFC122-A7C9-46C7-86F4-ACE8B76F061D.png?v=1780302727&width=1445"
+      }
+    ]
+  },
+  {
+    "id": 60,
+    "name": "Donuts Plush – Comfort Crew",
+    "brand": "Jellico",
+    "category": [
+      "plushies"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://jellico.in/collections/comfort-crew/products/comfort-crew-donut",
+        "image": "https://jellico.in/cdn/shop/files/E83086B0-63A9-41A9-9518-51E97E9E3998.png?v=1780302769&width=1445"
+      }
+    ]
+  },
+  {
+    "id": 61,
+    "name": "Pizza Plush – Comfort Crew",
+    "brand": "Jellico",
+    "category": [
+      "plushies"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://jellico.in/collections/comfort-crew/products/comfort-crew-pizza",
+        "image": "https://jellico.in/cdn/shop/files/98ED9474-9BEE-4422-9D37-64083BA19128.jpg?v=1782900615&width=1445"
+      }
+    ]
+  },
+  {
+    "id": 62,
+    "name": "Ice Cream Plush – Comfort Crew",
+    "brand": "Jellico",
+    "category": [
+      "plushies"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://jellico.in/collections/comfort-crew/products/comfort-crew-icecream-1",
+        "image": "https://jellico.in/cdn/shop/files/F51174F6-EC84-4C42-B9FA-20919108823C.png?v=1781778538&width=1445"
+      }
+    ]
   }
 ]

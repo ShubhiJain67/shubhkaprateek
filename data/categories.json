@@ -120,6 +120,11 @@
           "roleplay",
           "blaster"
         ]
+      },
+      {
+        "id": "plushies",
+        "name": "Plushies",
+        "keywords": []
       }
     ]
   },

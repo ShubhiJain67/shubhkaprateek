@@ -6,9 +6,9 @@
   "organic": "100% organic — no paid boosts, no ads, no giveaways.",
   "stats": [
     {
-      "value": "27M+",
+      "value": "34M+",
       "label": "Reach",
-      "note": "in the last 7 days"
+      "note": "in the last 30 days"
     },
     {
       "value": "9M+",
@@ -261,10 +261,8 @@
     "No loud or overly promotional messaging.",
     "Content will focus on authentic couple moments, gifting, and surprises.",
     "Product gifting is separate from the collaboration fee.",
-    "Barter collaborations are considered only for products worth ₹10,000 or more.",
     "Advertising usage rights are valid for 3 months from the date of content delivery.",
     "Any additional deliverables or extended usage rights can be discussed separately.",
-    "50% Payment to be done once we share the final draft and rest 50% once we go live.",
     "We do not guarantee any specific reach, views, engagement, impressions, or conversions.",
     "No refunds or additional deliverables will be provided based on content performance."
   ],
@@ -276,10 +274,6 @@
     {
       "title": "Timeline",
       "text": "Agreed with you during our conversation — it depends on the product and the idea."
-    },
-    {
-      "title": "Barter",
-      "text": "Only for products worth ₹10,000 or more."
     }
   ],
   "contact": {
@@ -288,6 +282,12 @@
     "note": "Tell us about your product — we reply within a day."
   },
   "brandCollabs": [
+    {
+      "brand": "Perfora",
+      "code": "Df6twiyy9Dy",
+      "views": "",
+      "cover": "https://shubhkaprateek-bot.shubhkaprateek.workers.dev/img/cover-Df6twiyy9Dy.jpg"
+    },
     {
       "brand": "Jellico",
       "code": "DftW3p_SFfL",
@@ -364,6 +364,10 @@
   ],
   "brands": [
     {
+      "name": "Perfora",
+      "link": "https://www.instagram.com/perforaofficial/"
+    },
+    {
       "name": "Jellico",
       "link": "https://www.instagram.com/jellico_in/"
     },
@@ -402,6 +406,10 @@
   ],
   "current": [
     {
+      "name": "Jellico",
+      "link": "https://www.instagram.com/jellico_in/"
+    },
+    {
       "name": "Introducing india",
       "link": "https://www.instagram.com/introducingindiaco/"
     },
@@ -424,10 +432,6 @@
     {
       "name": "KartDriftz",
       "link": ""
-    },
-    {
-      "name": "Perfora",
-      "link": "https://www.instagram.com/perforaofficial/"
     },
     {
       "name": "Apex Light",
