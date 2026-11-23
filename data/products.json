@@ -831,5 +831,35 @@
         "image": "https://jellico.in/cdn/shop/files/F51174F6-EC84-4C42-B9FA-20919108823C.png?v=1781778538&width=1445"
       }
     ]
+  },
+  {
+    "id": 64,
+    "name": "Book Lamp",
+    "brand": "",
+    "category": [
+      "lighting"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B07dHFF1g",
+        "image": "https://shubhkaprateek-bot.shubhkaprateek.workers.dev/img/p64-book-lamp-mwop6lgo.jpg"
+      }
+    ]
+  },
+  {
+    "id": 65,
+    "name": "TV Backlight",
+    "brand": "Apex Light",
+    "category": [
+      "lighting"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://apexlight.in/products/apex-hdmi-2-1-version-tv-backlight",
+        "image": "https://apexlight.in/cdn/shop/files/1_result_9bd84fc3-18d1-465f-a009-fbbcdaa0984f.webp?v=1791196318"
+      }
+    ]
   }
 ]
