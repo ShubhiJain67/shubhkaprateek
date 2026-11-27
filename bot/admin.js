@@ -10,7 +10,7 @@
 
 import * as store from "./store.js";
 
-const STATUSES = ["new", "hold", "confirmed", "product", "live", "delivered", "closed", "declined"];   // delivered = the work is done · closed = all dues cleared too
+const STATUSES = ["new", "hold", "confirmed", "product", "live", "shot", "edited", "delivered", "closed", "declined"];   // delivered = the work is done · closed = all dues cleared too
 const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels", "show_kit", "kit_views", "return_product", "returned_on", "deal_type", "deal_items", "no_product", "reel_code", "reel_days"];
 const now = () => new Date().toISOString();
 const clip = (v, n = 2000) => String(v ?? "").slice(0, n);
@@ -164,7 +164,7 @@ async function syncKit(env, h, reels, enquiries) {
   if (!Array.isArray(reels)) return;
   const codeOf = r => ((r.reel || "").match(h.REEL_RE) || [])[1] || "";
   const order = new Map(reels.map(r => [codeOf(r).toLowerCase(), { id: +r.id || 0, code: codeOf(r), cover: r.cover || "" }]));
-  const shown = enquiries.filter(e => ["live", "delivered", "closed"].includes(e.status) && e.show_kit !== "0");
+  const shown = enquiries.filter(e => ["live", "shot", "edited", "delivered", "closed"].includes(e.status) && e.show_kit !== "0");
   const collabs = [], seen = new Set();
   for (const e of shown) {
     let more = []; try { more = JSON.parse(e.reels || "[]"); } catch {}
@@ -186,7 +186,7 @@ async function syncKit(env, h, reels, enquiries) {
   const current = new Map();
   for (const e of enquiries) {
     const name = String(e.brand || "").trim();
-    if (!name || !["confirmed", "product", "live"].includes(e.status) || e.live_on || e.show_kit === "0" || current.has(name.toLowerCase())) continue;
+    if (!name || !["confirmed", "product", "live", "shot", "edited"].includes(e.status) || e.live_on || e.show_kit === "0" || current.has(name.toLowerCase())) continue;
     const withIg = enquiries.find(x => String(x.brand || "").trim().toLowerCase() === name.toLowerCase() && x.instagram);
     current.set(name.toLowerCase(), { name, link: withIg ? ig(withIg.instagram) : "" });
   }
