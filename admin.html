@@ -169,7 +169,9 @@
   }
   .itbox { display: grid; gap: 8px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
   .itrow { display: grid; grid-template-columns: 1.2fr 1.6fr .7fr auto; gap: 8px; margin-bottom: 8px; }
-  @media (max-width: 760px) { .itrow { grid-template-columns: 1fr 1fr auto; } .itrow [data-il] { grid-column: 1 / -1; order: 3; } }
+  @media (max-width: 760px) { .itrow { grid-template-columns: 1fr 1fr auto; } .itrow [data-il] { grid-column: 1 / -1; order: 3; } .itbox.aff .itrow [data-ia] { grid-column: 1 / -1; order: 4; } }
+  [hidden] { display: none !important; }
+  .itrow [data-ia] { display: none; } .itbox.aff .itrow [data-ia] { display: block; grid-column: 1 / -2; }
   .pipe { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
   .pstage { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: grid; gap: 3px; align-content: start; border-top: 5px solid var(--sc); }
   .pstage:not(:last-child)::after { content: "→"; position: absolute; right: -12px; top: 42%; color: var(--muted); font-weight: 800; font-size: 16px; z-index: 1; }
@@ -526,6 +528,8 @@
           <label>Package<select name="package">${[...new Set([e.package || "", ...(D.packages || []).map(p => p.name)])].map(o => `<option ${o === (e.package || "") ? "selected" : ""}>${esc(o)}</option>`).join("")}</select></label>
           <label>Agreed price${pk.private ? ` <span class="muted small" style="font-weight:500">— extra payment only, the refund is in Deliverables</span>` : ""}<input name="price" value="${esc(e.price || pk.price)}" placeholder="${pk.private ? "₹0 if it's only the refund" : "₹3,000"}"></label>
           <label>Payment<select name="payment">${["Paid", "Barter", "Pending"].map(o => `<option ${o === (e.payment || pk.payment) ? "selected" : ""}>${o}</option>`).join("")}</select></label>
+          <label>Affiliate<select name="affiliate"><option value="0">No affiliate</option><option value="1" ${e.affiliate === "1" ? "selected" : ""}>Yes</option></select></label>
+          <label data-affpct ${e.affiliate === "1" ? "" : "hidden"}>Commission %<input name="affiliate_pct" inputmode="decimal" value="${esc(e.affiliate_pct)}" placeholder="e.g. 10"></label>
           <label>Payment deadline<input name="payment_due" type="date" value="${esc(e.payment_due)}"></label>
           <label>Shoot by<input name="shoot_by" type="date" value="${esc(e.shoot_by)}"></label>
           <label>Post by<input name="post_by" type="date" value="${esc(e.post_by)}"></label>
@@ -558,13 +562,13 @@
   const itemsOf = (e, prods = []) => { try { const a = JSON.parse(e.deal_items || "null"); if (Array.isArray(a)) return a; } catch {}
     if (e.no_product === "1") return [];
     return e.product_value || e.product_link ? [{ name: (prods[0] && prods[0].name) || "", link: e.product_link || "", value: e.product_value || "" }] : []; };
-  const itemsRows = items => items.map((x, i) => `<div class="itrow" data-itrow><input data-in placeholder="Product name" value="${esc(x.name)}"><input data-il placeholder="https://… (link)" value="${esc(x.link)}"><input data-iv placeholder="₹ worth" value="${esc(x.value)}"><button type="button" data-itdel aria-label="Remove product">✕</button></div>`).join("");
+  const itemsRows = items => items.map((x, i) => `<div class="itrow" data-itrow><input data-in placeholder="Product name" value="${esc(x.name)}"><input data-il placeholder="https://… (link)" value="${esc(x.link)}"><input data-iv placeholder="₹ worth" value="${esc(x.value)}"><input data-ia placeholder="🔗 Affiliate link for this product" value="${esc(x.aff || "")}"><button type="button" data-itdel aria-label="Remove product">✕</button></div>`).join("");
   const itemsBlock = (e, prods) => { const items = itemsOf(e, prods), none = e.no_product === "1";
-    return `<div class="itbox" style="grid-column:1/-1"><div class="between"><b class="small">📦 Products in this collab</b><label class="small" style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-noprod style="width:auto" ${none ? "checked" : ""}> No product involved</label></div>
+    return `<div class="itbox${e.affiliate === "1" ? " aff" : ""}" style="grid-column:1/-1"><div class="between"><b class="small">📦 Products in this collab</b><label class="small" style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" data-noprod style="width:auto" ${none ? "checked" : ""}> No product involved</label></div>
       <div data-itlist ${none ? "hidden" : ""}>${itemsRows(items.length ? items : [{ name: "", link: "", value: "" }])}<button type="button" data-itadd>+ Add another product</button>
       <p class="muted small" style="margin:6px 0 0">Total worth <b data-ittotal></b> — this is what counts in Earnings.</p></div></div>`; };
   const readItems = f => { const none = f.querySelector("[data-noprod]")?.checked;
-    const items = none ? [] : [...f.querySelectorAll("[data-itrow]")].map(r => ({ name: r.querySelector("[data-in]").value.trim(), link: r.querySelector("[data-il]").value.trim(), value: r.querySelector("[data-iv]").value.trim() })).filter(x => x.name || x.link || x.value);
+    const items = none ? [] : [...f.querySelectorAll("[data-itrow]")].map(r => ({ name: r.querySelector("[data-in]").value.trim(), link: r.querySelector("[data-il]").value.trim(), value: r.querySelector("[data-iv]").value.trim(), ...(f.querySelector(".itbox.aff") && r.querySelector("[data-ia]").value.trim() ? { aff: r.querySelector("[data-ia]").value.trim() } : {}) })).filter(x => x.name || x.link || x.value || x.aff);
     const total = items.reduce((t, x) => t + money(x.value), 0);
     return { deal_items: JSON.stringify(items), no_product: none ? "1" : "0", product_value: total ? "₹" + total.toLocaleString("en-IN") : "", product_link: (items.find(x => x.link) || {}).link || "" }; };
   const wireItems = f => { const box = f.querySelector(".itbox"); if (!box) return; const list = box.querySelector("[data-itlist]");
@@ -572,6 +576,7 @@
     const hook = () => { box.querySelectorAll("[data-itdel]").forEach(b => b.onclick = () => { b.closest("[data-itrow]").remove(); total(); }); box.querySelectorAll("[data-iv]").forEach(i => i.oninput = total); };
     box.querySelector("[data-itadd]").onclick = () => { box.querySelector("[data-itadd]").insertAdjacentHTML("beforebegin", itemsRows([{ name: "", link: "", value: "" }])); hook(); };
     box.querySelector("[data-noprod]").onchange = ev => { list.hidden = ev.target.checked; };
+    const aff = f.querySelector('[name="affiliate"]'); if (aff) aff.onchange = () => { const on = aff.value === "1"; box.classList.toggle("aff", on); const pc = f.querySelector("[data-affpct]"); if (pc) pc.hidden = !on; };
     hook(); total(); };
   function dealView(e, prods) {
     const st = statsOf(e), cs = contactsOf(e), pl = e.product_link || (prods[0] && prods[0].variants[0]?.link) || "";
@@ -579,7 +584,8 @@
       ["Brand", esc(e.brand)], ["Email", e.email ? `<a href="mailto:${esc(e.email)}">${esc(e.email)}</a>` : ""],
       ["Instagram", e.instagram ? link(igUrl(e.instagram), e.instagram) : ""], ["Who reached out", e.pitched === "1" ? "🎯 We pitched a posted reel" : SOURCES[srcOf(e)]],
       ["Deal type", TYPES[typeOf(e)]], ["Package", esc(e.package)], ["Agreed price", esc(e.price)], ["Payment", esc(e.payment)],
-      ["Products", e.no_product === "1" ? "No product involved" : itemsOf(e, prods).map(x => `${x.link ? link(x.link, x.name || "Product") : esc(x.name || "Product")}${x.value ? ` <span class="muted">· ${esc(x.value)}</span>` : ""}`).join("<br>")],
+      ["Affiliate", e.affiliate === "1" ? `💰 Yes${e.affiliate_pct ? ` · ${esc(String(e.affiliate_pct).replace(/%$/, ""))}% commission` : ""}` : ""],
+      ["Products", e.no_product === "1" ? "No product involved" : itemsOf(e, prods).map(x => `${x.link ? link(x.link, x.name || "Product") : esc(x.name || "Product")}${x.value ? ` <span class="muted">· ${esc(x.value)}</span>` : ""}${e.affiliate === "1" && x.aff ? ` · ${link(x.aff, "🔗 affiliate link")}` : ""}`).join("<br>")],
       ["Total product worth", itemsOf(e, prods).length > 1 ? esc(e.product_value) : ""],
       ["Payment deadline", dateY(e.payment_due)], ["Shoot by", dateY(e.shoot_by)], ["Post by" + (reelsOwed(e) > 1 ? " (reel 1)" : ""), dateY(e.post_by)], ...reelDays(e).slice(0, reelsOwed(e) - 1).map((d, k) => [`Post by (reel ${k + 2})`, dateY(d)]),
       ["Product dispatched", dateY(e.dispatched_on)], ["Product received", dateY(e.received_on)], ["Draft submitted", dateY(e.draft_on)],
@@ -594,7 +600,7 @@
   // the product form (used inside an enquiry and on the Products page)
   function productForm(e) {
     const p = editing.id ? prod(editing.id) : null, v = (p && p.variants && p.variants[0]) || {};
-    const f = editing.form || { name: p ? p.name : "", brand: p ? p.brand || "" : (e ? e.brand : ""), link: v.link || (e ? e.product_link : "") || "", image: v.image || "", category: p ? [].concat(p.category || []) : [] };
+    const f = editing.form || { name: p ? p.name : "", brand: p ? p.brand || "" : (e ? e.brand : ""), link: v.link || (e ? (e.affiliate === "1" && (itemsOf(e).find(x => x.aff) || {}).aff) || e.product_link : "") || "", image: v.image || "", category: p ? [].concat(p.category || []) : [] };
     editing.form = f;
     return `<form id="pf" class="card" style="margin-top:12px;background:var(--bg)">
       <h2>${p ? "Edit " + esc(p.name) : "New product"}</h2>
