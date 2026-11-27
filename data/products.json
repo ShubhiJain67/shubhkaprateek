@@ -617,14 +617,14 @@
     "brand": "Samvardhan Mart",
     "category": [
       "toys",
-      "electronics",
+      "gifts",
       "quirky",
-      "gifts"
+      "electronics"
     ],
     "variants": [
       {
         "name": "Default",
-        "link": "https://link.amazon/B09aymuXU",
+        "link": "https://link.amazon/B03m0SmjF",
         "image": "https://m.media-amazon.com/images/I/71kZtE5Cm7L._SL1500_.jpg"
       }
     ]
@@ -652,13 +652,13 @@
     "brand": "",
     "category": [
       "mugs",
-      "electronics",
-      "date-night"
+      "date-night",
+      "electronics"
     ],
     "variants": [
       {
         "name": "Default",
-        "link": "https://link.amazon/B00sgbZp7",
+        "link": "https://link.amazon/B02A4h0Um",
         "image": "https://m.media-amazon.com/images/I/61lELikd+hL._SY879_.jpg"
       }
     ]
@@ -706,7 +706,7 @@
     "variants": [
       {
         "name": "Default",
-        "link": "https://amzn.in/d/0gBzCmIt",
+        "link": "https://link.amazon/B08ZtmfYC",
         "image": "https://m.media-amazon.com/images/I/71qWaiXTX4L._SL1500_.jpg"
       }
     ]
@@ -859,6 +859,22 @@
         "name": "Default",
         "link": "https://apexlight.in/products/apex-hdmi-2-1-version-tv-backlight",
         "image": "https://apexlight.in/cdn/shop/files/1_result_9bd84fc3-18d1-465f-a009-fbbcdaa0984f.webp?v=1791196318"
+      }
+    ]
+  },
+  {
+    "id": 67,
+    "name": "Mini Food Cooling Fan - Elephant",
+    "brand": "CERVELLO",
+    "category": [
+      "mugs",
+      "quirky"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://link.amazon/B04agP9WP",
+        "image": "https://m.media-amazon.com/images/W/BW_MEDIAX_AVIF_MEASUREMENT_1306696-T4/images/I/610e+ezeogL._SL1200_.jpg"
       }
     ]
   }
