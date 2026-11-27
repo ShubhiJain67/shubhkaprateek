@@ -313,6 +313,9 @@
   const delivOf = e => { try { const d = JSON.parse(e.deliverables || ""); if (d && d.items) return d; } catch {} return delivDefault(e); };
   const statsOf = e => { try { return JSON.parse(e.pitch_stats || "{}") || {}; } catch { return {}; } };
   // reels that already have a brand deal (anything but declined) — no pitching those
+  // reel 2, 3… of a collab: codes in e.reels, their live dates in e.reel_lives {code: date}
+  const extraReels = e => { let x = [], l = {}; try { x = JSON.parse(e.reels || "[]"); } catch {} try { l = JSON.parse(e.reel_lives || "{}") || {}; } catch {}
+    return (Array.isArray(x) ? x : []).filter(Boolean).map(c => ({ code: String(c), live_on: l[c] || "" })); };
   const reelsOfDeal = e => { let x = []; try { x = JSON.parse(e.reels || "[]"); } catch {} return [e.reel_code, ...(Array.isArray(x) ? x : [])].filter(Boolean).map(c => String(c).toLowerCase()); };
   const dealOfReel = code => D.enquiries.find(e => e.status !== "declined" && reelsOfDeal(e).includes(String(code || "").toLowerCase()));
   // golden rows: reels that are a brand collab, and products we got without paying (from a deal, not pitched after buying)
@@ -497,11 +500,14 @@
         ${prods.length ? `<div class="list">${prods.map(p => `<div class="row"><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" referrerpolicy="no-referrer"><b>${esc(p.name)}</b>${p.hidden ? ` <span class="pill" style="background:#f1ece8;color:#6b5a52" title="Not on the website yet — goes live with its collab reel">🙈 Hidden until reel is live</span>` : ""}<span class="muted small">${(p.category || []).map(catName).map(esc).join(" · ")}</span><button data-edit="${p.id}">Edit</button></div>`).join("")}</div>` : `<p class="muted" style="margin:0">Confirm the collab, then add the product they're sending: paste its link and the photo, name and categories fill in.</p>`}
         ${editing ? productForm(e) : ""}
       </section>
-      <section class="card" data-fold="reel"><h2>Reel</h2>
-        ${e.reel_code ? `<p style="margin:0 0 10px">${e.pitched === "1" && !["live", "shot", "edited", "delivered", "closed"].includes(e.status) ? "Your reel" : "Reel"}: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a>${moreReels.map(c => ` · <a href="${SITE}/reel/${esc(c)}" target="_blank" rel="noopener">${esc(reelTitle(c))}</a>`).join("")} · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
+      <section class="card" data-fold="reel"><h2>${reelsOwed(e) > 1 || moreReels.length ? `Reels <span class="hint">${(e.reel_code ? 1 : 0) + moreReels.length} of ${Math.max(reelsOwed(e), (e.reel_code ? 1 : 0) + moreReels.length)} posted</span>` : "Reel"}</h2>
+        ${e.reel_code ? `<p style="margin:0 0 10px">${e.pitched === "1" && !["live", "shot", "edited", "delivered", "closed"].includes(e.status) ? "Your reel" : moreReels.length || reelsOwed(e) > 1 ? "Reel 1" : "Reel"}: <a href="${reelUrl}" target="_blank" rel="noopener">${reelUrl}</a> · brand page: ${brandLink(e.brand) ? `<a href="${esc(brandLink(e.brand))}" target="_blank" rel="noopener">${esc(brandLink(e.brand))}</a>` : "—"}</p>` : ""}
         ${prods.length ? `<form id="reelf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 210px">Live date &amp; time<input name="live_on" type="datetime-local" value="${esc(dtVal(e.live_on) || nowLocal())}"></label><button class="main">${e.reel_code ? "Update reel" : "Go live →"}</button></form>
           <p class="muted small" style="margin:8px 0 0">Makes the reel page, connects it to their product${prods.length > 1 ? "s" : ""} and publishes the website. Status → Ongoing.</p>` : `<form id="reelnf" class="row" style="align-items:end"><input name="link" placeholder="https://www.instagram.com/reel/…" value="${e.reel_code ? "https://www.instagram.com/reel/" + esc(e.reel_code) + "/" : ""}" style="flex:1 1 280px"><label class="small" style="flex:0 1 210px">Live date &amp; time<input name="live_on" type="datetime-local" value="${esc(dtVal(e.live_on) || nowLocal())}"></label><button class="main">Save reel</button></form>
           <p class="muted small" style="margin:8px 0 0">No website product in this collab, so this just records the reel link + live date (no reel page on the website). Add a product above to get a reel page.</p>`}
+        ${e.reel_code ? `${extraReels(e).length ? `<ul class="vlist" style="margin:12px 0 0">${extraReels(e).map((x, i) => `<li>✅ <b>Reel ${i + 2}</b> · <a href="https://www.instagram.com/reel/${esc(x.code)}/" target="_blank" rel="noopener">${esc(reelTitle(x.code))}</a>${D.reels.some(r => codeOf(r).toLowerCase() === x.code.toLowerCase()) ? ` · <a href="${SITE}/reel/${esc(x.code)}" target="_blank" rel="noopener">reel page</a>` : ""} <span class="muted">· live ${x.live_on ? dateY(x.live_on) : "—"}</span> <button type="button" class="sbtn" data-unreel="${esc(x.code)}" aria-label="Remove this reel">✕</button></li>`).join("")}</ul>` : ""}
+          <form id="reelx" class="row" style="align-items:end;margin-top:12px"><input name="link" placeholder="Reel ${moreReels.length + 2} — https://www.instagram.com/reel/…" style="flex:1 1 280px"><label class="small" style="flex:0 1 210px">Live date &amp; time<input name="live_on" type="datetime-local" value="${esc(nowLocal())}"></label><button class="main">+ Add reel ${moreReels.length + 2}</button></form>
+          <p class="muted small" style="margin:8px 0 0">For brands that asked for more than one reel.${prods.length ? " Each reel gets its own page on the website, linked to this collab's products." : ""}${reelsOwed(e) > 1 ? ` Deliverables say ${reelsOwed(e)} reels.` : " Set how many in Deliverables → Collaborative reels."}</p>` : ""}
       </section>
       <section class="card" data-fold="trials"><h2>Trial reels <span class="hint">${trialsOf(e).length || ""}</span><span class="muted small" style="font-weight:500">· just for your record, no page on the website</span></h2>
         ${!editCard.has("trials") ? `${trialsOf(e).length ? `<ul class="vlist">${trialsOf(e).map(t => `<li><b>${dateY(t.date) || "—"}</b> ${link(t.link)} ${t.note ? `<span class="muted">· ${esc(t.note)}</span>` : ""}</li>`).join("")}</ul>` : `<p class="muted" style="margin:0">No trial reels yet.</p>`}<div style="margin-top:10px">${editBtn("trials")}</div>` : `<form id="trf" style="display:grid;gap:8px"><div class="tlist" style="display:grid;gap:8px">${(trialsOf(e).length ? trialsOf(e) : [{ date: today() }]).map(trialRow).join("")}</div>
@@ -787,7 +793,7 @@
     const t = Number(n >> 23n) + 1314220021721; return t > 1.3e12 && t < Date.now() + 864e5 ? new Date(t).toLocaleDateString("en-CA") : ""; } catch { return ""; } };
   const ymd = d => d.toLocaleDateString("en-CA");
   function calItems() {
-    const open = e => ["confirmed", "product", "live", "shot", "edited"].includes(e.status) && !e.live_on;
+    const open = e => ["confirmed", "product", "live", "shot", "edited"].includes(e.status) && reelsOfDeal(e).length < reelsOwed(e);
     // open ideas go in the tray until they get a date; a posted idea shows on its date (it isn't waiting any more)
     const ideas = (D.ideas || []).filter(i => ["idea", "planned", "toshoot", "shot"].includes(i.status) || (i.status === "posted" && i.post_on));
     const deals = D.enquiries.filter(open);
@@ -795,7 +801,7 @@
     ideas.forEach(i => (i.post_on ? sched : tray).push({ key: "idea:" + i.id, kind: "idea", id: i.id, day: i.post_on || "", label: i.text, sub: (ISTAT[i.status] || "") + (i.type ? " · " + ITYPE[i.type] : ""), cls: i.status === "posted" ? "c-posted" : "c-idea", done: i.status === "posted" }));
     // a deal gets one calendar slot per reel it owes (Deliverables → Collaborative reels × N); reel 1 is the deal's "Post by", the rest live in reel_days
     deals.forEach(e => { const n = reelsOwed(e), extra = reelDays(e);
-      for (let k = 0; k < n; k++) { const day = k ? day10(extra[k - 1]) : day10(e.post_by);
+      for (let k = reelsOfDeal(e).length; k < n; k++) { const day = k ? day10(extra[k - 1]) : day10(e.post_by);
         (day ? sched : tray).push({ key: `deal:${e.id}:${k}`, kind: "deal", id: e.id, day, label: `🤝 ${e.brand}${n > 1 ? ` · reel ${k + 1}/${n}` : ""}`, sub: `${e.package || TYPE_SHORT[typeOf(e)]} · ${STATUS[e.status]}`, cls: "c-deal" }); } });
     // posted: every reel on the website, on the day it went up on Instagram; plus collab reels that went live without a website reel
     const posted = [], seen = new Set();
@@ -803,6 +809,8 @@
       const deal = D.enquiries.find(e => String(e.reel_code || "").toLowerCase() === c.toLowerCase());
       posted.push({ key: "reel:" + c, kind: "reel", day: d, label: r.title || c, sub: deal ? `✅ Posted · 🤝 ${deal.brand}` : "✅ Posted", cls: "c-posted", href: `https://www.instagram.com/reel/${c}/` }); });
     D.enquiries.filter(e => e.live_on && !seen.has(String(e.reel_code || "").toLowerCase())).forEach(e => posted.push({ key: "live:" + e.id, kind: "live", day: day10(e.live_on), label: `🤝 ${e.brand}`, sub: "✅ Went live", cls: "c-posted", open: e.id }));
+    D.enquiries.forEach(e => extraReels(e).forEach((x, i) => { if (!x.live_on || seen.has(x.code.toLowerCase())) return;
+      posted.push({ key: "live:" + e.id + ":" + x.code, kind: "live", day: day10(x.live_on), label: `🤝 ${e.brand} · reel ${i + 2}`, sub: "✅ Went live", cls: "c-posted", open: e.id }); }));
     return { sched, tray, posted };
   }
   const day10 = v => String(v || "").slice(0, 10);
@@ -1092,6 +1100,9 @@
       if (b.dataset.status === "delivered" && !["delivered", "closed"].includes(e0.status) && (!e0.reel_code || !e0.live_on)) {
         toast("⚠ Add the reel link + live date first (Reel card) — or Decline if it was dropped");
         const rc = document.querySelector('[data-fold="reel"]'); if (rc) { rc.classList.remove("closed"); rc.scrollIntoView({ behavior: "smooth", block: "center" }); } return; }
+        if (b.dataset.status === "delivered" && !["delivered", "closed"].includes(e0.status) && reelsOfDeal(e0).length < reelsOwed(e0)) {
+          toast(`⚠ Deliverables say ${reelsOwed(e0)} reels, ${reelsOfDeal(e0).length} added — add the rest in the Reels card (or lower the count in Deliverables)`);
+          const rc = document.querySelector('[data-fold="reel"]'); if (rc) { rc.classList.remove("closed"); rc.scrollIntoView({ behavior: "smooth", block: "center" }); } return; }
       act(b, () => api("enquiry.update", { id: +openId, patch: { status: b.dataset.status } }), "Status: " + STATUS[b.dataset.status]); });
     root.querySelectorAll("[data-del]").forEach(b => b.onclick = () => { if (!confirmTwice(b)) return; act(b, async () => { await api("product.delete", { id: +b.dataset.del }); editing = null; }, "Product removed — gone from the site in a few seconds"); });
     root.querySelectorAll("[data-delreel]").forEach(b => b.onclick = () => { if (!confirmTwice(b)) return; act(b, async () => { await api("reel.delete", { code: b.dataset.delreel }); reelEdit = null; }, "Reel removed"); });
@@ -1164,6 +1175,11 @@
       trf.onsubmit = ev => { ev.preventDefault(); act(trf.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch: { trial_reels: readTrials(trf) } }); editCard.delete("trials"); }, "Trial reels saved"); };
     }
     const brief = $("brief"); if (brief) brief.onsubmit = ev => { ev.preventDefault(); act(brief.querySelector("button.main"), async () => { await api("enquiry.update", { id: +openId, patch: Object.fromEntries(new FormData(brief)) }); editCard.delete("brief"); }, "Brief saved"); };
+    const reelx = $("reelx"); if (reelx) reelx.onsubmit = ev => { ev.preventDefault(); const e = D.enquiries.find(x => x.id === +openId), fd = new FormData(reelx);
+      const m = String(fd.get("link") || "").match(/\/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]{5,})/); if (!m) { toast("Paste the reel's Instagram link"); return; }
+      if (reelsOfDeal(e).includes(m[1].toLowerCase())) { toast("That reel is already on this collab"); return; }
+      act(reelx.querySelector("button"), () => api("enquiry.addReel", { id: e.id, link: fd.get("link"), liveOn: fd.get("live_on") }), "Reel added 🚀"); };
+    root.querySelectorAll("[data-unreel]").forEach(b => b.onclick = () => act(b, () => api("enquiry.removeReel", { id: +openId, code: b.dataset.unreel }), "Reel removed from this collab"));
     const reelf = $("reelf"); if (reelf) reelf.onsubmit = ev => { ev.preventDefault(); const e = D.enquiries.find(x => x.id === +openId);
       const fd = new FormData(reelf);
       act(reelf.querySelector("button"), () => api("reel.save", { link: fd.get("link"), liveOn: fd.get("live_on"), products: e.product_ids, enquiryId: e.id }), "Reel is live on the website 🚀"); };

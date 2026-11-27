@@ -11,7 +11,7 @@
 import * as store from "./store.js";
 
 const STATUSES = ["new", "hold", "confirmed", "product", "live", "shot", "edited", "delivered", "closed", "declined"];   // delivered = the work is done · closed = all dues cleared too
-const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels", "show_kit", "kit_views", "return_product", "returned_on", "deal_type", "deal_items", "no_product", "reel_code", "reel_days"];
+const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels", "show_kit", "kit_views", "return_product", "returned_on", "deal_type", "deal_items", "no_product", "reel_code", "reel_days", "reel_lives"];
 const now = () => new Date().toISOString();
 const clip = (v, n = 2000) => String(v ?? "").slice(0, n);
 const LONG = { script: 20000, non_negotiables: 5000, contacts: 5000, deliverables: 5000, trial_reels: 10000 };   // fields allowed to be longer than 2,000 characters
@@ -34,7 +34,7 @@ async function tables(env) {
   try { if (!((((await env.STATS.prepare("PRAGMA table_info(ideas)").all()).results) || []).some(c => c.name === "post_on"))) await env.STATS.prepare("ALTER TABLE ideas ADD COLUMN post_on TEXT").run(); } catch {}   // the day it's planned to go live (content calendar)   // idea → the collab it's for
   // columns added later — only the missing ones are added (one quick look instead of ~25 tries every cold start)
   const have = new Set((((await env.STATS.prepare("PRAGMA table_info(enquiries)").all()).results) || []).map(c => c.name));
-  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT", "show_kit TEXT", "kit_views TEXT", "return_product TEXT", "returned_on TEXT", "deal_type TEXT", "deal_items TEXT", "no_product TEXT", "reel_days TEXT"]) { if (!have.has(col.split(" ")[0])) try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
+  for (const col of ["payment_due TEXT", "contacts TEXT", "source TEXT", "dispatched_on TEXT", "received_on TEXT", "live_on TEXT", "paid_on TEXT", "script TEXT", "non_negotiables TEXT", "instagram TEXT", "deliverables TEXT", "draft_on TEXT", "draft_link TEXT", "trial_reels TEXT", "txn_id TEXT", "payment_notes TEXT", "pitched TEXT", "pitch_stats TEXT", "collab_on TEXT", "reels TEXT", "show_kit TEXT", "kit_views TEXT", "return_product TEXT", "returned_on TEXT", "deal_type TEXT", "deal_items TEXT", "no_product TEXT", "reel_days TEXT", "reel_lives TEXT"]) { if (!have.has(col.split(" ")[0])) try { await env.STATS.prepare(`ALTER TABLE enquiries ADD COLUMN ${col}`).run(); } catch {} }
   // there's no "replied" status any more: those go back to New, and their "Status → replied" log lines are dropped
   // there's no "Product received" status: those deals are Ongoing
   try { await env.STATS.batch([env.STATS.prepare("UPDATE enquiries SET status = 'live' WHERE status = 'received'"),
@@ -251,6 +251,7 @@ async function run(a, env, h) {
       const code = "reel_code" in p ? p.reel_code : e.reel_code, live = "live_on" in p ? p.live_on : e.live_on;
       if (!code || !live) throw new Error("Add the reel link and its live date first (Reel card) — or Decline the deal if it was dropped");
     }
+    if (status && !STATUSES.includes(status)) throw new Error(`Unknown status "${status}" — the bot is older than the dashboard: run make deploy-bot`);
     if (status && STATUSES.includes(status) && status !== e.status) { sets.push("status = ?"); vals.push(status); await logEvent(env, e.id, `Status → ${status}`); }
     // marked Closed → all dues cleared: a paid deal that has no Payment received date gets today's
     if (status === "closed" && status !== e.status && !(p.paid_on || e.paid_on) && (String(p.price ?? e.price ?? "").replace(/[^\d]/g, "") || (p.payment ?? e.payment) === "Paid")) {
@@ -343,6 +344,29 @@ async function run(a, env, h) {
   }
 
   // ---- reels: paste the link + pick its products → live
+  // ---- reel 2, 3… of a collab (brands that asked for more than one): kept in reels (codes) + reel_lives {code: live date}
+  if (op === "enquiry.addReel" || op === "enquiry.removeReel") {
+    const e = await getEnquiry(env, a.id); if (!e) throw new Error("That deal is gone");
+    let codes = [], lives = {}; try { codes = JSON.parse(e.reels || "[]"); } catch {} try { lives = JSON.parse(e.reel_lives || "{}") || {}; } catch {}
+    if (!Array.isArray(codes)) codes = [];
+    if (op === "enquiry.removeReel") {
+      codes = codes.filter(c => String(c).toLowerCase() !== String(a.code || "").toLowerCase()); delete lives[a.code];
+      await env.STATS.prepare("UPDATE enquiries SET reels = ?, reel_lives = ?, updated = ? WHERE id = ?").bind(JSON.stringify(codes), JSON.stringify(lives), now(), e.id).run();
+      await logEvent(env, e.id, `Reel removed from the collab: ${a.code}`);
+      return load(env, h);
+    }
+    const code = (String(a.link || "").match(h.REEL_RE) || [])[1]; if (!code) throw new Error("That doesn't look like an Instagram reel link");
+    if (!e.reel_code) throw new Error("Add the first reel first");
+    if ([e.reel_code, ...codes].some(c => String(c).toLowerCase() === code.toLowerCase())) throw new Error("That reel is already on this collab");
+    const liveOn = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(a.liveOn || "") ? a.liveOn : now().slice(0, 10);
+    codes.push(code); lives[code] = liveOn;
+    await env.STATS.prepare("UPDATE enquiries SET reels = ?, reel_lives = ?, updated = ? WHERE id = ?").bind(JSON.stringify(codes), JSON.stringify(lives), now(), e.id).run();
+    await logEvent(env, e.id, `Reel ${codes.length + 1} live: ${code}`);
+    // collab with website products → this reel gets its own reel page too, linked to the same products
+    const ids = (() => { try { return JSON.parse(e.product_ids || "[]").map(Number).filter(Boolean); } catch { return []; } })();
+    if (ids.length) return run({ op: "reel.save", link: `https://www.instagram.com/reel/${code}/`, products: ids }, env, h);
+    return load(env, h);
+  }
   if (op === "reel.save") {
     const code = (String(a.link || a.code || "").match(h.REEL_RE) || [])[1] || (/^[\w-]{5,}$/.test(a.code || "") ? a.code : "");
     if (!code) throw new Error("That doesn't look like an Instagram reel link");
