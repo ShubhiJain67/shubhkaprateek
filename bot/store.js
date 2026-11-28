@@ -7,7 +7,7 @@
 //   products   [{ id, name, brand, category: [...], variants: [{ name, link, image }] }]
 //   reels      [{ id, reel, title, products: [ids], cover? }]
 //   categories [{ id, name, emoji, theme?, keywords, sub: [{ id, name, keywords }] }]
-//   brands     { slug: { name, id: "<5-digit page number>", link, instagram?, website? } }
+//   brands     { slug: { name, id: "<5-digit page number>", link, instagram?, website?, page?, go?, goLink? } }   (go = tracked link code: /go/<go>)
 // The first time it runs it imports the current data/*.json + bot/brands.json from GitHub (once).
 
 const slugOf = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
@@ -31,7 +31,11 @@ export async function ensure(env, h) {
     db.prepare("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)"),
     db.prepare("CREATE TABLE IF NOT EXISTS images (key TEXT PRIMARY KEY, type TEXT, data TEXT, created TEXT)"),
   ]);
-  try { if (!((((await db.prepare("PRAGMA table_info(brands)").all()).results) || []).some(c => c.name === "ads"))) await db.prepare("ALTER TABLE brands ADD COLUMN ads TEXT").run(); } catch {}   // link to their Meta Ad Library
+  try { const cols = (((await db.prepare("PRAGMA table_info(brands)").all()).results) || []).map(c => c.name);
+    if (!cols.includes("ads")) await db.prepare("ALTER TABLE brands ADD COLUMN ads TEXT").run();     // link to their Meta Ad Library
+    if (!cols.includes("page")) await db.prepare("ALTER TABLE brands ADD COLUMN page TEXT").run();   // their page — where the tracked link sends people
+    if (!cols.includes("go")) await db.prepare("ALTER TABLE brands ADD COLUMN go TEXT").run();       // the tracked link's fixed code: shubhkaprateek.com/go/<go>
+  } catch {}
   const flags = new Set((((await db.prepare("SELECT key FROM settings WHERE key IN ('imported', 'fix:brands:1')").all()).results) || []).map(r => r.key));
   if (!flags.has("imported")) await importFromFiles(env, h);
   // one-time tidy-ups of brand names (runs once, the first time after this is deployed)
@@ -77,7 +81,29 @@ async function importFromFiles(env, h) {
 export async function readBrands(env) {
   const rows = (await env.STATS.prepare("SELECT * FROM brands ORDER BY slug").all()).results || [];
   const site = env.SITE_URL || "https://shubhkaprateek.com";
-  return Object.fromEntries(rows.map(b => [b.slug, { name: b.name, id: b.number, link: `${site}/brand/${b.number}`, instagram: b.instagram || "", website: b.website || "", ads: b.ads || "", dbId: b.id }]));
+  return Object.fromEntries(rows.map(b => [b.slug, { name: b.name, id: b.number, link: `${site}/brand/${b.number}`, instagram: b.instagram || "", website: b.website || "", ads: b.ads || "",
+    page: b.page || "", go: b.go || "", goLink: b.go && brandTarget(b) ? `${site}/go/${b.go}` : "", dbId: b.id }]));
+}
+// ---- a brand's tracked link: shubhkaprateek.com/go/<code> → their page (the "Their page" link; else website; else Instagram)
+// The code is fixed the first time a page/website/Instagram is saved and never changes — renaming the brand keeps shared links working.
+const igUrl = v => { const h = String(v || "").trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/^@/, "").split(/[/?#]/)[0]; return h ? `https://www.instagram.com/${h}/` : ""; };
+const asUrl = v => { v = String(v || "").trim(); if (!v) return ""; if (!/^https?:\/\//i.test(v)) v = "https://" + v; try { const u = new URL(v); return /^https?:$/.test(u.protocol) ? u.href : ""; } catch { return ""; } };
+export const brandTarget = b => asUrl(b.page) || asUrl(b.website) || igUrl(b.instagram);
+export async function brandByGo(env, code) {
+  await ensure(env, {});
+  code = String(code || "").toLowerCase();
+  const b = await env.STATS.prepare("SELECT * FROM brands WHERE go = ?").bind(code).first();
+  if (b) return b;
+  const alias = await getSetting(env, "goalias:" + code, null);        // a brand that was merged into another
+  return alias ? env.STATS.prepare("SELECT * FROM brands WHERE id = ?").bind(+alias).first() : null;
+}
+async function giveGoCode(env, id) {      // only once a brand has somewhere to send people
+  const db = env.STATS, b = await db.prepare("SELECT * FROM brands WHERE id = ?").bind(id).first();
+  if (!b || b.go || !brandTarget(b)) return;
+  const base = (b.slug || "brand").slice(0, 30);
+  for (let i = 1; i < 50; i++) { const code = i === 1 ? base : `${base}-${i}`;
+    if (/^\d+$/.test(code)) continue;                       // numbers are product links (/go/48)
+    if (!(await db.prepare("SELECT 1 FROM brands WHERE go = ?").bind(code).first())) { await db.prepare("UPDATE brands SET go = ? WHERE id = ?").bind(code, id).run(); return; } }
 }
 // the brand's row for a name, created (with its fixed 5-digit page number) if it's new
 export async function brandId(env, name) {
@@ -91,16 +117,17 @@ export async function brandId(env, name) {
   return r.meta.last_row_id;
 }
 // rename a brand / its Instagram + website (the page number never changes)
-export async function saveBrand(env, slug, { name, instagram, website, ads }) {
+export async function saveBrand(env, slug, { name, instagram, website, ads, page }) {
   const db = env.STATS; let b = await db.prepare("SELECT * FROM brands WHERE slug = ?").bind(slug).first();
   if (!b && name) { await brandId(env, name); b = await db.prepare("SELECT * FROM brands WHERE slug = ?").bind(slugOf(name)).first(); }
   if (!b) throw new Error("That brand is gone");
   const nn = String(name ?? b.name).trim() || b.name, ns = slugOf(nn);
   if (ns !== b.slug && await db.prepare("SELECT 1 FROM brands WHERE slug = ?").bind(ns).first()) return mergeBrand(env, b.slug, ns);   // renamed to a brand you already have → they become one
   await db.batch([
-    db.prepare("UPDATE brands SET name = ?, slug = ?, instagram = ?, website = ?, ads = ? WHERE id = ?").bind(nn, ns, String(instagram ?? b.instagram ?? "").trim(), String(website ?? b.website ?? "").trim(), String(ads ?? b.ads ?? "").trim(), b.id),
+    db.prepare("UPDATE brands SET name = ?, slug = ?, instagram = ?, website = ?, ads = ?, page = ? WHERE id = ?").bind(nn, ns, String(instagram ?? b.instagram ?? "").trim(), String(website ?? b.website ?? "").trim(), String(ads ?? b.ads ?? "").trim(), String(page ?? b.page ?? "").trim().slice(0, 500), b.id),
     db.prepare("UPDATE enquiries SET brand = ? WHERE lower(trim(brand)) = lower(?)").bind(nn, b.name),
   ]);
+  await giveGoCode(env, b.id);
   await invalidate(env);
 }
 // merge brand `from` into `into`: its products + deals move over, `from` (and its page number) is removed
@@ -117,9 +144,17 @@ export async function mergeBrand(env, from, into, intoName) {
   await db.batch([
     db.prepare("UPDATE products SET brand_id = ? WHERE brand_id = ?").bind(b.id, a.id),
     db.prepare("UPDATE enquiries SET brand = ? WHERE lower(trim(brand)) = lower(?)").bind(b.name, a.name),
-    db.prepare("UPDATE brands SET instagram = COALESCE(NULLIF(instagram, ''), ?), website = COALESCE(NULLIF(website, ''), ?) WHERE id = ?").bind(a.instagram || "", a.website || "", b.id),
+    db.prepare("UPDATE brands SET instagram = COALESCE(NULLIF(instagram, ''), ?), website = COALESCE(NULLIF(website, ''), ?), page = COALESCE(NULLIF(page, ''), ?) WHERE id = ?").bind(a.instagram || "", a.website || "", a.page || "", b.id),
     db.prepare("DELETE FROM brands WHERE id = ?").bind(a.id),
+    db.prepare("UPDATE brands SET go = COALESCE(NULLIF(go, ''), ?) WHERE id = ?").bind(a.go || null, b.id),
   ]);
+  // the old brand's tracked link keeps working (→ the merged brand), and its clicks move over
+  if (a.go && b.go && a.go !== b.go) await setSetting(env, "goalias:" + a.go, b.id);
+  try { await db.batch([
+    db.prepare("INSERT INTO hits (day, kind, item, src, n) SELECT day, kind, ?, src, n FROM hits WHERE item = ? ON CONFLICT (day, kind, item, src) DO UPDATE SET n = n + excluded.n").bind("b:" + b.id, "b:" + a.id),
+    db.prepare("DELETE FROM hits WHERE item = ?").bind("b:" + a.id),
+  ]); } catch {}
+  await giveGoCode(env, b.id);
   await invalidate(env);
 }
 
@@ -227,9 +262,11 @@ export async function snapshot(env, h) {
   if (!site || Date.now() - fresh > 10 * 60e3) {          // data/site.json (title, links, form…) is still a file — re-read it every 10 minutes
     try { site = await h.readJson(env, "data/site.json"); await setSetting(env, "site:file", site); await setSetting(env, "site:at", Date.now()); } catch { site = site || {}; }
   }
-  const [categories, allProducts, reels, featured] = await Promise.all([readCategories(env), readProducts(env), readReels(env), getFeatured(env)]);
+  const [categories, allProducts, reels, featured, allBrands] = await Promise.all([readCategories(env), readProducts(env), readReels(env), getFeatured(env), readBrands(env)]);
   const products = allProducts.filter(p => !p.hidden);   // a collab's product stays off the website until its reel goes live
-  const body = JSON.stringify({ site: { ...site, site: { ...(site.site || {}), featured } }, categories, products, reels });
+  // brands with a tracked link → "Visit <brand>'s page" on their product pages (only the name + link code, nothing private)
+  const brands = Object.values(allBrands).filter(b => b.goLink).map(b => ({ name: b.name, go: b.go }));
+  const body = JSON.stringify({ site: { ...site, site: { ...(site.site || {}), featured } }, categories, products, reels, brands });
   if (env.DRAFTS) try { await env.DRAFTS.put(SNAP, body, { expirationTtl: 600 }); } catch {}
   return body;
 }

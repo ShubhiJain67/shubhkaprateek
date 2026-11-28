@@ -81,7 +81,9 @@
     d.brand = String(d.brand || "").replace(/^./, c => c.toUpperCase());   // "blix" → "Blix"
     const P = d.products || [], R = d.reels || [];
     const sum = f => P.reduce((a, p) => a + (+p[f] || 0), 0);
-    const clicks = sum("buy") + sum("buyPage") + sum("go"), reelViews = R.reduce((a, r) => a + (+r.views || 0), 0);
+    const pg = d.page, pageClicks = pg ? +pg.clicks || 0 : 0;   // their tracked link: shubhkaprateek.com/go/<code> → their page
+    const pageFrom = pg ? Object.entries(pg.from || {}).sort((a, b) => b[1] - a[1]) : [];
+    const clicks = sum("buy") + sum("buyPage") + sum("go") + pageClicks, reelViews = R.reduce((a, r) => a + (+r.views || 0), 0);
     const from = {}; P.forEach(p => Object.entries(p.from || {}).forEach(([k, v]) => { from[k] = (from[k] || 0) + v; }));
     const fromList = Object.entries(from).sort((a, b) => b[1] - a[1]);
     document.title = `${d.brand} × ShubhKaPrateek`;
@@ -90,9 +92,10 @@
       <h1>${esc(d.brand)} × ShubhKaPrateek</h1>
       <p class="muted">Your product${P.length > 1 ? "s" : ""} on shubhkaprateek.com, the reels ${P.length > 1 ? "they're" : "it's"} in, and how many people we sent your way — live from our analytics.</p>
       <label class="range">Showing <select id="days" aria-label="Period">${PERIODS.map(n => `<option value="${n}" ${n === d.days ? "selected" : ""}>${n === 1 ? "Today" : n ? `Last ${n} days` : "Lifetime"}</option>`).join("")}</select></label>
-      <div class="tile total"><b>${fmt(clicks)}</b><span>Total clicks to your store</span><small>all three below added up</small></div>
+      <div class="tile total"><b>${fmt(clicks)}</b><span>Total clicks to your store</span><small>${pg ? "all four" : "all three"} below added up</small></div>
       <p class="organic-note">🌱 Organic views and clicks — we don't run ads.</p>
       <div class="tiles">
+        ${pg ? `<div class="tile"><b>${fmt(pageClicks)}</b><span>Visits to your page</span><small>${pg.link ? esc(pg.link.replace(/^https?:\/\//, "")) : "your page link"}${pageFrom.length && pageClicks ? " · " + pageFrom.slice(0, 3).map(([k, v]) => `${esc(k)} ${fmt(v)}`).join(" · ") : ""}</small></div>` : ""}
         <div class="tile"><b>${fmt(sum("go"))}</b><span>Direct link clicks</span><small>our shubhkaprateek.com/go/… links in DMs, captions & bio</small></div>
         <div class="tile"><b>${fmt(sum("buyPage"))}</b><span>Buy on product page</span><small>"Buy" tapped on your product's page</small></div>
         <div class="tile"><b>${fmt(sum("buy"))}</b><span>Buy elsewhere on our site</span><small>home page, reel pages, featured</small></div>

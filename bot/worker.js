@@ -13,7 +13,7 @@
 // Settings in wrangler.toml [vars]: GITHUB_REPO, GITHUB_BRANCH, SITE_URL
 // KV namespace DRAFTS = a short cache for the brand pages; D1 database STATS = clicks, enquiries, deals.
 
-import { reportHttp, hitHttp } from "./report.js";
+import { reportHttp, hitHttp, countHit } from "./report.js";
 import { adminHttp, kitFile } from "./admin.js";
 import * as store from "./store.js";      // 🗄 products, brands, reels, categories, photos — the database behind the website   // 🗂 the dashboard (shubhkaprateek.com/admin) + the media kit's enquiry form
 import { DATA_FILES, dataJs } from "../tools/data.mjs"; // builds assets/js/data.js — same code `make ship` uses
@@ -33,6 +33,7 @@ export default {
       try { return new Response(await store.snapshot(env, H), { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=30" } }); }
       catch (e) { console.error(e); return new Response('{"error":"unavailable"}', { status: 503, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }); }
     }
+    if (url.pathname.startsWith("/out/") && req.method === "GET") return brandOut(req, env, url);   // a brand's tracked link (shubhkaprateek.com/go/<code>)
     if (url.pathname.startsWith("/img/") && req.method === "GET") return store.imageHttp(env, decodeURIComponent(url.pathname.slice(5)));   // uploaded photos + reel covers
     if (url.pathname === "/kit" && req.method === "GET") {            // the media kit's brand collabs + brands (from your deals)
       // everything the media kit shows: your content (edited in the dashboard) + brand collabs and brands (from your deals)
@@ -48,6 +49,21 @@ export default {
   }
 };
 
+
+// ---------------------------------------------------------------- 🔗 brand tracked links
+// shubhkaprateek.com/go/<code>?from=bio → (404.html) → here: counts the click for their brand page, then sends the
+// person to the brand's page (the "Their page" link in the dashboard; else their website; else their Instagram).
+// Link previews (WhatsApp, Instagram, Telegram…) don't run the page's script, and bots are skipped here too.
+const BOTS = /bot|crawl|spider|slurp|preview|facebookexternalhit|meta-externalagent|whatsapp|telegram|slack|discord|twitter|linkedin|embedly|curl|wget|python|headless/i;
+async function brandOut(req, env, url) {
+  const site = env.SITE_URL || "https://shubhkaprateek.com";
+  const code = decodeURIComponent(url.pathname.slice(5)).replace(/\/$/, "").toLowerCase();
+  let b = null; try { if (/^[a-z0-9-]{1,40}$/.test(code)) b = await store.brandByGo(env, code); } catch (e) { console.error(e); }
+  const to = b ? store.brandTarget(b) : "";
+  if (!to) return Response.redirect(site + "/", 302);                         // unknown code / no page saved → our home page
+  if (!BOTS.test(req.headers.get("User-Agent") || "")) try { await countHit(env, "go", "b:" + b.id, url.searchParams.get("from")); } catch (e) { console.error(e); }
+  return new Response(null, { status: 302, headers: { Location: to, "Cache-Control": "no-store", "Referrer-Policy": "origin" } });
+}
 
 // ---------------------------------------------------------------- 🔔 Telegram notifications (send only)
 // A message to everyone in ALLOWED_CHAT_IDS. The bot doesn't read anything you send it any more.

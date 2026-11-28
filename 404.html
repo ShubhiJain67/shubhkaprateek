@@ -26,6 +26,16 @@
   })();
 </script>
 <script>
+  // Tracked brand links: shubhkaprateek.com/go/<brand code>  (e.g. /go/blix, or /go/blix?from=bio) — set up in the
+  // dashboard (Brands → a brand → Edit brand → Their page). The bot counts the click for their brand page and sends
+  // the person on to the brand's page. Numbers (/go/48) are product links, below.
+  (function () {
+    var m = location.pathname.match(/^\/go\/([a-z0-9-]*[a-z-][a-z0-9-]*)\/?$/i); if (!m) return;
+    document.documentElement.className = "going";
+    location.replace("https://shubhkaprateek-bot.shubhkaprateek.workers.dev/out/" + m[1].toLowerCase() + location.search);
+  })();
+</script>
+<script>
   // Tracked buy links: shubhkaprateek.com/go/<product id>  (e.g. /go/48, or /go/48?from=autodm)
   // Counts the visit in Umami (Events → "go: <product name>", with id / store / from) and then opens the
   // product's buy link (Amazon, Blix…). There's no page for /go/… so GitHub shows this file — no extra files needed.

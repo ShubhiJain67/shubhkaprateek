@@ -39,6 +39,24 @@ export async function hitHttp(req, env, url) {
   } catch (e) { console.error(e); }
   return new Response(null, { status: 204, headers: cors });
 }
+// one count, from the bot itself (the brand tracked links: /go/<brand code> → GET /out/<code> on the bot)
+export async function countHit(env, kind, item, src) {
+  if (!env.STATS) return;
+  await statsTable(env);
+  src = String(src || "").toLowerCase().replace(/[^a-z0-9 _.-]/g, "").trim().slice(0, 40) || "direct";
+  await env.STATS.prepare("INSERT INTO hits (day, kind, item, src, n) VALUES (?, ?, ?, ?, 1) ON CONFLICT (day, kind, item, src) DO UPDATE SET n = n + 1").bind(IST(), kind, item, src).run();
+}
+// clicks on every brand's tracked link, for the dashboard: { <brand db id>: { all, d7, d30, from: { bio: 3, … } } }
+export async function brandClicks(env) {
+  if (!env.STATS) return {};
+  await statsTable(env);
+  const day = n => new Date(Date.now() + 5.5 * 3600e3 - (n - 1) * 864e5).toISOString().slice(0, 10);
+  const rows = (await env.STATS.prepare("SELECT item, src, SUM(n) AS n, SUM(CASE WHEN day >= ? THEN n ELSE 0 END) AS d7, SUM(CASE WHEN day >= ? THEN n ELSE 0 END) AS d30 FROM hits WHERE kind = 'go' AND item LIKE 'b:%' GROUP BY item, src")
+    .bind(day(7), day(30)).all()).results || [];
+  const out = {};
+  for (const r of rows) { const o = out[r.item.slice(2)] ||= { all: 0, d7: 0, d30: 0, from: {} }; o.all += +r.n || 0; o.d7 += +r.d7 || 0; o.d30 += +r.d30 || 0; o.from[r.src] = (o.from[r.src] || 0) + (+r.n || 0); }
+  return out;
+}
 async function statsFor(env, items, days) {
   await statsTable(env);
   const since = days ? new Date(Date.now() + 5.5 * 3600e3 - (days - 1) * 864e5).toISOString().slice(0, 10) : "0000-00-00";   // days 0 = lifetime
@@ -75,7 +93,8 @@ async function umami(env, websiteId, path, params) {
 
 export async function buildReport(env, h, slug, days) {
   await store.ensure(env, h);
-  const [products, reels, categories] = await Promise.all([store.readProducts(env), store.readReels(env), store.readCategories(env)]);
+  const [products, reels, categories, brands] = await Promise.all([store.readProducts(env), store.readReels(env), store.readCategories(env), store.readBrands(env)]);
+  const rec = brands[slug] || {};
   const catName = {};
   for (const c of categories || []) { catName[c.id] = c.name; for (const s of c.sub || []) catName[s.id] = s.name; }
   const mine = productsForBrand(slug, products), ids = new Set(mine.map(p => p.id));
@@ -90,10 +109,12 @@ export async function buildReport(env, h, slug, days) {
         page: `${siteUrl}/product/${p.id}`, categories: [].concat(p.category || []).map(c => catName[c] || c),
         reels: myReels.filter(r => r.products.includes(p.id)).length, buy: 0, buyPage: 0, go: 0, views: 0, from: {} };
     }),
-    reels: myReels.map(({ products, ...r }) => ({ ...r, views: 0 })), note: ""
+    reels: myReels.map(({ products, ...r }) => ({ ...r, views: 0 })), note: "",
+    // their tracked link (shubhkaprateek.com/go/<code> → their page): clicks + where they came from (?from=bio …)
+    page: rec.goLink ? { link: rec.goLink, clicks: 0, from: {} } : null
   };
   if (env.STATS) {                                               // our own counter (free) — used whenever it's set up
-    const { rows, since } = await statsFor(env, [...out.products.map(p => "p:" + p.id), ...out.reels.map(r => "r:" + r.code)], days);
+    const { rows, since } = await statsFor(env, [...out.products.map(p => "p:" + p.id), ...out.reels.map(r => "r:" + r.code), ...(rec.dbId ? ["b:" + rec.dbId] : [])], days);
     const byItem = it => out.products.find(p => "p:" + p.id === it);
     for (const r of rows) {
       const n = +r.n || 0, p = byItem(r.item);
@@ -102,6 +123,9 @@ export async function buildReport(env, h, slug, days) {
       else if (p && r.kind === "go") { p.go += n; p.from[r.src] = (p.from[r.src] || 0) + n; }
       else if (p && r.kind === "view") p.views += n;
       else if (r.kind === "view") { const rl = out.reels.find(x => "r:" + x.code === r.item); if (rl) rl.views += n; }
+      else if (r.kind === "go" && r.item === "b:" + rec.dbId) {
+        out.page ||= { link: "", clicks: 0, from: {} };          // link removed later: its past clicks still count
+        out.page.clicks += n; out.page.from[r.src] = (out.page.from[r.src] || 0) + n; }
     }
     if (since) out.since = since;
     return out;

@@ -9,6 +9,7 @@
 // Public: POST /enquiry — the media kit's enquiry form (shubhkaprateek.com/mediakit and /collab) saves into the database here.
 
 import * as store from "./store.js";
+import { brandClicks } from "./report.js";   // clicks on brand tracked links (/go/<brand code>)
 
 const STATUSES = ["new", "hold", "confirmed", "product", "live", "shot", "edited", "delivered", "closed", "declined"];   // delivered = the work is done · closed = all dues cleared too
 const DEAL_FIELDS = ["brand", "email", "package", "product_link", "message", "price", "payment", "payment_due", "product_value", "shoot_by", "post_by", "contact", "contacts", "notes", "source", "dispatched_on", "received_on", "live_on", "paid_on", "script", "non_negotiables", "instagram", "deliverables", "draft_on", "draft_link", "trial_reels", "txn_id", "payment_notes", "pitch_stats", "collab_on", "reels", "show_kit", "kit_views", "return_product", "returned_on", "deal_type", "deal_items", "no_product", "reel_code", "reel_days", "reel_lives", "affiliate", "affiliate_pct"];
@@ -152,6 +153,8 @@ async function load(env, h) {
   await syncKit(env, h, reels, enquiries);
   const kitAuto = await store.getSetting(env, "kit", {});
   const featuredPlan = await store.getSetting(env, "featuredPlan", []);
+  let clicks = {}; try { clicks = await brandClicks(env); } catch (e) { console.error(e); }   // clicks on each brand's tracked link
+  for (const b of Object.values(brands)) b.clicks = clicks[b.dbId] || { all: 0, d7: 0, d30: 0, from: {} };
   return { products, reels, categories, featured, brands, enquiries, events, packages, ideas, kit, kitAuto, featuredPlan };
 }
 const readIdeas = async env => (await env.STATS.prepare("SELECT * FROM ideas ORDER BY id DESC").all()).results || [];

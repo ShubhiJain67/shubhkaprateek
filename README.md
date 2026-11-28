@@ -43,6 +43,7 @@ Saving there is **not** a deployment: the website reads the database live and sh
 
 - Each reel gets its own page: `shubhkaprateek.com/reel/<reel code>`, each product too: `shubhkaprateek.com/product/<id>`.
 - Tracked buy links: `shubhkaprateek.com/go/<product id>` (counted for the brand pages).
+- Tracked brand links: `shubhkaprateek.com/go/<brand code>` (e.g. `/go/blix?from=bio`) → the brand's page. Set it in the dashboard: Brands → the brand → Edit brand → **Their page** (empty = their website, else Instagram). The code is fixed the first time and survives renames. Clicks show on their brand page ("Visits to your page"), on the dashboard's Brands list + brand page, and their product pages get a "More from <brand>" link (counted as `from=product`).
 
 ## Categories & settings
 

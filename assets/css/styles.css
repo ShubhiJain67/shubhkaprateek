@@ -427,6 +427,8 @@ body.on-reel-page #sentinel { display: none !important; }
 .pd-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 10px; }
 .pd-actions .buy, .pd-actions .soon { height: 46px; padding: 0 22px; font-size: 15px; }
 .pd-actions .rp-share { height: 46px; padding: 0 16px; border-radius: 12px; font: inherit; font-weight: 700; cursor: pointer; }
+.pd-brand { display: inline-flex; align-items: center; min-height: 44px; margin-top: 4px; font-weight: 700; font-size: 15px; color: var(--pink); text-decoration: none; }   /* the brand's tracked link (/go/<code>) */
+.pd-brand:hover { text-decoration: underline; }
 .pd-h { margin: 8px 0 14px; font-family: Fraunces, Georgia, serif; font-size: 22px; letter-spacing: -.01em; }
 /* "Seen in these reels" carousel: one row, swipe / arrows, snaps to each reel */
 .carousel { position: relative; margin-bottom: 34px; }

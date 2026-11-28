@@ -38,6 +38,8 @@
       console.error(e); return;
     }
   }
+  // brands with a tracked link (set in the dashboard) → "Visit <brand>" on their product pages, through /go/<code>
+  const brandGo = new Map((raw.brands || []).filter(b => b && b.go).map(b => [String(b.name).trim().toLowerCase(), b.go]));
   // Join reels → products by id, so the rest of the app sees full product objects
   const catalogue = new Map((raw.products || []).map(p => [p.id, p]));
   const used = new Set();
@@ -729,6 +731,7 @@
           <div class="pd-actions"><span class="vbuy">${buyBtn(v)}</span>
             <button class="rp-share" type="button" data-share>🔗 Copy link</button></div>
           ${inReels.length ? `<p class="rp-sub">Featured in ${inReels.length} reel${inReels.length === 1 ? "" : "s"}</p>` : ""}
+          ${(go => go ? `<a class="pd-brand" href="/go/${esc(go)}?from=product" target="_blank" rel="noopener">More from ${esc(p.brand)} ↗</a>` : "")(brandGo.get(String(p.brand || "").trim().toLowerCase()))}
         </div>
       </div>
       ${inReels.length ? `<h3 class="pd-h">Seen in ${inReels.length === 1 ? "this reel" : "these reels"}</h3>

@@ -997,11 +997,29 @@
   function vBrands() {
     const list = brandList().filter(b => !q || b.name.toLowerCase().includes(q));
     return `<div class="between"><h1>Brands <span class="muted" style="font:500 16px Inter,sans-serif">${list.length}</span></h1><input id="q" placeholder="Search brands…" value="${esc(q)}" style="width:220px"></div>
-      <div class="tablebox"><table class="table"><thead><tr><th>Brand</th><th>Collabs</th><th>Products</th><th>Paid deals</th><th>Barter deals</th><th>Brand page</th></tr></thead><tbody>
+      <div class="tablebox"><table class="table"><thead><tr><th>Brand</th><th>Collabs</th><th>Products</th><th>Paid deals</th><th>Barter deals</th><th title="Clicks on their tracked link (shubhkaprateek.com/go/…), last 30 days">Link clicks</th><th>Brand page</th></tr></thead><tbody>
       ${list.map(b => `<tr style="cursor:pointer" data-brand="${esc(b.name)}"><td><b>${esc(b.name)}</b> <a class="small" href="${esc(adsLink(b.name))}" target="_blank" rel="noopener" title="Their ads in the Meta Ad Library">📢 Ads</a></td><td>${b.enquiries.length}</td><td>${b.products.length}</td>
         ${(m => `<td>${m.paidN ? `₹${m.paid.toLocaleString("en-IN")} <span class="muted small">· ${m.paidN}</span>` : `<span class="muted small">—</span>`}</td><td>${m.barterN ? `₹${m.barter.toLocaleString("en-IN")} <span class="muted small">· ${m.barterN}</span>` : `<span class="muted small">—</span>`}</td>`)(brandMoney(b))}
+        <td>${(r => r && r.goLink ? `${(r.clicks || {}).d30 || 0} <span class="muted small">· ${(r.clicks || {}).all || 0} all</span>` : `<span class="muted small">no link</span>`)(brandRec(b.name))}</td>
         <td>${brandLink(b.name) ? `<a href="${esc(brandLink(b.name))}" target="_blank" rel="noopener">${esc(brandLink(b.name).replace(/^https:\/\//, ""))}</a>` : `<span class="muted small">after first product</span>`}</td></tr>`).join("")}
       </tbody></table></div>`;
+  }
+  // their tracked link: shubhkaprateek.com/go/<code> → their page, counted on their brand page (and here)
+  const GO_FROM = [["", "Plain"], ["bio", "Bio"], ["story", "Story"], ["dm", "DM"], ["caption", "Caption"], ["autodm", "Auto-DM"]];
+  function goCard(b) {
+    const r = brandRec(b.name), edit = r ? `data-brandedit="${esc(r.slug)}"` : `data-brandnew="${esc(b.name)}"`;
+    if (!r || !r.goLink) return `<section class="card"><h2>🔗 Tracked link to their page</h2><p class="muted" style="margin:0 0 10px">Add their page (website, Amazon store, Instagram…) and you get a link like <b>shubhkaprateek.com/go/${esc((r && r.slug) || "brand")}</b> that counts every click — shown on their brand page.</p><button ${edit}>Add their page</button></section>`;
+    const c = r.clicks || {}, from = Object.entries(c.from || {}).sort((x, y) => y[1] - x[1]);
+    return `<section class="card"><h2>🔗 Tracked link to their page</h2>
+      <p style="margin:0 0 6px"><a href="${esc(r.goLink)}" target="_blank" rel="noopener"><b>${esc(r.goLink.replace(/^https?:\/\//, ""))}</b></a> <span class="muted small">→ ${esc(r.page || r.website || r.instagram || "")}</span></p>
+      <div class="row" style="margin:6px 0 12px">${GO_FROM.map(([f, t]) => `<button type="button" data-copy="${esc(r.goLink + (f ? "?from=" + f : ""))}" title="${esc(r.goLink + (f ? "?from=" + f : ""))}">📋 ${t}</button>`).join("")}</div>
+      <div class="grid2">
+        <div><b style="font:700 22px Fraunces,serif">${c.d7 || 0}</b><br><span class="muted small">clicks · last 7 days</span></div>
+        <div><b style="font:700 22px Fraunces,serif">${c.d30 || 0}</b><br><span class="muted small">last 30 days</span></div>
+        <div><b style="font:700 22px Fraunces,serif">${c.all || 0}</b><br><span class="muted small">all time</span></div>
+        <div><span class="muted small">${from.length ? from.map(([k, v]) => `${esc(k)} <b>${v}</b>`).join(" · ") : "Where clicks came from shows up here (?from=…)"}</span></div>
+      </div>
+      <p class="muted small" style="margin:10px 0 0">The code never changes, even if you rename the brand. Its product pages on the website also show a “Visit ${esc(b.name)}” link (counted as <b>product</b>).</p></section>`;
   }
   function vBrand() {
     const b = brandList().find(x => x.name.toLowerCase() === String(openId || "").toLowerCase());
@@ -1016,6 +1034,7 @@
         <div class="card"><b style="font:700 26px Fraunces,serif">₹${m.barter.toLocaleString("en-IN")}</b><br><span class="muted small">Barter deals · ${m.barterN} (product worth)</span></div>
         <div class="card"><b style="font:700 26px Fraunces,serif">${b.products.length}</b><br><span class="muted small">Products · ${reels.length} reel${reels.length === 1 ? "" : "s"}</span></div>
       </div>
+      ${goCard(b)}
       <section class="card"><h2>Collabs</h2><div class="list">${b.enquiries.map(e => `<button class="item" data-open="${e.id}"><span><b>${esc(e.package || "Collab")}</b> <span class="muted small">· ${e.payment === "Barter" ? `barter${e.product_value ? " · worth " + esc(e.product_value) : ""}` : esc(e.price || "—") + " · " + esc(e.payment || "")}</span><br><span class="muted small">${date(e.created)}</span></span>${pill(e.status)}</button>`).join("") || `<p class="muted" style="margin:0">No enquiries yet.</p>`}</div></section>
       <section class="card"><h2>Products &amp; reels</h2><div class="list">${b.products.map(p => `<div class="row"><img class="thumb" onerror="this.style.visibility='hidden'" src="${esc(img(p.variants[0]?.image))}" alt="" referrerpolicy="no-referrer"><b>${esc(p.name)}</b><span class="muted small">${reelsOf(p.id).map(r => esc(r.title)).join(" · ")}</span></div>`).join("") || `<p class="muted" style="margin:0">No products yet.</p>`}</div></section>`;
   }
@@ -1148,6 +1167,7 @@
     root.querySelectorAll("[data-foldall]").forEach(b => b.onclick = () => { const c = b.dataset.foldall === "1", s2 = {};
       root.querySelectorAll("[data-fold]").forEach(sec => { sec.classList.toggle("closed", c); s2[sec.dataset.fold] = c; }); try { localStorage.setItem("skp-fold", JSON.stringify(s2)); } catch {} });
     root.querySelectorAll("[data-brandedit]").forEach(b => b.onclick = () => openBrandDialog(b.dataset.brandedit));
+    root.querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); toast("Copied: " + b.dataset.copy.replace(/^https?:\/\//, "")); } catch { prompt("Copy this link", b.dataset.copy); } });
     root.querySelectorAll("[data-brandnew]").forEach(b => b.onclick = () => openBrandDialog("", b.dataset.brandnew));   // a brand that's only in your deals so far
     root.querySelectorAll("[data-catedit]").forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); openCatDialog(b.dataset.catedit, null); });
     root.querySelectorAll("[data-catadd]").forEach(b => b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); openCatDialog(null, b.dataset.catadd); });
@@ -1241,7 +1261,7 @@
   }
   // rename a brand, set its Instagram + website
   function openBrandDialog(slug, newName) {
-    const b = (D.brands || {})[slug] || (newName ? { name: newName, instagram: (D.enquiries.find(e => e.brand.trim().toLowerCase() === newName.toLowerCase() && e.instagram) || {}).instagram || "", website: "", ads: "", id: "new" } : null); if (!b) return;
+    const b = (D.brands || {})[slug] || (newName ? { name: newName, instagram: (D.enquiries.find(e => e.brand.trim().toLowerCase() === newName.toLowerCase() && e.instagram) || {}).instagram || "", website: "", ads: "", page: "", id: "new" } : null); if (!b) return;
     const dlg = document.createElement("dialog");
     dlg.style.cssText = "border:0;border-radius:18px;padding:0;width:min(520px,94vw);max-height:90vh;box-shadow:0 20px 60px rgba(43,31,26,.25)";
     dlg.innerHTML = `<form method="dialog" style="padding:22px;display:grid;gap:12px">
@@ -1250,6 +1270,8 @@
         <label>Name<input name="name" required value="${esc(b.name)}"></label>
         <label>Instagram<input name="instagram" value="${esc(b.instagram)}" placeholder="@brand"></label>
         <label style="grid-column:1/-1">Website<input name="website" value="${esc(b.website)}" placeholder="https://…"></label>
+        <label style="grid-column:1/-1">🔗 Their page <span class="muted small" style="font-weight:500">(where your tracked link goes — e.g. their Amazon store; empty = website, else Instagram)</span><input name="page" value="${esc(b.page || "")}" placeholder="https://www.amazon.in/stores/…" inputmode="url"></label>
+        <p class="muted small" style="grid-column:1/-1;margin:0">${b.goLink ? `Tracked link: <b>${esc(b.goLink.replace(/^https?:\/\//, ""))}</b>` : "Saving a page, website or Instagram gives this brand a tracked link: shubhkaprateek.com/go/…"}</p>
         <label style="grid-column:1/-1">📢 Meta Ad Library link <a class="small" href="${esc(adsSearch(b.name))}" target="_blank" rel="noopener">search it ↗</a><input name="ads" value="${esc(b.ads || "")}" placeholder="https://www.facebook.com/ads/library/?…&view_all_page_id=…"></label>
         <p class="muted small" style="grid-column:1/-1;margin:0">Open "search it", pick their page, copy that address and paste it here. Left empty, the Ads button just searches their name.</p>
       </div>
@@ -1260,7 +1282,7 @@
     const f = dlg.querySelector("form"), close = () => { dlg.close(); dlg.remove(); };
     dlg.querySelectorAll("[data-x]").forEach(x => x.onclick = close); dlg.addEventListener("cancel", close);
     f.onsubmit = async ev => { ev.preventDefault(); const btn = f.querySelector("button.main"); btn.disabled = true;
-      try { await api("brand.save", { slug, brand: { name: f.name.value, instagram: f.instagram.value, website: f.website.value, ads: f.ads.value } }); close(); toast("Brand saved");
+      try { await api("brand.save", { slug, brand: { name: f.name.value, instagram: f.instagram.value, website: f.website.value, ads: f.ads.value, page: f.page.value } }); close(); toast("Brand saved");
         if (view === "brand") { openId = f.name.value.trim(); location.hash = "brand/" + encodeURIComponent(openId); } render(); } catch { btn.disabled = false; } };
     dlg.showModal(); f.name.focus();
   }
