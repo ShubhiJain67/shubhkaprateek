@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Page not found — ShubhKaPrateek</title>
+<title>ShubhKaPrateek</title>   <!-- becomes "Page not found" at the end of the page, only when no link is being opened -->
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="noindex">
 <meta property="og:site_name" content="ShubhKaPrateek">
@@ -23,6 +23,8 @@
     else if (/^\/(?:rates|packages|collabs?)\/?$/i.test(p)) location.replace("/collab" + location.search);               // media kit + packages
     else if (/^\/ugc(?:[-_]?(?:rates|packages))?\/$|^\/ugc[-_]?(?:rates|packages)$/i.test(p)) location.replace("/ugc" + location.search);       // UGC rate card
     else if ((m = p.match(/^\/(?:brand|brands|report)\/([a-z0-9-]+)\/?$/i))) location.replace("/brand.html?b=" + m[1] + location.search.replace(/^\?/, "&"));   // brand pages
+    else return;
+    window.SKP_OPENING = true;                                         // a real link → don't call it "Page not found"
   })();
 </script>
 <script>
@@ -31,7 +33,7 @@
   // the person on to the brand's page. Numbers (/go/48) are product links, below.
   (function () {
     var m = location.pathname.match(/^\/go\/([a-z0-9-]*[a-z-][a-z0-9-]*)\/?$/i); if (!m) return;
-    document.documentElement.className = "going";
+    document.documentElement.className = "going"; window.SKP_OPENING = true;
     location.replace("https://shubhkaprateek-bot.shubhkaprateek.workers.dev/out/" + m[1].toLowerCase() + location.search);
   })();
 </script>
@@ -41,7 +43,7 @@
   // product's buy link (Amazon, Blix…). There's no page for /go/… so GitHub shows this file — no extra files needed.
   (function () {
     var m = location.pathname.match(/^\/go\/(\d+)\/?$/); if (!m) return;
-    document.documentElement.className = "going";
+    document.documentElement.className = "going"; window.SKP_OPENING = true;
     var id = m[1], q = new URLSearchParams(location.search), done = false;
     var go = function (url) { if (done) return; done = true; location.replace(url); };
     // the product's link: live from the database (through the bot) — or the copy built into data.js if that's slow / down
@@ -122,5 +124,6 @@
   </main>
 
   <footer>Some links may be affiliate links — we may earn a small commission at no extra cost to you.</footer>
+<script>if (!window.SKP_OPENING) document.title = "Page not found — ShubhKaPrateek";</script>
 </body>
 </html>

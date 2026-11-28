@@ -202,6 +202,8 @@
   [data-fold] .hint { font: 500 13px Inter, sans-serif; color: var(--muted); margin-left: 6px; }
   .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--dark); color: #fff; padding: 12px 18px; border-radius: 12px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 9; max-width: 90vw; }
   .toast.on { opacity: 1; }
+  .subtabs { margin-top: -4px; padding-left: 12px; border-left: 3px solid #e8890c; }   /* Ongoing's stages, under the main tabs */
+  .subtabs .chip { font-size: 13px; }
   .empty { padding: 30px; text-align: center; color: var(--muted); }
   .login { max-width: 360px; margin: 80px auto; display: grid; gap: 12px; text-align: center; padding: 0 16px; }
   .checks { display: grid; gap: 6px; max-height: 220px; overflow: auto; background: var(--field); border-radius: 10px; padding: 8px; }
@@ -409,7 +411,7 @@
 
   // ---------- views
   let ideaFilter = "open", ideaType = "all", ideaEdit = null;
-  let navOpen = false, view = "enquiries", filter = "all", typeFilter = "all", moneyType = "all", srcFilter = "all", moneyRange = "30", moneyFrom = "", moneyTo = "", editCard = new Set(), q = "", openId = null, editing = null, reelEdit = null;
+  let navOpen = false, view = "enquiries", filter = "all", subFilter = "all", typeFilter = "all", moneyType = "all", srcFilter = "all", moneyRange = "30", moneyFrom = "", moneyTo = "", editCard = new Set(), q = "", openId = null, editing = null, reelEdit = null;
   const go = (v, id = null) => { navOpen = false; view = v; openId = id; editing = null; reelEdit = null; editCard = new Set(); location.hash = v + (id != null ? "/" + id : ""); render(); window.scrollTo(0, 0); };
   window.addEventListener("hashchange", () => { const [v, id] = location.hash.slice(1).split("/"); if (v && v !== view + "") { view = v; openId = id || null; render(); } });
 
@@ -434,11 +436,15 @@
     // in All: everything open first (newest on top), then on hold, then delivered, then closed, then declined
     const rank = e => ({ hold: 1, delivered: 2, closed: 3, declined: 4 })[e.status] || 0;
     const inType = e => typeFilter === "all" || typeOf(e) === typeFilter;
-    const list = D.enquiries.filter(e => inTab(e, filter) && inType(e) && (!q || (e.brand + " " + e.email).toLowerCase().includes(q))).sort((a, b) => rank(a) - rank(b));
+    // Ongoing has sub-tabs, one per stage: to shoot → shot → waiting for approval
+    const SUB = filter === "live" ? [["all", "All ongoing"], ["live", "🎥 To shoot"], ["shot", "🎬 Shot"], ["edited", "📤 Waiting for approval"]] : null;
+    const inSub = e => !SUB || subFilter === "all" || e.status === subFilter;
+    const list = D.enquiries.filter(e => inTab(e, filter) && inSub(e) && inType(e) && (!q || (e.brand + " " + e.email).toLowerCase().includes(q))).sort((a, b) => rank(a) - rank(b));
     const count = t => D.enquiries.filter(e => inTab(e, t) && inType(e)).length;
     return `<div class="between"><h1>Enquiries</h1><div class="row"><input id="q" placeholder="Search brands…" value="${esc(q)}" style="width:220px"><button class="main" data-act="addEnq">+ Add enquiry</button></div></div>
       <div class="row">${["all", "new", "confirmed", "live", "delivered", "closed", "declined", "hold"].map(s =>
         `<button class="chip ${filter === s ? "on" : ""}" data-filter="${s}">${s === "all" ? "All" : STATUS[s]} ${count(s)}</button>`).join("")}</div>
+      ${SUB ? `<div class="row subtabs">${SUB.map(([k, t]) => `<button class="chip ${subFilter === k ? "on" : ""}" data-sub="${k}">${t} ${D.enquiries.filter(e => inTab(e, "live") && inType(e) && (k === "all" || e.status === k)).length}</button>`).join("")}</div>` : ""}
       ${typeChips(typeFilter, "data-type", k => D.enquiries.filter(e => inTab(e, filter) && (k === "all" || typeOf(e) === k)).length)}
       <div class="list">${list.map(e => `<button class="item" data-open="${e.id}">
           <span>${typeBadge(e)}<b>${esc(e.brand)}</b> <span class="muted small">· ${esc(e.package || "—")}</span><br><span class="muted small">${e.pitched === "1" ? "🎯 Pitched a posted reel" : srcOf(e) === "us" ? "↗ We reached out" : "↘ They reached out"}${e.email ? " · " + esc(e.email) : ""} · ${date(e.created)}${e.payment_due ? ` · payment due ${date(e.payment_due)}` : ""}</span></span>
@@ -1055,7 +1061,8 @@
   function wire() {
     root.querySelectorAll("[data-burger]").forEach(b => b.onclick = () => { navOpen = !navOpen; render(); });
     root.querySelectorAll("[data-go]").forEach(a => a.onclick = e => { e.preventDefault(); q = ""; go(a.dataset.go); });
-    root.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { filter = b.dataset.filter; render(); });
+    root.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { filter = b.dataset.filter; subFilter = "all"; render(); });
+    root.querySelectorAll("[data-sub]").forEach(b => b.onclick = () => { subFilter = b.dataset.sub; render(); });
     root.querySelectorAll("[data-mrange]").forEach(b => b.onclick = () => { moneyRange = b.dataset.mrange; render(); });
     root.querySelectorAll("[data-mtype]").forEach(b => b.onclick = () => { moneyType = b.dataset.mtype; render(); });
     // content calendar
