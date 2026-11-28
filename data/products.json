@@ -833,6 +833,21 @@
     ]
   },
   {
+    "id": 63,
+    "name": "Personalised Bunny – Oat, Beige Sweater",
+    "brand": "Jellico",
+    "category": [
+      "plushies"
+    ],
+    "variants": [
+      {
+        "name": "Default",
+        "link": "https://jellico.in/collections/personalized/products/personalised-bunny-oat-beige-sweater",
+        "image": "https://jellico.in/cdn/shop/files/Creambunnyinasoftivorysweater.png?v=1793968131&width=1445"
+      }
+    ]
+  },
+  {
     "id": 64,
     "name": "Book Lamp",
     "brand": "",

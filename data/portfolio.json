@@ -283,6 +283,12 @@
   },
   "brandCollabs": [
     {
+      "brand": "Jellico",
+      "code": "DgRfIWWyRLR",
+      "views": "",
+      "cover": "https://shubhkaprateek-bot.shubhkaprateek.workers.dev/img/cover-DgRfIWWyRLR.jpg"
+    },
+    {
       "brand": "Perfora",
       "code": "Df6twiyy9Dy",
       "views": "",
@@ -364,12 +370,12 @@
   ],
   "brands": [
     {
-      "name": "Perfora",
-      "link": "https://www.instagram.com/perforaofficial/"
-    },
-    {
       "name": "Jellico",
       "link": "https://www.instagram.com/jellico_in/"
+    },
+    {
+      "name": "Perfora",
+      "link": "https://www.instagram.com/perforaofficial/"
     },
     {
       "name": "Samvardhan Mart",
@@ -410,12 +416,12 @@
       "link": "https://www.instagram.com/sleepyheadhq/"
     },
     {
-      "name": "Digitek",
-      "link": "https://www.instagram.com/digitekofficial/"
+      "name": "Ocean Bloom Books",
+      "link": "https://www.instagram.com/oceanbloombooks/"
     },
     {
-      "name": "Jellico",
-      "link": "https://www.instagram.com/jellico_in/"
+      "name": "Digitek",
+      "link": "https://www.instagram.com/digitekofficial/"
     },
     {
       "name": "Introducing india",
